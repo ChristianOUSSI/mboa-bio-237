@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useTr } from "../i18n";
 
 /** Bouton MBOA - cible tactile minimale 72px, coins arrondis 20px. */
@@ -155,6 +155,49 @@ export function PictoCategorie({ categorie, size = 48 }: { categorie: string; si
     <span style={{ fontSize: size }} aria-hidden>
       {emojis[categorie] ?? "📦"}
     </span>
+  );
+}
+
+/** Champ mot de passe avec bascule œil afficher/masquer. */
+export function ChampMotDePasse({
+  value,
+  onChange,
+  placeholder,
+  className = "",
+  autoComplete = "current-password",
+  style,
+}: {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  className?: string;
+  autoComplete?: string;
+  style?: React.CSSProperties;
+}) {
+  const [voir, setVoir] = useState(false);
+  const t = useTr();
+  return (
+    <div className="relative">
+      <input
+        type={voir ? "text" : "password"}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        className={`w-full ${voir ? "pr-14 " : ""}${className}`}
+        style={style}
+      />
+      <button
+        type="button"
+        onClick={() => setVoir((v) => !v)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-xl leading-none"
+        style={{ minWidth: 44, minHeight: 44 }}
+        aria-label={voir ? t("a11y.masquerMdp") : t("a11y.voirMdp")}
+        title={voir ? t("a11y.masquerMdp") : t("a11y.voirMdp")}
+      >
+        {voir ? "🙈" : "👁️"}
+      </button>
+    </div>
   );
 }
 

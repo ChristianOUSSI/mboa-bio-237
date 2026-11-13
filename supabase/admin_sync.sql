@@ -39,6 +39,23 @@ create policy "admin_activite_anon" on public.admin_activite
   using (true)
   with check (true);
 
+-- Catégories de produits créées par l'admin (en plus des 8 intégrées).
+create table if not exists public.categories (
+  id text primary key,
+  slug text not null unique,
+  nom text not null,
+  emoji text not null default '🏷️',
+  created_le timestamptz not null default now()
+);
+
+alter table public.categories enable row level security;
+
+drop policy if exists "categories_anon" on public.categories;
+create policy "categories_anon" on public.categories
+  for all to anon
+  using (true)
+  with check (true);
+
 -- Index pour les lectures récentes.
 create index if not exists admin_activite_quand_idx on public.admin_activite (quand desc);
 create index if not exists admin_comptes_maj_idx on public.admin_comptes (maj_le desc);

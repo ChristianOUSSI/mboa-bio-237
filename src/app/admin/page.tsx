@@ -251,6 +251,9 @@ export default function TableauAdmin() {
         <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/stock")}>
           📦 {t("adm.stock")} ({stock.length})
         </BoutonMboa>
+        <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/categories")}>
+          🏷️ {t("adm.categories")}
+        </BoutonMboa>
         <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/devis")}>
           📝 {t("adm.devis2")} ({commandes.length})
         </BoutonMboa>

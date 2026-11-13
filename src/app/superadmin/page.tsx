@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CarteMboa, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { CarteMboa, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa, ChampMotDePasse } from "@/core/design_system/composants";
 import { tousComptes, majCompte, desactiverCompte, changerMotDePasse, verifierMotDePasse } from "@/core/auth/auth_service";
 import { CompteAuth, validerMotDePasse } from "@/core/auth/auth_local";
 import { synchroniserComptesAdmin } from "@/core/auth/synchro_admin";
@@ -158,8 +158,8 @@ export default function SuperAdminPage() {
                     className="champ-mboa"
                     style={{ fontSize: 18 }}
                   />
-                  <input
-                    type="password"
+                  <ChampMotDePasse
+                    autoComplete="new-password"
                     placeholder={t("super.nouveauMdp")}
                     value={mdpEdit}
                     onChange={(e) => setMdpEdit(e.target.value)}

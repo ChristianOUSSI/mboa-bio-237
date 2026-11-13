@@ -1,11 +1,11 @@
-import { Categorie, categorieResolve } from "./categorie";
+import { categorieResolve } from "./categorie";
 import { Unite, uniteResolve } from "./unite";
 
 /** Une ligne de `public.catalogue` : une référence du marché camerounais. */
 export interface EntreeCatalogue {
   slug: string;
   nom: string;
-  categorie: Categorie;
+  categorie: string;
   prixTendance: number;
   paliers: number[];
   perissable: boolean;

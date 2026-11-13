@@ -31,8 +31,8 @@ export const CATEGORIES_ORDREES: Categorie[] = Object.values(Categorie).sort(
   (a, b) => CATEGORIE_INFO[a].ordre - CATEGORIE_INFO[b].ordre,
 );
 
-export function categorieResolve(slug?: string | null): Categorie {
-  if (!slug) return Categorie.fruit;
-  const found = (Object.values(Categorie) as string[]).includes(slug);
-  return found ? (slug as Categorie) : Categorie.fruit;
+export function categorieResolve(slug?: string | null): string {
+  // Les catégories personnalisées admin ont des slugs arbitraires : on les
+  // conserve tels quels au lieu de les rabattre sur une catégorie intégrée.
+  return slug?.trim() || Categorie.fruit;
 }

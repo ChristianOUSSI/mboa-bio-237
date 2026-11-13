@@ -1,4 +1,4 @@
-import { Categorie, categorieResolve } from "./categorie";
+import { categorieResolve } from "./categorie";
 import { Unite, uniteResolve, uniteAvec, uniteAvecArticle } from "./unite";
 import { PackComposant, packComposantDepuisJson } from "./pack_composant";
 
@@ -7,7 +7,7 @@ export interface Produit {
   id: string;
   slug: string;
   nom: string;
-  categorie: Categorie;
+  categorie: string;
   photoReelle: string;
   photoFiligranee?: string | null;
   /** Emoji représentatif du produit (mangue 🥭, macabo 🍆…) - prioritaire sur le picto de catégorie. */

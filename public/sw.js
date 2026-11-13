@@ -1,5 +1,5 @@
 // Service Worker MBOA BIO 237 - cache offline-first
-const CACHE_NAME = "mboa-bio-v3";
+const CACHE_NAME = "mboa-bio-v4";
 const ASSETS = [
   "/",
   "/connexion",

@@ -1,4 +1,4 @@
-import { Categorie, CATEGORIE_INFO } from "./categorie";
+import { categorieResolve } from "./categorie";
 
 /**
  * Les cinq états d'une marchandise proposée au comptoir.
@@ -48,7 +48,7 @@ export interface Achat {
   fournisseurId: string;
   slug: string;
   nom: string;
-  categorie: Categorie;
+  categorie: string;
   unite: string;
   quantite: number;
   prixDemande: number;
@@ -105,4 +105,3 @@ export function achatFromMap(map: Record<string, unknown>): Achat {
 }
 
 // Import resolve functions at bottom to avoid circular deps
-import { categorieResolve } from "./categorie";

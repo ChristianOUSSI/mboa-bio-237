@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { CarteMboa, BoutonMboa, EnTetePage, PictoCategorie, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
-import { CATEGORIES_ORDREES, Categorie } from "@/core/types/categorie";
+import { CATEGORIES_ORDREES } from "@/core/types/categorie";
+import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
 import { Unite, UNITE_INFO, uniteAvec } from "@/core/types/unite";
 import { proposerAchat } from "@/core/data/depots";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
@@ -18,7 +19,12 @@ export default function ProposerRecoltePage() {
   const catLibelle = useCategorieLibelle();
 
   const [nom, setNom] = useState("");
-  const [categorie, setCategorie] = useState<Categorie>(Categorie.fruit);
+  const [categorie, setCategorie] = useState<string>("fruit");
+  const [persos, setPersos] = useState<CategoriePerso[]>([]);
+
+  useEffect(() => {
+    categoriesPerso().then(setPersos).catch(() => {});
+  }, []);
   const [unite, setUnite] = useState<Unite>(Unite.kg);
   const [quantite, setQuantite] = useState(1);
   const [prix, setPrix] = useState("");
@@ -127,7 +133,7 @@ export default function ProposerRecoltePage() {
         <CarteMboa>
           <label className="text-corps block mb-2">{t("prop.categorie")}</label>
           <div className="grid grid-cols-4 gap-2">
-            {CATEGORIES_ORDREES.map((c) => (
+            {[...CATEGORIES_ORDREES, ...persos.map((x) => x.slug)].map((c) => (
               <button
                 key={c}
                 onClick={() => setCategorie(c)}
@@ -138,8 +144,12 @@ export default function ProposerRecoltePage() {
                   border: `2px solid ${categorie === c ? "var(--mboa-primary)" : "transparent"}`,
                 }}
               >
-                <PictoCategorie categorie={c} size={28} />
-                <span className="text-aide mt-1 text-center" style={{ fontSize: 14 }}>{catLibelle(c)}</span>
+                {emojiCategorie(c, persos) ? (
+                  <span style={{ fontSize: 28 }}>{emojiCategorie(c, persos)}</span>
+                ) : (
+                  <PictoCategorie categorie={c} size={28} />
+                )}
+                <span className="text-aide mt-1 text-center" style={{ fontSize: 14 }}>{libelleCategorie(c, persos)}</span>
               </button>
             ))}
           </div>

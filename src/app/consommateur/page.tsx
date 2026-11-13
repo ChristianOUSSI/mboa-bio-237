@@ -6,11 +6,12 @@ import { useRouter } from "next/navigation";
 import { useSession, usePanier, useData, useReseau } from "@/core/etat/store";
 import { chargerVitrine, chargerCatalogue, commandesCliente, compterFile } from "@/core/data/depots";
 import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
-import { CATEGORIES_ORDREES, Categorie } from "@/core/types/categorie";
+import { CATEGORIES_ORDREES } from "@/core/types/categorie";
+import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
 import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstVitrine } from "@/core/types/produit";
 import { Commande } from "@/core/types/commande_full";
 import { useGuardRole } from "@/core/auth/use_guard_role";
-import { useTr, useCategorieLibelle } from "@/core/i18n";
+import { useTr } from "@/core/i18n";
 
 export default function MarchePage() {
   const router = useRouter();
@@ -19,19 +20,19 @@ export default function MarchePage() {
   const panier = usePanier();
   const { vitrine, catalogue, setVitrine, setCatalogue } = useData();
   const { enLigne, fileAttente, setEnLigne, setFileAttente } = useReseau();
-  const [categorieChoisie, setCategorieChoisie] = useState<Categorie | null>(null);
+  const [persos, setPersos] = useState<CategoriePerso[]>([]);
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [recherche, setRecherche] = useState("");
   const [tri, setTri] = useState<"nom" | "prix_asc" | "prix_desc">("nom");
   const t = useTr();
-  const catLibelle = useCategorieLibelle();
 
   useEffect(() => {
     async function charger() {
-      const [v, c] = await Promise.all([chargerVitrine(), chargerCatalogue()]);
+      const [v, c, p] = await Promise.all([chargerVitrine(), chargerCatalogue(), categoriesPerso()]);
       // The customer only sees real stock: active and quantity > 0
       setVitrine(v.filter(produitEstVitrine));
       setCatalogue(c);
+      setPersos(p);
       if (profil) {
         const cmds = await commandesCliente(profil.id);
         setCommandes(cmds);
@@ -62,10 +63,7 @@ export default function MarchePage() {
     );
   }
 
-  const produitsFiltres = (categorieChoisie
-    ? vitrine.filter((p) => p.categorie === categorieChoisie)
-    : vitrine
-  ).filter((p) =>
+  const produitsFiltres = vitrine.filter((p) =>
     !recherche.trim() || p.nom.toLowerCase().includes(recherche.toLowerCase())
   ).sort((a, b) => {
     if (tri === "prix_asc") return a.prix - b.prix;
@@ -160,40 +158,31 @@ export default function MarchePage() {
       <div className="px-4 py-2">
         <h2 className="text-titre mb-2">{t("march.categories")}</h2>
         <div className="grid grid-cols-4 gap-2">
-          {CATEGORIES_ORDREES.map((cat) => {
-            const estChoisie = categorieChoisie === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setCategorieChoisie(estChoisie ? null : cat)}
-                className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all`}
-                style={{
-                  minHeight: 72,
-                  borderColor: estChoisie ? "var(--mboa-primary)" : "transparent",
-                  background: estChoisie ? "var(--mboa-secondary-doux)" : "var(--mboa-surface)",
-                }}
-              >
+          {[...CATEGORIES_ORDREES, ...persos.map((x) => x.slug)].map((cat) => (
+            <button
+              key={cat}
+              onClick={() => router.push(`/consommateur/categorie/${encodeURIComponent(cat)}`)}
+              className="flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all"
+              style={{
+                minHeight: 72,
+                borderColor: "transparent",
+                background: "var(--mboa-surface)",
+              }}
+            >
+              {emojiCategorie(cat, persos) ? (
+                <span style={{ fontSize: 32 }}>{emojiCategorie(cat, persos)}</span>
+              ) : (
                 <PictoCategorie categorie={cat} size={32} />
-                <span className="text-aide mt-1 text-center font-bold">{catLibelle(cat)}</span>
-              </button>
-            );
-          })}
+              )}
+              <span className="text-aide mt-1 text-center font-bold">{libelleCategorie(cat, persos)}</span>
+            </button>
+          ))}
         </div>
-        {categorieChoisie && (
-          <button
-            onClick={() => setCategorieChoisie(null)}
-            className="text-aide text-[var(--mboa-primary)] mt-1 underline"
-          >
-            {t("march.toutAfficher")}
-          </button>
-        )}
       </div>
 
       {/* Product showcase */}
       <div className="px-4 py-2 flex-1">
-        <h2 className="text-titre mb-2">
-          {categorieChoisie ? catLibelle(categorieChoisie) : t("march.tousProduits")}
-        </h2>
+        <h2 className="text-titre mb-2">{t("march.tousProduits")}</h2>
         {produitsFiltres.length === 0 ? (
           <CarteMboa className="text-center">
             <p className="text-corps text-[var(--mboa-text-doux)]">{t("march.aucunProduit")}</p>

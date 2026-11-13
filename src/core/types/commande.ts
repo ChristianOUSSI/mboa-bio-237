@@ -1,4 +1,4 @@
-import { Categorie, categorieResolve } from "./categorie";
+import { categorieResolve } from "./categorie";
 import { Unite, uniteResolve, uniteAvec, unitePour, uniteAvecArticle } from "./unite";
 import { PackComposant, packComposantDepuisJson } from "./pack_composant";
 
@@ -7,7 +7,7 @@ export interface LigneCommande {
   produitId: string;
   slug?: string | null;
   nom: string;
-  categorie: Categorie;
+  categorie: string;
   quantite: number;
   prix: number;
   coutAchat: number;

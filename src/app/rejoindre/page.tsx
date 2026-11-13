@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CarteMboa, BoutonMboa, EnTetePage, PictoCategorie, FondMboa } from "@/core/design_system/composants";
 import { chargerCatalogue, proposerAchat, sauverFournisseur } from "@/core/data/depots";
-import { CATEGORIES_ORDREES, CATEGORIE_INFO, Categorie } from "@/core/types/categorie";
+import { CATEGORIES_ORDREES, Categorie } from "@/core/types/categorie";
+import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
 import { Unite, UNITE_INFO } from "@/core/types/unite";
 import { EntreeCatalogue, catalogueUniteReelle } from "@/core/types/catalogue";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
@@ -14,7 +15,7 @@ import { useEffect } from "react";
 
 interface ProduitDraft {
   nom: string;
-  categorie: Categorie;
+  categorie: string;
   unite: Unite;
   quantite: number;
   prix: string;
@@ -42,6 +43,7 @@ export default function RejoindrePage() {
   const { langue, setLangue } = useLangue();
   const t = useTr();
   const [catalogue, setCatalogue] = useState<EntreeCatalogue[]>([]);
+  const [persos, setPersos] = useState<CategoriePerso[]>([]);
   const [nom, setNom] = useState("");
   const [telephone, setTelephone] = useState("");
   const [village, setVillage] = useState("");
@@ -55,7 +57,9 @@ export default function RejoindrePage() {
 
   useEffect(() => {
     async function charger() {
-      setCatalogue(await chargerCatalogue());
+      const [c, p] = await Promise.all([chargerCatalogue(), categoriesPerso()]);
+      setCatalogue(c);
+      setPersos(p);
     }
     charger();
   }, []);
@@ -267,7 +271,7 @@ export default function RejoindrePage() {
 
             {/* Category */}
             <div className="grid grid-cols-4 gap-1 mb-2">
-              {CATEGORIES_ORDREES.map((c) => (
+              {[...CATEGORIES_ORDREES, ...persos.map((x) => x.slug)].map((c) => (
                 <button
                   key={c}
                   onClick={() => majProduit(i, { categorie: c })}
@@ -278,8 +282,12 @@ export default function RejoindrePage() {
                     border: `1px solid ${p.categorie === c ? "var(--mboa-primary)" : "transparent"}`,
                   }}
                 >
-                  <PictoCategorie categorie={c} size={18} />
-                  <span className="text-aide mt-0.5 text-center" style={{ fontSize: 9 }}>{CATEGORIE_INFO[c].libelle}</span>
+                  {emojiCategorie(c, persos) ? (
+                    <span style={{ fontSize: 18 }}>{emojiCategorie(c, persos)}</span>
+                  ) : (
+                    <PictoCategorie categorie={c} size={18} />
+                  )}
+                  <span className="text-aide mt-0.5 text-center" style={{ fontSize: 9 }}>{libelleCategorie(c, persos)}</span>
                 </button>
               ))}
             </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CarteMboa, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { CarteMboa, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa, ChampMotDePasse } from "@/core/design_system/composants";
 import {
   assurerCompteAdmin,
   changerMotDePasse,
@@ -230,8 +230,8 @@ export default function AdminComptePage() {
                 className="champ-mboa"
                 style={{ fontSize: 18 }}
               />
-              <input
-                type="password"
+              <ChampMotDePasse
+                autoComplete="new-password"
                 placeholder={`${t("adm.cpt.adminMdp")} - ${t("adm.cpt.nouveauHint")}`}
                 value={adminMdp}
                 onChange={(e) => setAdminMdp(e.target.value)}
@@ -250,8 +250,8 @@ export default function AdminComptePage() {
           <h2 className="text-titre mb-3">{t("adm.cpt.changerTitre")}</h2>
 
           <label className="text-aide block mb-1">{t("adm.cpt.actuel")}</label>
-          <input
-            type="password"
+          <ChampMotDePasse
+            autoComplete="current-password"
             placeholder="••••••"
             value={actuel}
             onChange={(e) => setActuel(e.target.value)}
@@ -260,8 +260,8 @@ export default function AdminComptePage() {
           />
 
           <label className="text-aide block mb-1">{t("adm.cpt.nouveau")}</label>
-          <input
-            type="password"
+          <ChampMotDePasse
+            autoComplete="new-password"
             placeholder={t("adm.cpt.nouveauHint")}
             value={nouveau}
             onChange={(e) => setNouveau(e.target.value)}
@@ -270,8 +270,8 @@ export default function AdminComptePage() {
           />
 
           <label className="text-aide block mb-1">{t("adm.cpt.confirm")}</label>
-          <input
-            type="password"
+          <ChampMotDePasse
+            autoComplete="new-password"
             placeholder={t("adm.cpt.confirmHint")}
             value={confirmation}
             onChange={(e) => setConfirmation(e.target.value)}

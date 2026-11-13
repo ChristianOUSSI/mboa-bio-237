@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { chargerStock, ajusterProduit, creerProduit, supprimerProduit, basculerProduitActif } from "@/core/data/depots";
 import { CarteMboa, EnTetePage, JaugeMboa, BoutonVoix, BadgeStatut, BoutonMboa, PictoCategorie, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { Produit, produitJauge, produitMargeUnitaire, produitMargePct, produitEstAPerte, produitDisponibilite, produitEstPack } from "@/core/types/produit";
-import { CATEGORIES_ORDREES, Categorie } from "@/core/types/categorie";
+import { CATEGORIES_ORDREES } from "@/core/types/categorie";
+import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
 import { Unite, UNITE_INFO } from "@/core/types/unite";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { useGuardRole } from "@/core/auth/use_guard_role";
@@ -21,12 +22,13 @@ export default function StockAdminPage() {
   const [prixEdit, setPrixEdit] = useState<Record<string, string>>({});
   const [onglet, setOnglet] = useState<Onglet>("stock");
   const [recherche, setRecherche] = useState("");
-  const [filtreCat, setFiltreCat] = useState<Categorie | null>(null);
+  const [filtreCat, setFiltreCat] = useState<string | null>(null);
+  const [persos, setPersos] = useState<CategoriePerso[]>([]);
   const [confirmSuppr, setConfirmSuppr] = useState<string | null>(null);
 
   // Formulaire nouveau produit
   const [npNom, setNpNom] = useState("");
-  const [npCategorie, setNpCategorie] = useState<Categorie>(Categorie.fruit);
+  const [npCategorie, setNpCategorie] = useState<string>("fruit");
   const [npUnite, setNpUnite] = useState<Unite>(Unite.kg);
   const [npPrix, setNpPrix] = useState("");
   const [npQuantite, setNpQuantite] = useState("1");
@@ -38,6 +40,7 @@ export default function StockAdminPage() {
 
   async function charger() {
     setStock(await chargerStock());
+    categoriesPerso().then(setPersos).catch(() => {});
   }
 
   useEffect(() => {
@@ -179,7 +182,7 @@ export default function StockAdminPage() {
               >
                 {t("adm.stk.tout")}
               </button>
-              {CATEGORIES_ORDREES.map((c) => (
+              {[...CATEGORIES_ORDREES, ...persos.map((x) => x.slug)].map((c) => (
                 <button
                   key={c}
                   onClick={() => setFiltreCat(filtreCat === c ? null : c)}
@@ -189,8 +192,12 @@ export default function StockAdminPage() {
                     color: filtreCat === c ? "white" : "var(--mboa-text)",
                   }}
                 >
-                  <PictoCategorie categorie={c} size={14} />
-                  {t(`cat.${c}`)}
+                  {emojiCategorie(c, persos) ? (
+                    <span>{emojiCategorie(c, persos)}</span>
+                  ) : (
+                    <PictoCategorie categorie={c} size={14} />
+                  )}
+                  {libelleCategorie(c, persos)}
                 </button>
               ))}
             </div>
@@ -326,7 +333,7 @@ export default function StockAdminPage() {
 
             <label className="text-corps block mb-1">{t("adm.stk.categorie")}</label>
             <div className="grid grid-cols-4 gap-2 mb-2">
-              {CATEGORIES_ORDREES.map((c) => (
+              {[...CATEGORIES_ORDREES, ...persos.map((x) => x.slug)].map((c) => (
                 <button
                   key={c}
                   onClick={() => setNpCategorie(c)}
@@ -337,8 +344,12 @@ export default function StockAdminPage() {
                     border: `2px solid ${npCategorie === c ? "var(--mboa-primary)" : "transparent"}`,
                   }}
                 >
-                  <PictoCategorie categorie={c} size={20} />
-                  <span className="text-aide mt-1 text-center" style={{ fontSize: 10 }}>{t(`cat.${c}`)}</span>
+                  {emojiCategorie(c, persos) ? (
+                    <span style={{ fontSize: 20 }}>{emojiCategorie(c, persos)}</span>
+                  ) : (
+                    <PictoCategorie categorie={c} size={20} />
+                  )}
+                  <span className="text-aide mt-1 text-center" style={{ fontSize: 10 }}>{libelleCategorie(c, persos)}</span>
                 </button>
               ))}
             </div>

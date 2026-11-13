@@ -5,14 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/core/etat/store";
 import { useLangue, useTr, Lang } from "@/core/i18n";
-import { CarteMboa, BoutonMboa, FondMboa } from "@/core/design_system/composants";
+import { CarteMboa, BoutonMboa, FondMboa, ChampMotDePasse } from "@/core/design_system/composants";
 import type { AppRole } from "@/core/config/app_env";
 import {
   compteParIdentifiant,
   creerCompte,
   verifierMotDePasse,
   changerMotDePasse,
-  doitChangerMotDePasse,
   amorcerSiAucunCompte,
   assurerCompteSuperAdmin,
 } from "@/core/auth/auth_service";
@@ -27,7 +26,7 @@ import {
 import { Profil } from "@/core/types/profil";
 import { ouvrirSessionLocale } from "@/core/data/depots";
 
-type Etape = "choix" | "splash" | "identifiant" | "inscription" | "nouveauMdp" | "compteAdmin" | "superadmin";
+type Etape = "choix" | "splash" | "identifiant" | "inscription" | "nouveauMdp" | "superadmin";
 
 /** Ordre d'affichage des espaces : le client d'abord. */
 const ROLES_ORDRE: AppRole[] = ["consommateur", "fournisseur", "livreur", "admin"];
@@ -181,15 +180,10 @@ export default function PageConnexion() {
         setErreur(t("connex.erreurMdpFaux"));
         return;
       }
-      // Le compte admin de bootstrap (mdp par défaut) ne connecte jamais
-      // directement : on force la création d'un compte admin personnel.
-      if (compte.role === "admin" && compte.motDePasseParDefaut) {
+      // Mot de passe par défaut (compte bootstrap ou partagé) : on impose
+      // le choix d'un nouveau mot de passe avant de laisser entrer.
+      if (compte.motDePasseParDefaut) {
         setMdpParDefaut(true);
-        setEtape("compteAdmin");
-        return;
-      }
-      // Nouveau mot de passe sur un autre appareil.
-      if (doitChangerMotDePasse(compte)) {
         setEtape("nouveauMdp");
         return;
       }
@@ -270,42 +264,6 @@ export default function PageConnexion() {
     }
   }
 
-  /** Login avec le compte admin par défaut → crée un compte admin personnel. */
-  async function creerCompteAdmin() {
-    const mail = normaliserEmail(identifiant) ?? identifiant.trim().toLowerCase();
-    if (nom.trim().length === 0 || !mail.includes("@")) {
-      setErreur(t("adm.cpt.adminErreurMail"));
-      return;
-    }
-    const err = validerMotDePasse(nouveauMdp);
-    if (!err.ok) {
-      setErreur(t("adm.cpt.adminErreurMdp"));
-      return;
-    }
-    if (nouveauMdp !== confirmationMdp) {
-      setErreur(t("connex.erreurMdpPaire"));
-      return;
-    }
-    setEnCours(true);
-    setErreur(null);
-    try {
-      const compte = await creerCompte({
-        role: "admin",
-        nom: nom.trim(),
-        telephone: null,
-        email: mail,
-        village: village.trim() || "Douala",
-        motDePasse: nouveauMdp,
-      });
-      ouvrirSession(compte);
-    } catch (e) {
-      console.error(e);
-      setErreur(t("insc.erreurCreation"));
-    } finally {
-      setEnCours(false);
-    }
-  }
-
   /** Login super admin caché (chou 🥬 sur la page de connexion). */
   async function seConnecterSuper() {
     if (identifiant.trim().toUpperCase() !== IDENTIFIANT_SUPERADMIN) {
@@ -321,7 +279,7 @@ export default function PageConnexion() {
     setErreur(null);
     try {
       const compte = await compteParIdentifiant(EMAIL_SUPERADMIN);
-      if (!compte || compte.role !== "superadmin") {
+      if (!compte || compte.role !== "superadmin" || !compte.actif) {
         setErreur(t("super.erreur"));
         return;
       }
@@ -363,35 +321,43 @@ export default function PageConnexion() {
   return (
     <FondMboa>
       {/* Aliments flottants en arrière-plan */}
-      {ALIMENTS_FLOTTANTS.map((a, i) => (
-        <span
-          key={i}
-          className="aliment-flottant"
-          style={{
-            top: a.top,
-            left: "left" in a ? a.left : undefined,
-            right: "right" in a ? a.right : undefined,
-            fontSize: a.taille,
-            animationDelay: a.delai,
-            ...("cliquable" in a && a.cliquable
-              ? { pointerEvents: "auto", cursor: "pointer" }
-              : {}),
-          }}
-          aria-hidden
-          onClick={
-            "cliquable" in a && a.cliquable
-              ? () => {
-                  setIdentifiant(IDENTIFIANT_SUPERADMIN);
-                  setMotDePasse("");
-                  setErreur(null);
-                  setEtape("superadmin");
-                }
-              : undefined
-          }
-        >
-          {a.emoji}
-        </span>
-      ))}
+      {ALIMENTS_FLOTTANTS.map((a, i) => {
+        const cliquable = "cliquable" in a && a.cliquable;
+        const style = {
+          top: a.top,
+          left: "left" in a ? a.left : undefined,
+          right: "right" in a ? a.right : undefined,
+          fontSize: a.taille,
+          animationDelay: a.delai,
+          ...(cliquable ? { zIndex: 20, cursor: "pointer" as const, pointerEvents: "auto" as const } : {}),
+        };
+        const ouvrirSuper = () => {
+          setIdentifiant(IDENTIFIANT_SUPERADMIN);
+          setMotDePasse("");
+          setErreur(null);
+          setEtape("superadmin");
+        };
+        // Le chou cliquable est un vrai bouton : il doit rester au-dessus des cartes.
+        if (cliquable) {
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={ouvrirSuper}
+              className="aliment-flottant"
+              style={{ ...style, background: "none", border: "none", padding: 0 }}
+              aria-label={t("super.accesCache")}
+            >
+              {a.emoji}
+            </button>
+          );
+        }
+        return (
+          <span key={i} className="aliment-flottant" style={style} aria-hidden>
+            {a.emoji}
+          </span>
+        );
+      })}
 
       {/* Header avec logo + sélecteur de langue */}
       <div className="entete-mboa flex flex-col items-center text-center p-6 relative overflow-hidden">
@@ -563,8 +529,7 @@ export default function PageConnexion() {
             />
 
             <label className="text-aide block mb-1 font-bold">{t("connex.mdpLabel")}</label>
-            <input
-              type="password"
+            <ChampMotDePasse
               autoComplete="current-password"
               placeholder={t("connex.mdpPlaceholder")}
               value={motDePasse}
@@ -662,8 +627,7 @@ export default function PageConnexion() {
             />
 
             <label className="text-aide block mb-1 font-bold">{t("insc.mdpLabel")}</label>
-            <input
-              type="password"
+            <ChampMotDePasse
               autoComplete="new-password"
               placeholder={t("insc.mdpPlaceholder")}
               value={motDePasse}
@@ -673,8 +637,7 @@ export default function PageConnexion() {
             />
 
             <label className="text-aide block mb-1 font-bold">{t("insc.mdpConfirmLabel")}</label>
-            <input
-              type="password"
+            <ChampMotDePasse
               autoComplete="new-password"
               placeholder={t("insc.mdpConfirmPlaceholder")}
               value={confirmationMdp}
@@ -711,8 +674,7 @@ export default function PageConnexion() {
             </div>
 
             <label className="text-aide block mb-1 font-bold">{t("insc.mdpLabel")}</label>
-            <input
-              type="password"
+            <ChampMotDePasse
               autoComplete="new-password"
               placeholder={t("insc.mdpPlaceholder")}
               value={nouveauMdp}
@@ -722,8 +684,7 @@ export default function PageConnexion() {
             />
 
             <label className="text-aide block mb-1 font-bold">{t("insc.mdpConfirmLabel")}</label>
-            <input
-              type="password"
+            <ChampMotDePasse
               autoComplete="new-password"
               placeholder={t("insc.mdpConfirmPlaceholder")}
               value={confirmationMdp}
@@ -738,71 +699,6 @@ export default function PageConnexion() {
 
             <BoutonMboa onClick={appliquerNouveauMdp} disabled={enCours} className="w-full">
               {enCours ? t("mdp.btnCours") : `🔒 ${t("mdp.btn")}`}
-            </BoutonMboa>
-          </CarteMboa>
-        )}
-
-        {etape === "compteAdmin" && (
-          <CarteMboa className="w-full max-w-md anim-apparition">
-            <div className="text-center mb-4">
-              <div className="text-5xl mb-2">🏪</div>
-              <h2 className="text-titre">{t("adminCreate.titre")}</h2>
-              <p className="text-aide text-[var(--mboa-text-doux)] italic">
-                {t("adminCreate.sousTitre")}
-              </p>
-            </div>
-
-            <label className="text-aide block mb-1 font-bold">{t("insc.nomLabel")}</label>
-            <input
-              type="text"
-              autoComplete="name"
-              placeholder={t("insc.nomPlaceholder")}
-              value={nom}
-              onChange={(e) => setNom(e.target.value)}
-              className="champ-mboa mb-3"
-              style={{ fontSize: 20 }}
-            />
-
-            <label className="text-aide block mb-1 font-bold">{t("connex.idLabel")}</label>
-            <input
-              type="text"
-              inputMode="email"
-              autoComplete="username"
-              placeholder="votre@email.com"
-              value={identifiant}
-              onChange={(e) => setIdentifiant(e.target.value)}
-              className="champ-mboa mb-3"
-              style={{ fontSize: 20 }}
-            />
-
-            <label className="text-aide block mb-1 font-bold">{t("insc.mdpLabel")}</label>
-            <input
-              type="password"
-              autoComplete="new-password"
-              placeholder={t("insc.mdpPlaceholder")}
-              value={nouveauMdp}
-              onChange={(e) => setNouveauMdp(e.target.value)}
-              className="champ-mboa mb-3"
-              style={{ fontSize: 20 }}
-            />
-
-            <label className="text-aide block mb-1 font-bold">{t("insc.mdpConfirmLabel")}</label>
-            <input
-              type="password"
-              autoComplete="new-password"
-              placeholder={t("insc.mdpConfirmPlaceholder")}
-              value={confirmationMdp}
-              onChange={(e) => setConfirmationMdp(e.target.value)}
-              className="champ-mboa mb-3"
-              style={{ fontSize: 20 }}
-            />
-
-            {erreur && (
-              <p className="text-[var(--mboa-error)] text-aide mb-2 text-center anim-secousse font-bold">{erreur}</p>
-            )}
-
-            <BoutonMboa onClick={creerCompteAdmin} disabled={enCours} className="w-full">
-              {enCours ? t("insc.btnCours") : `✓ ${t("adminCreate.btn")}`}
             </BoutonMboa>
           </CarteMboa>
         )}
@@ -828,8 +724,7 @@ export default function PageConnexion() {
             />
 
             <label className="text-aide block mb-1 font-bold">{t("connex.mdpLabel")}</label>
-            <input
-              type="password"
+            <ChampMotDePasse
               autoComplete="current-password"
               placeholder={t("connex.mdpPlaceholder")}
               value={motDePasse}

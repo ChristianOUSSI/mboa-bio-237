@@ -34,15 +34,16 @@ export async function compteParIdentifiant(identifiant: string): Promise<CompteA
   const cible = identifiant.trim().toLowerCase();
   const tel = normaliserTel(cible);
   const mail = normaliserEmail(cible);
-  return (
-    comptes.find(
-      (c) =>
-        (tel && c.telephone === tel) ||
-        (mail && c.email === mail) ||
-        // Identifiants sans TLD classique (ex. mboa-admin@237) : comparaison brute.
-        (c.email != null && c.email.toLowerCase() === cible),
-    ) ?? null
+  const trouves = comptes.filter(
+    (c) =>
+      (tel && c.telephone === tel) ||
+      (mail && c.email === mail) ||
+      // Identifiants sans TLD classique (ex. mboa-admin@237) : comparaison brute.
+      (c.email != null && c.email.toLowerCase() === cible),
   );
+  // Les entrées d'index (mail:/tel:) peuvent être des copies périmées :
+  // en cas de doublon on préfère le compte actif.
+  return trouves.find((c) => c.actif) ?? trouves[0] ?? null;
 }
 
 /** Vérifie qu'un identifiant est déjà pris. */
@@ -227,6 +228,9 @@ export async function reinitialiserAdmin(): Promise<CompteAuth> {
     appareil: empreinteAppareil(),
   };
   await cacheEcrire(ENTITE, maj.id, maj);
+  if (maj.telephone) await cacheEcrire(ENTITE, cleTel(maj.telephone), maj);
+  if (maj.email) await cacheEcrire(ENTITE, cleMail(maj.email), maj);
+  publierCompteAdmin(maj);
   return maj;
 }
 
