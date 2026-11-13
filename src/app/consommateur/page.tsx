@@ -6,10 +6,11 @@ import { useRouter } from "next/navigation";
 import { useSession, usePanier, useData, useReseau } from "@/core/etat/store";
 import { chargerVitrine, chargerCatalogue, commandesCliente, compterFile } from "@/core/data/depots";
 import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
-import { CATEGORIES_ORDREES, CATEGORIE_INFO, Categorie } from "@/core/types/categorie";
+import { CATEGORIES_ORDREES, Categorie } from "@/core/types/categorie";
 import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstVitrine } from "@/core/types/produit";
 import { Commande } from "@/core/types/commande_full";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useTr, useCategorieLibelle } from "@/core/i18n";
 
 export default function MarchePage() {
   const router = useRouter();
@@ -22,6 +23,8 @@ export default function MarchePage() {
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [recherche, setRecherche] = useState("");
   const [tri, setTri] = useState<"nom" | "prix_asc" | "prix_desc">("nom");
+  const t = useTr();
+  const catLibelle = useCategorieLibelle();
 
   useEffect(() => {
     async function charger() {
@@ -89,8 +92,8 @@ export default function MarchePage() {
   return (
     <FondMboa>
       <EnTetePage
-        titre="The market"
-        sousTitre={profil ? `Hello ${profil.nom}` : "MBOA BIO 237"}
+        titre={t("march.titre")}
+        sousTitre={profil ? `${t("march.bonjour")} ${profil.nom}` : "MBOA BIO 237"}
         onDeconnexion={() => {
           deconnexion();
           router.push("/connexion");
@@ -111,7 +114,7 @@ export default function MarchePage() {
 
       {/* Network indicator */}
       <div className={`px-4 py-1 text-center text-aide ${enLigne ? "text-[var(--mboa-primary)]" : "text-[var(--mboa-error)]"}`}>
-        {enLigne ? "● Online" : "● Offline"}{fileAttente > 0 ? ` · ${fileAttente} waiting to send` : ""}
+        {enLigne ? `● ${t("march.enLigne")}` : `● ${t("march.horsLigne")}`}{fileAttente > 0 ? ` · ${fileAttente} ${t("march.enAttente")}` : ""}
       </div>
 
       {/* My orders */}
@@ -119,7 +122,7 @@ export default function MarchePage() {
         <div className="px-4 py-2">
           <Link href="/consommateur/suivi">
             <CarteMboa className="flex items-center justify-between">
-              <span className="text-corps">My orders</span>
+              <span className="text-corps">{t("march.mesCommandes")}</span>
               <span className="text-aide text-[var(--mboa-primary)] font-bold">{commandes.length} →</span>
             </CarteMboa>
           </Link>
@@ -130,14 +133,14 @@ export default function MarchePage() {
       <div className="px-4 py-2">
         <input
           type="text"
-          placeholder="🔍 Search for a product..."
+          placeholder={t("march.recherche")}
           value={recherche}
           onChange={(e) => setRecherche(e.target.value)}
           className="w-full p-2 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
           style={{ fontSize: 16 }}
         />
         <div className="flex gap-2">
-          {([["nom", "A-Z"], ["prix_asc", "Price ↑"], ["prix_desc", "Price ↓"]] as const).map(([v, label]) => (
+          {([["nom", "A-Z"], ["prix_asc", t("march.prixAsc")], ["prix_desc", t("march.prixDesc")]] as const).map(([v, label]) => (
             <button
               key={v}
               onClick={() => setTri(v)}
@@ -155,10 +158,9 @@ export default function MarchePage() {
 
       {/* 8-category grid */}
       <div className="px-4 py-2">
-        <h2 className="text-titre mb-2">Categories</h2>
+        <h2 className="text-titre mb-2">{t("march.categories")}</h2>
         <div className="grid grid-cols-4 gap-2">
           {CATEGORIES_ORDREES.map((cat) => {
-            const info = CATEGORIE_INFO[cat];
             const estChoisie = categorieChoisie === cat;
             return (
               <button
@@ -172,7 +174,7 @@ export default function MarchePage() {
                 }}
               >
                 <PictoCategorie categorie={cat} size={32} />
-                <span className="text-aide mt-1 text-center font-bold">{info.libelle}</span>
+                <span className="text-aide mt-1 text-center font-bold">{catLibelle(cat)}</span>
               </button>
             );
           })}
@@ -182,7 +184,7 @@ export default function MarchePage() {
             onClick={() => setCategorieChoisie(null)}
             className="text-aide text-[var(--mboa-primary)] mt-1 underline"
           >
-            Show all
+            {t("march.toutAfficher")}
           </button>
         )}
       </div>
@@ -190,11 +192,11 @@ export default function MarchePage() {
       {/* Product showcase */}
       <div className="px-4 py-2 flex-1">
         <h2 className="text-titre mb-2">
-          {categorieChoisie ? CATEGORIE_INFO[categorieChoisie].libelle : "All products"}
+          {categorieChoisie ? catLibelle(categorieChoisie) : t("march.tousProduits")}
         </h2>
         {produitsFiltres.length === 0 ? (
           <CarteMboa className="text-center">
-            <p className="text-corps text-[var(--mboa-text-doux)]">No products available right now</p>
+            <p className="text-corps text-[var(--mboa-text-doux)]">{t("march.aucunProduit")}</p>
           </CarteMboa>
         ) : (
           <div className="grid grid-cols-2 gap-3">
@@ -232,7 +234,7 @@ export default function MarchePage() {
                     <button
                       onClick={() => poserAuPanier(p)}
                       className="btn-mboa btn-primary !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl"
-                      aria-label="Add to cart"
+                      aria-label={t("march.ajouter")}
                     >
                       +
                     </button>
@@ -247,10 +249,10 @@ export default function MarchePage() {
       {/* Useful links */}
       <div className="px-4 py-2 flex gap-2">
         <Link href="/consommateur/liste" className="flex-1">
-          <BoutonMboa variant="surface" className="w-full">📋 Market list</BoutonMboa>
+          <BoutonMboa variant="surface" className="w-full">📋 {t("march.liste")}</BoutonMboa>
         </Link>
         <Link href="/consommateur/suivi" className="flex-1">
-          <BoutonMboa variant="surface" className="w-full">📦 My orders</BoutonMboa>
+          <BoutonMboa variant="surface" className="w-full">📦 {t("march.mesCommandes")}</BoutonMboa>
         </Link>
       </div>
     </FondMboa>

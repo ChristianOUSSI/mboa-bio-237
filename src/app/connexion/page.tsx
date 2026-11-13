@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/core/etat/store";
+import { useLangue, useTr, Lang } from "@/core/i18n";
 import { CarteMboa, BoutonMboa, FondMboa } from "@/core/design_system/composants";
-import { APP_ROLE_INFO, AppRole } from "@/core/config/app_env";
+import type { AppRole } from "@/core/config/app_env";
 import {
   compteParIdentifiant,
   creerCompte,
@@ -23,9 +24,32 @@ import { Profil } from "@/core/types/profil";
 
 type Etape = "choix" | "identifiant" | "inscription" | "nouveauMdp";
 
+/** Ordre d'affichage des espaces : le client d'abord. */
+const ROLES_ORDRE: AppRole[] = ["consommateur", "fournisseur", "livreur", "admin"];
+
+/** Aliments qui flottent en arrière-plan de l'écran de connexion. */
+const ALIMENTS_FLOTTANTS = [
+  { emoji: "🍌", top: "6%", left: "6%", taille: 44, delai: "0s" },
+  { emoji: "🍅", top: "12%", right: "8%", taille: 38, delai: "-1.5s" },
+  { emoji: "🐟", top: "38%", left: "3%", taille: 42, delai: "-3s" },
+  { emoji: "🌽", top: "55%", right: "4%", taille: 40, delai: "-2s" },
+  { emoji: "🥭", top: "72%", left: "8%", taille: 36, delai: "-4.5s" },
+  { emoji: "🥬", top: "82%", right: "10%", taille: 38, delai: "-1s" },
+];
+
+/** Emoji illustrant chaque espace. */
+const ROLE_EMOJI: Record<AppRole, string> = {
+  consommateur: "🛒",
+  fournisseur: "🌾",
+  livreur: "🛵",
+  admin: "🏪",
+};
+
 export default function PageConnexion() {
   const router = useRouter();
   const { setSession } = useSession();
+  const { langue, setLangue } = useLangue();
+  const t = useTr();
   const [etape, setEtape] = useState<Etape>("choix");
   const [identifiant, setIdentifiant] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
@@ -58,7 +82,7 @@ export default function PageConnexion() {
       nom: compte.nom,
       village: compte.village || "Mbouda",
       telephone: compte.telephone ?? "",
-      langue: "en" as never,
+      langue: langue as never,
       actif: true,
     };
     setSession(profil, compte.role as AppRole);
@@ -68,7 +92,7 @@ export default function PageConnexion() {
   async function seConnecter() {
     const err = validerMotDePasse(motDePasse);
     if (!err.ok) {
-      setErreur(err.message);
+      setErreur(err.message === "Password must be at least 6 characters" ? t("connex.erreurMdp") : t("connex.erreurMdpChiffre"));
       return;
     }
     setEnCours(true);
@@ -76,16 +100,16 @@ export default function PageConnexion() {
     try {
       const compte = await compteParIdentifiant(identifiant);
       if (!compte) {
-        setErreur("No account with this ID. Create your account.");
+        setErreur(t("connex.erreurIntrouvable"));
         return;
       }
       if (!compte.actif) {
-        setErreur("This account is disabled. Contact the MBOA counter.");
+        setErreur(t("connex.erreurDesactive"));
         return;
       }
       const bon = await verifierMotDePasse(compte, motDePasse);
       if (!bon) {
-        setErreur("Incorrect password");
+        setErreur(t("connex.erreurMdpFaux"));
         return;
       }
       // Default password unchanged → forced change.
@@ -102,7 +126,7 @@ export default function PageConnexion() {
       ouvrirSession(compte);
     } catch (e) {
       console.error(e);
-      setErreur("Sign-in error");
+      setErreur(t("connex.erreurGenerique"));
     } finally {
       setEnCours(false);
     }
@@ -111,15 +135,15 @@ export default function PageConnexion() {
   async function enregistrer() {
     const err = validerMotDePasse(motDePasse);
     if (!err.ok) {
-      setErreur(err.message);
+      setErreur(err.message === "Password must be at least 6 characters" ? t("connex.erreurMdp") : t("connex.erreurMdpChiffre"));
       return;
     }
     if (motDePasse !== confirmationMdp) {
-      setErreur("The two passwords do not match");
+      setErreur(t("connex.erreurMdpPaire"));
       return;
     }
     if (nom.trim().length === 0) {
-      setErreur("Your name is required");
+      setErreur(t("insc.erreurNom"));
       return;
     }
     setEnCours(true);
@@ -128,7 +152,7 @@ export default function PageConnexion() {
       const tel = modeInscription === "telephone" ? normaliserTel(identifiant) : null;
       const mail = modeInscription === "email" ? normaliserEmail(identifiant) : null;
       if (!tel && !mail) {
-        setErreur("Invalid ID");
+        setErreur(t("insc.erreurId"));
         return;
       }
       const compte = await creerCompte({
@@ -142,7 +166,7 @@ export default function PageConnexion() {
       ouvrirSession(compte);
     } catch (e) {
       console.error(e);
-      setErreur("Error creating the account");
+      setErreur(t("insc.erreurCreation"));
     } finally {
       setEnCours(false);
     }
@@ -151,11 +175,11 @@ export default function PageConnexion() {
   async function appliquerNouveauMdp() {
     const err = validerMotDePasse(nouveauMdp);
     if (!err.ok) {
-      setErreur(err.message);
+      setErreur(err.message === "Password must be at least 6 characters" ? t("connex.erreurMdp") : t("connex.erreurMdpChiffre"));
       return;
     }
     if (nouveauMdp !== confirmationMdp) {
-      setErreur("The two passwords do not match");
+      setErreur(t("connex.erreurMdpPaire"));
       return;
     }
     setEnCours(true);
@@ -163,14 +187,14 @@ export default function PageConnexion() {
     try {
       const compte = await compteParIdentifiant(identifiant);
       if (!compte) {
-        setErreur("Account not found");
+        setErreur(t("mdp.compteIntrouvable"));
         return;
       }
       const maj = await changerMotDePasse(compte, nouveauMdp);
       ouvrirSession(maj);
     } catch (e) {
       console.error(e);
-      setErreur("Error while changing password");
+      setErreur(t("insc.erreurMdp"));
     } finally {
       setEnCours(false);
     }
@@ -189,13 +213,35 @@ export default function PageConnexion() {
   }
 
   const labelIdentifiant =
-    modeInscription === "email" ? "Your email address" : "Your phone number";
+    modeInscription === "email" ? t("insc.idLabel") : t("connex.idLabel");
   const placeholderIdentifiant =
-    modeInscription === "email" ? "mama@example.com" : "6XX XXX XXX";
+    modeInscription === "email"
+      ? "mama@example.com"
+      : langue === "fr"
+        ? "6XX XXX XXX ou email"
+        : "6XX XXX XXX or email";
 
   return (
     <FondMboa>
-      {/* Header with logo */}
+      {/* Aliments flottants en arrière-plan */}
+      {ALIMENTS_FLOTTANTS.map((a, i) => (
+        <span
+          key={i}
+          className="aliment-flottant"
+          style={{
+            top: a.top,
+            left: "left" in a ? a.left : undefined,
+            right: "right" in a ? a.right : undefined,
+            fontSize: a.taille,
+            animationDelay: a.delai,
+          }}
+          aria-hidden
+        >
+          {a.emoji}
+        </span>
+      ))}
+
+      {/* Header avec logo + sélecteur de langue */}
       <div className="entete-mboa flex flex-col items-center text-center p-6 relative overflow-hidden">
         <div
           className="halo-mboa"
@@ -209,77 +255,108 @@ export default function PageConnexion() {
           className="w-24 h-24 object-contain rounded-2xl mb-3 relative z-10 anim-apparition-zoom"
           style={{ background: "white", padding: 6 }}
         />
-        <h1 className="text-ecran text-white relative z-10">MBOA BIO 237</h1>
-        <p className="text-aide text-white/90 relative z-10">
-          The earth feeds us, quality sets us apart
+        <h1 className="text-ecran text-white relative z-10">{t("app.nom")}</h1>
+        <p className="text-aide text-white/90 relative z-10 italic">
+          {t("app.slogan")}
         </p>
+        <p className="text-aide text-white/70 relative z-10 mt-1">
+          📍 {t("app.village")}
+        </p>
+        {/* Sélecteur de langue */}
+        <div className="absolute top-4 right-4 z-20">
+          <div className="selecteur-langue" role="group" aria-label="Language">
+            {(["fr", "en"] as Lang[]).map((l) => (
+              <button
+                key={l}
+                className={langue === l ? "actif" : ""}
+                onClick={() => setLangue(l)}
+              >
+                {l === "fr" ? "FR" : "EN"}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center p-4 pb-10">
+      <div className="flex-1 flex flex-col items-center p-4 pb-10 relative z-10">
         {etape === "choix" && (
-          <div className="w-full max-w-md space-y-3 anim-apparition">
-            <CarteMboa>
-              <h2 className="text-titre text-center mb-1">Which space?</h2>
-              <p className="text-aide text-[var(--mboa-text-doux)] text-center mb-4">
-                The counter sells. The customer buys. The driver delivers.
+          <div className="w-full max-w-md space-y-4 anim-apparition">
+            <div className="text-center">
+              <h2 className="text-titre">{t("choix.titre")}</h2>
+              <p className="text-aide text-[var(--mboa-text-doux)] italic mt-1">
+                {t("choix.sousTitre")}
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                {(Object.keys(APP_ROLE_INFO) as AppRole[]).map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => {
-                      setRoleChoisi(r);
-                      setEtape("identifiant");
-                    }}
-                    className="p-3 rounded-xl border-2 text-aide transition-transform active:scale-95"
-                    style={{
-                      borderColor: roleChoisi === r ? "var(--mboa-primary)" : "transparent",
-                      background: roleChoisi === r ? "var(--mboa-secondary-doux)" : "var(--mboa-background)",
-                      color: "var(--mboa-text)",
-                    }}
-                  >
-                    <span className="block font-bold">{APP_ROLE_INFO[r].appName}</span>
-                    <span className="block text-[var(--mboa-text-doux)]">{APP_ROLE_INFO[r].description}</span>
-                  </button>
-                ))}
-              </div>
-            </CarteMboa>
+            </div>
 
-            <Link href="/rejoindre" className="block text-center">
+            {/* Grille des 4 espaces */}
+            <div className="grid grid-cols-2 gap-3">
+              {ROLES_ORDRE.map((r) => (
+                <button
+                  key={r}
+                  onClick={() => {
+                    setRoleChoisi(r);
+                    setEtape("identifiant");
+                  }}
+                  className={`carte-role ${roleChoisi === r ? "selectionne" : ""}`}
+                >
+                  <div className="role-emojis-cercle">{ROLE_EMOJI[r]}</div>
+                  <span className="block text-corps font-black text-[var(--mboa-primary)] leading-tight">
+                    {t(`role.${r}.nom`)}
+                  </span>
+                  <span className="block text-aide text-[var(--mboa-text-doux)] italic mt-1 leading-snug">
+                    {t(`role.${r}.desc`)}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <Link href="/rejoindre" className="block">
               <BoutonMboa variant="secondary" className="w-full">
-                👨‍🌾 Selling? Become a supplier
+                👨‍🌾 {t("choix.rejoindre")}
               </BoutonMboa>
             </Link>
-            <p className="text-aide text-center text-[var(--mboa-text-doux)]">
-              The driver receives their account directly from the MBOA counter.
+
+            {/* Puces rassurance */}
+            <div className="flex flex-wrap justify-center gap-2 pt-1">
+              <span className="puce-info">📶 {t("plus.horsLigne")}</span>
+              <span className="puce-info">🛵 {t("plus.livraison")}</span>
+              <span className="puce-info">💵 {t("plus.paiement")}</span>
+              <span className="puce-info">🌿 {t("plus.frais")}</span>
+            </div>
+
+            <p className="text-aide text-center text-[var(--mboa-text-doux)] italic">
+              {t("choix.note")}
             </p>
           </div>
         )}
 
         {etape === "identifiant" && (
           <CarteMboa className="w-full max-w-md anim-apparition">
-            <h2 className="text-titre mb-1 text-center">{APP_ROLE_INFO[roleChoisi].appName}</h2>
-            <p className="text-aide text-[var(--mboa-text-doux)] text-center mb-4">
-              Sign in with your phone or email
-            </p>
+            <div className="text-center mb-4">
+              <div className="text-5xl mb-2">{ROLE_EMOJI[roleChoisi]}</div>
+              <h2 className="text-titre">{t(`role.${roleChoisi}.nom`)}</h2>
+              <p className="text-aide text-[var(--mboa-text-doux)] italic">
+                {t("connex.sousTitre")}
+              </p>
+            </div>
 
-            <label className="text-aide block mb-1">Phone or email address</label>
+            <label className="text-aide block mb-1 font-bold">{t("connex.idLabel")}</label>
             <input
               type="text"
               inputMode="email"
               autoComplete="username"
-              placeholder="6XX XXX XXX or email"
+              placeholder={placeholderIdentifiant}
               value={identifiant}
               onChange={(e) => setIdentifiant(e.target.value)}
               className="champ-mboa mb-3"
               style={{ fontSize: 22 }}
             />
 
-            <label className="text-aide block mb-1">Password</label>
+            <label className="text-aide block mb-1 font-bold">{t("connex.mdpLabel")}</label>
             <input
               type="password"
               autoComplete="current-password"
-              placeholder="••••••"
+              placeholder={t("connex.mdpPlaceholder")}
               value={motDePasse}
               onChange={(e) => setMotDePasse(e.target.value)}
               className="champ-mboa mb-3"
@@ -287,19 +364,19 @@ export default function PageConnexion() {
             />
 
             {erreur && (
-              <p className="text-[var(--mboa-error)] text-aide mb-2 text-center anim-secousse">{erreur}</p>
+              <p className="text-[var(--mboa-error)] text-aide mb-2 text-center anim-secousse font-bold">{erreur}</p>
             )}
 
             <BoutonMboa onClick={seConnecter} disabled={enCours} className="w-full">
-              {enCours ? "Signing in..." : "Sign in"}
+              {enCours ? t("connex.btnCours") : `→ ${t("connex.btn")}`}
             </BoutonMboa>
 
             {roleChoisi === "consommateur" && (
               <button
                 onClick={allerInscription}
-                className="text-aide text-[var(--mboa-primary)] underline text-center w-full mt-3"
+                className="text-aide text-[var(--mboa-primary)] underline text-center w-full mt-3 font-bold"
               >
-                No account yet? Create my account
+                {t("connex.sansCompte")}
               </button>
             )}
 
@@ -307,17 +384,20 @@ export default function PageConnexion() {
               onClick={() => setEtape("choix")}
               className="text-aide text-[var(--mboa-text-doux)] underline text-center w-full mt-2"
             >
-              Switch space
+              ← {t("connex.switch")}
             </button>
           </CarteMboa>
         )}
 
         {etape === "inscription" && (
           <CarteMboa className="w-full max-w-md anim-apparition">
-            <h2 className="text-titre mb-1 text-center">Create my account</h2>
-            <p className="text-aide text-[var(--mboa-text-doux)] text-center mb-4">
-              MBOA BIO customer — quick sign-up
-            </p>
+            <div className="text-center mb-4">
+              <div className="text-5xl mb-2">🛒</div>
+              <h2 className="text-titre">{t("insc.titre")}</h2>
+              <p className="text-aide text-[var(--mboa-text-doux)] italic">
+                {t("insc.sousTitre")}
+              </p>
+            </div>
 
             <div className="grid grid-cols-2 gap-2 mb-3">
               {(["telephone", "email"] as const).map((m) => (
@@ -333,12 +413,12 @@ export default function PageConnexion() {
                     border: `2px solid ${modeInscription === m ? "var(--mboa-primary)" : "transparent"}`,
                   }}
                 >
-                  {m === "telephone" ? "📱 Phone" : "📧 Email"}
+                  {m === "telephone" ? `📱 ${t("insc.parTel")}` : `📧 ${t("insc.parMail")}`}
                 </button>
               ))}
             </div>
 
-            <label className="text-aide block mb-1">{labelIdentifiant}</label>
+            <label className="text-aide block mb-1 font-bold">{labelIdentifiant}</label>
             <input
               type="text"
               inputMode={modeInscription === "email" ? "email" : "tel"}
@@ -350,43 +430,43 @@ export default function PageConnexion() {
               style={{ fontSize: 20 }}
             />
 
-            <label className="text-aide block mb-1">Your name</label>
+            <label className="text-aide block mb-1 font-bold">{t("insc.nomLabel")}</label>
             <input
               type="text"
               autoComplete="name"
-              placeholder="E.g.: Mama Elise"
+              placeholder={t("insc.nomPlaceholder")}
               value={nom}
               onChange={(e) => setNom(e.target.value)}
               className="champ-mboa mb-3"
               style={{ fontSize: 20 }}
             />
 
-            <label className="text-aide block mb-1">Your village (optional)</label>
+            <label className="text-aide block mb-1 font-bold">{t("insc.villageLabel")}</label>
             <input
               type="text"
-              placeholder="E.g.: Mbouda"
+              placeholder={t("insc.villagePlaceholder")}
               value={village}
               onChange={(e) => setVillage(e.target.value)}
               className="champ-mboa mb-3"
               style={{ fontSize: 20 }}
             />
 
-            <label className="text-aide block mb-1">Password</label>
+            <label className="text-aide block mb-1 font-bold">{t("insc.mdpLabel")}</label>
             <input
               type="password"
               autoComplete="new-password"
-              placeholder="6 characters minimum, with a digit"
+              placeholder={t("insc.mdpPlaceholder")}
               value={motDePasse}
               onChange={(e) => setMotDePasse(e.target.value)}
               className="champ-mboa mb-3"
               style={{ fontSize: 20 }}
             />
 
-            <label className="text-aide block mb-1">Confirm password</label>
+            <label className="text-aide block mb-1 font-bold">{t("insc.mdpConfirmLabel")}</label>
             <input
               type="password"
               autoComplete="new-password"
-              placeholder="Re-type the password"
+              placeholder={t("insc.mdpConfirmPlaceholder")}
               value={confirmationMdp}
               onChange={(e) => setConfirmationMdp(e.target.value)}
               className="champ-mboa mb-3"
@@ -394,48 +474,48 @@ export default function PageConnexion() {
             />
 
             {erreur && (
-              <p className="text-[var(--mboa-error)] text-aide mb-2 text-center anim-secousse">{erreur}</p>
+              <p className="text-[var(--mboa-error)] text-aide mb-2 text-center anim-secousse font-bold">{erreur}</p>
             )}
 
             <BoutonMboa onClick={enregistrer} disabled={enCours} className="w-full">
-              {enCours ? "Creating..." : "Create my account"}
+              {enCours ? t("insc.btnCours") : `✓ ${t("insc.btn")}`}
             </BoutonMboa>
 
             <button
               onClick={allerConnexion}
-              className="text-aide text-[var(--mboa-primary)] underline text-center w-full mt-3"
+              className="text-aide text-[var(--mboa-primary)] underline text-center w-full mt-3 font-bold"
             >
-              I already have an account
+              {t("insc.dejaCompte")}
             </button>
           </CarteMboa>
         )}
 
         {etape === "nouveauMdp" && (
           <CarteMboa className="w-full max-w-md anim-apparition">
-            <div className="text-5xl text-center mb-2">🔐</div>
-            <h2 className="text-titre text-center mb-1">New password</h2>
-            <p className="text-aide text-[var(--mboa-text-doux)] text-center mb-4">
-              {mdpParDefaut
-                ? "First sign-in on this device. The initial password must be changed."
-                : "You signed in on a new device. Confirm your password."}
-            </p>
+            <div className="text-center mb-4">
+              <div className="text-5xl mb-2">🔐</div>
+              <h2 className="text-titre">{t("mdp.titre")}</h2>
+              <p className="text-aide text-[var(--mboa-text-doux)] italic">
+                {mdpParDefaut ? t("mdp.sousTitreDefaut") : t("mdp.sousTitreAppareil")}
+              </p>
+            </div>
 
-            <label className="text-aide block mb-1">New password</label>
+            <label className="text-aide block mb-1 font-bold">{t("insc.mdpLabel")}</label>
             <input
               type="password"
               autoComplete="new-password"
-              placeholder="6 characters minimum, with a digit"
+              placeholder={t("insc.mdpPlaceholder")}
               value={nouveauMdp}
               onChange={(e) => setNouveauMdp(e.target.value)}
               className="champ-mboa mb-3"
               style={{ fontSize: 20 }}
             />
 
-            <label className="text-aide block mb-1">Confirm password</label>
+            <label className="text-aide block mb-1 font-bold">{t("insc.mdpConfirmLabel")}</label>
             <input
               type="password"
               autoComplete="new-password"
-              placeholder="Re-type the password"
+              placeholder={t("insc.mdpConfirmPlaceholder")}
               value={confirmationMdp}
               onChange={(e) => setConfirmationMdp(e.target.value)}
               className="champ-mboa mb-3"
@@ -443,11 +523,11 @@ export default function PageConnexion() {
             />
 
             {erreur && (
-              <p className="text-[var(--mboa-error)] text-aide mb-2 text-center anim-secousse">{erreur}</p>
+              <p className="text-[var(--mboa-error)] text-aide mb-2 text-center anim-secousse font-bold">{erreur}</p>
             )}
 
             <BoutonMboa onClick={appliquerNouveauMdp} disabled={enCours} className="w-full">
-              {enCours ? "Saving..." : "Confirm"}
+              {enCours ? t("mdp.btnCours") : `🔒 ${t("mdp.btn")}`}
             </BoutonMboa>
           </CarteMboa>
         )}

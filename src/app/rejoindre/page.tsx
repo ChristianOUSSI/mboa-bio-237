@@ -9,6 +9,7 @@ import { CATEGORIES_ORDREES, CATEGORIE_INFO, Categorie } from "@/core/types/cate
 import { Unite, UNITE_INFO } from "@/core/types/unite";
 import { EntreeCatalogue, catalogueUniteReelle } from "@/core/types/catalogue";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
+import { useLangue, useTr, Lang } from "@/core/i18n";
 import { useEffect } from "react";
 
 interface ProduitDraft {
@@ -34,6 +35,8 @@ const VILLAGES_CAMEROUN = [
  */
 export default function RejoindrePage() {
   const router = useRouter();
+  const { langue, setLangue } = useLangue();
+  const t = useTr();
   const [catalogue, setCatalogue] = useState<EntreeCatalogue[]>([]);
   const [nom, setNom] = useState("");
   const [telephone, setTelephone] = useState("");
@@ -100,14 +103,14 @@ export default function RejoindrePage() {
 
   function valider(): string[] {
     const errs: string[] = [];
-    if (nom.trim().length === 0) errs.push("Your name is required");
+    if (nom.trim().length === 0) errs.push(t("rej.erreur.nom"));
     const tel = telephone.replace(/\D/g, "");
-    if (tel.length < 9) errs.push("Invalid phone number");
-    if (village.trim().length === 0) errs.push("Your village is required");
+    if (tel.length < 9) errs.push(t("rej.erreur.tel"));
+    if (village.trim().length === 0) errs.push(t("rej.erreur.village"));
     produits.forEach((p, i) => {
-      if (p.nom.trim().length === 0) errs.push(`Product ${i + 1}: name required`);
+      if (p.nom.trim().length === 0) errs.push(`Produit ${i + 1}: ${t("rej.erreur.produitNom")}`);
       const prixNum = parseInt(p.prix) || 0;
-      if (prixNum <= 0) errs.push(`Product ${i + 1}: price required`);
+      if (prixNum <= 0) errs.push(`Produit ${i + 1}: ${t("rej.erreur.produitPrix")}`);
     });
     return errs;
   }
@@ -143,7 +146,7 @@ export default function RejoindrePage() {
       setSucces(true);
     } catch (e) {
       console.error("Error:", e);
-      setErreurs(["An error occurred. Please try again."]);
+      setErreurs([t("rej.erreur.generique")]);
     } finally {
       setEnCours(false);
     }
@@ -153,13 +156,12 @@ export default function RejoindrePage() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center min-h-screen bg-[var(--mboa-background)]">
         <div className="text-6xl mb-4">✅</div>
-        <h1 className="text-ecran text-[var(--mboa-primary)]">Declaration sent</h1>
-        <p className="text-corps text-[var(--mboa-text-doux)] mt-2 text-center px-6">
-          The Mboa Bio counter will review your offer. If accepted,
-          your goods enter stock and you are paid on delivery.
+        <h1 className="text-ecran text-[var(--mboa-primary)]">{t("rej.succes.titre")}</h1>
+        <p className="text-corps text-[var(--mboa-text-doux)] mt-2 text-center px-6 italic">
+          {t("rej.succes.texte")}
         </p>
         <BoutonMboa variant="primary" className="mt-6" onClick={() => router.push("/")}>
-          Back to home
+          {t("rej.succes.btn")}
         </BoutonMboa>
       </div>
     );
@@ -167,15 +169,32 @@ export default function RejoindrePage() {
 
   return (
     <FondMboa>
-      <EnTetePage titre="Become a supplier" sousTitre="Tell us what you have, the counter buys" onRetour={() => router.back()} />
+      <EnTetePage
+        titre={t("rej.titre")}
+        sousTitre={t("rej.sousTitre")}
+        onRetour={() => router.back()}
+        action={
+          <div className="selecteur-langue !border-white/40 !bg-white/15">
+            {(["fr", "en"] as Lang[]).map((l) => (
+              <button
+                key={l}
+                className={langue === l ? "actif" : ""}
+                onClick={() => setLangue(l)}
+              >
+                {l === "fr" ? "FR" : "EN"}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       <div className="flex-1 p-4 space-y-3">
         {/* Identity */}
         <CarteMboa>
-          <h2 className="text-titre mb-3">Who are you?</h2>
+          <h2 className="text-titre mb-3">{t("rej.who")}</h2>
           <input
             type="text"
-            placeholder="Your name"
+            placeholder={t("rej.nomPh")}
             value={nom}
             onChange={(e) => setNom(e.target.value)}
             className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
@@ -184,7 +203,7 @@ export default function RejoindrePage() {
           <input
             type="tel"
             inputMode="numeric"
-            placeholder="Phone (for payment)"
+            placeholder={t("rej.telPh")}
             value={telephone}
             onChange={(e) => setTelephone(e.target.value)}
             className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
@@ -196,9 +215,9 @@ export default function RejoindrePage() {
             className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl"
             style={{ fontSize: 18 }}
           >
-            <option value="">Your village / town</option>
+            <option value="">{t("rej.villagePh")}</option>
             {VILLAGES_CAMEROUN.map((v) => (
-              <option key={v} value={v}>{v}</option>
+              <option key={v} value={v}>{v === "Other" ? t("rej.villageAutre") : v}</option>
             ))}
           </select>
         </CarteMboa>
@@ -207,7 +226,7 @@ export default function RejoindrePage() {
         {produits.map((p, i) => (
           <CarteMboa key={i}>
             <div className="flex justify-between items-center mb-2">
-              <h3 className="text-corps font-bold">Product {i + 1}</h3>
+              <h3 className="text-corps font-bold">{t("rej.produit")} {i + 1}</h3>
               {produits.length > 1 && (
                 <button onClick={() => retirerProduit(i)} className="text-[var(--mboa-error)] text-xl">✕</button>
               )}
@@ -234,7 +253,7 @@ export default function RejoindrePage() {
 
             <input
               type="text"
-              placeholder="Product name (e.g.: Cassava, Macabo, Pork...)"
+              placeholder={t("rej.nomProduitPh")}
               value={p.nom}
               onChange={(e) => majProduit(i, { nom: e.target.value })}
               className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
@@ -275,7 +294,7 @@ export default function RejoindrePage() {
               <input
                 type="number"
                 inputMode="numeric"
-                placeholder="Quantity"
+                placeholder={t("rej.quantitePh")}
                 value={p.quantite || ""}
                 onChange={(e) => majProduit(i, { quantite: parseInt(e.target.value) || 1 })}
                 className="p-2 border-2 border-[var(--mboa-primary)] rounded-xl text-center"
@@ -286,7 +305,7 @@ export default function RejoindrePage() {
             <input
               type="number"
               inputMode="numeric"
-              placeholder="Asking price per unit (FCFA)"
+              placeholder={t("rej.prixPh")}
               value={p.prix}
               onChange={(e) => majProduit(i, { prix: e.target.value })}
               className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl text-chiffre mb-2"
@@ -294,7 +313,7 @@ export default function RejoindrePage() {
             />
             {p.prix && p.quantite > 0 && (
               <p className="text-aide text-[var(--mboa-text-doux)] mb-2">
-                Total: {formaterFcfa(Math.round(p.quantite * (parseInt(p.prix) || 0)))}
+                {t("rej.total")} {formaterFcfa(Math.round(p.quantite * (parseInt(p.prix) || 0)))}
               </p>
             )}
 
@@ -304,11 +323,11 @@ export default function RejoindrePage() {
               className="w-full h-32 bg-[var(--mboa-background)] rounded-xl flex items-center justify-center cursor-pointer border-2 border-dashed border-[var(--mboa-primary)]"
             >
               {p.photoUrl ? (
-                <img src={p.photoUrl} alt="Goods" className="w-full h-full object-cover rounded-xl" />
+                <img src={p.photoUrl} alt={t("rej.photoAlt")} className="w-full h-full object-cover rounded-xl" />
               ) : (
                 <div className="text-center">
                   <div className="text-4xl">📷</div>
-                  <p className="text-aide text-[var(--mboa-text-doux)] mt-1">Photo (recommended)</p>
+                  <p className="text-aide text-[var(--mboa-text-doux)] mt-1">{t("rej.photo")}</p>
                 </div>
               )}
             </div>
@@ -316,14 +335,14 @@ export default function RejoindrePage() {
         ))}
 
         <BoutonMboa variant="surface" onClick={ajouterProduit} className="w-full">
-          + Add another product
+          {t("rej.ajouter")}
         </BoutonMboa>
 
         {/* Optional note */}
         <CarteMboa>
-          <label className="text-corps block mb-2">Note for the counter (optional)</label>
+          <label className="text-corps block mb-2">{t("rej.noteLabel")}</label>
           <textarea
-            placeholder="Availability, transport conditions, harvest periods..."
+            placeholder={t("rej.notePh")}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl"
@@ -346,12 +365,12 @@ export default function RejoindrePage() {
           disabled={enCours}
           className="w-full !text-titre"
         >
-          {enCours ? "Sending..." : "Send my declaration"}
+          {enCours ? t("rej.envoi") : t("rej.envoyer")}
         </BoutonMboa>
 
         <p className="text-aide text-center text-[var(--mboa-text-doux)]">
-          Already a connected supplier?{" "}
-          <Link href="/connexion" className="text-[var(--mboa-primary)] underline">Sign in</Link>
+          {t("rej.dejaFournisseur")}{" "}
+          <Link href="/connexion" className="text-[var(--mboa-primary)] underline">{t("rej.connecter")}</Link>
         </p>
       </div>
     </FondMboa>
