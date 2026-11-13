@@ -10,12 +10,14 @@ import { STATUT_COMMANDE_INFO, StatutCommande } from "@/core/types/statuts";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { resumerQuantites } from "@/core/types/commande";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useTr } from "@/core/i18n";
 
 const CLE_PAYES = "livreurs_payes";
 
 export default function LivraisonsPage() {
   const router = useRouter();
   const { pret, profil } = useGuardRole("admin");
+  const t = useTr();
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [payes, setPayes] = useState<Set<string>>(new Set());
   const [enCours, setEnCours] = useState<string | null>(null);
@@ -65,13 +67,13 @@ export default function LivraisonsPage() {
   }
   return (
     <FondMboa>
-      <EnTetePage titre="Deliveries" sousTitre="The driver is paid on confirmed receipt" onRetour={() => router.back()} />
+      <EnTetePage titre={t("adm.liv.titre")} sousTitre={t("adm.liv.sousTitre")} onRetour={() => router.back()} />
       <div className="flex-1 p-4 space-y-3">
-        <h2 className="text-titre">To pay the driver ({aPayer.length})</h2>
+        <h2 className="text-titre">{t("adm.liv.aPayer")} ({aPayer.length})</h2>
         {aPayer.length === 0 ? (
           <CarteMboa>
             <p className="text-corps text-[var(--mboa-text-doux)] text-center">
-              No confirmed receipt to pay
+              {t("adm.liv.rienAPayer")}
             </p>
           </CarteMboa>
         ) : (
@@ -79,12 +81,12 @@ export default function LivraisonsPage() {
             <CarteMboa key={c.id}>
               <div className="flex justify-between items-start mb-2">
                 <BadgeStatut statut={c.statut} libelle={STATUT_COMMANDE_INFO[c.statut].libelle} />
-                <BoutonVoix texte={`Delivery finished. Pay the driver ${c.livreurTarif ?? 0} francs`} />
+                <BoutonVoix texte={`${t("adm.liv.voixFin")} ${c.livreurTarif ?? 0} francs`} />
               </div>
               <p className="text-corps mb-1">{resumerQuantites(c.lignes)}</p>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-aide text-[var(--mboa-text-doux)]">
-                  {c.livreurNom ?? "Driver"}
+                  {c.livreurNom ?? t("adm.liv.livreur")}
                 </span>
                 <span className="text-chiffre text-[var(--mboa-primary)]">
                   {formaterFcfa(c.livreurTarif ?? 0)}
@@ -96,7 +98,7 @@ export default function LivraisonsPage() {
                 disabled={enCours === c.id}
                 onClick={() => payer(c)}
               >
-                {enCours === c.id ? "Paying..." : "Pay the driver"}
+                {enCours === c.id ? t("adm.liv.paiement") : t("adm.liv.payer")}
               </BoutonMboa>
             </CarteMboa>
           ))
@@ -104,7 +106,7 @@ export default function LivraisonsPage() {
 
         {enCours2.length > 0 && (
           <>
-            <h2 className="text-titre">Ongoing deliveries ({enCours2.length})</h2>
+            <h2 className="text-titre">{t("adm.liv.enCours")} ({enCours2.length})</h2>
             {enCours2.map((c) => (
               <CarteMboa key={c.id}>
                 <div className="flex justify-between items-start mb-2">
@@ -115,7 +117,7 @@ export default function LivraisonsPage() {
                 </div>
                 <p className="text-corps">{resumerQuantites(c.lignes)}</p>
                 {c.livreurNom && (
-                  <p className="text-aide text-[var(--mboa-text-doux)] mt-1">Driver: {c.livreurNom}</p>
+                  <p className="text-aide text-[var(--mboa-text-doux)] mt-1">{t("adm.liv.livreur2")} : {c.livreurNom}</p>
                 )}
               </CarteMboa>
             ))}

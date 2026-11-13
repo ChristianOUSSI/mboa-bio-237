@@ -10,10 +10,12 @@ import { STATUT_COMMANDE_INFO, StatutCommande } from "@/core/types/statuts";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { resumerQuantites } from "@/core/types/commande";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useTr } from "@/core/i18n";
 
 export default function DevisAdminPage() {
   const router = useRouter();
   const { pret, profil } = useGuardRole("admin");
+  const t = useTr();
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [livreurs, setLivreurs] = useState<Livreur[]>([]);
   const [livreurChoisi, setLivreurChoisi] = useState<Record<string, string>>({});
@@ -67,12 +69,12 @@ export default function DevisAdminPage() {
   }
   return (
     <FondMboa>
-      <EnTetePage titre="Quotes" sousTitre="Validate and send a driver" onRetour={() => router.back()} />
+      <EnTetePage titre={t("adm.dev.titre")} sousTitre={t("adm.dev.sousTitre")} onRetour={() => router.back()} />
       <div className="flex-1 p-4 space-y-2">
         {commandes.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="text-6xl mb-4">📝</div>
-            <p className="text-corps text-[var(--mboa-text-doux)]">No quotes yet</p>
+            <p className="text-corps text-[var(--mboa-text-doux)]">{t("adm.dev.vide")}</p>
           </div>
         )}
         {commandes.map((c) => {
@@ -111,7 +113,7 @@ export default function DevisAdminPage() {
                     disabled={enCours === c.id}
                     onClick={() => validerEtEnvoyer(c, livreurSelectionne)}
                   >
-                    {enCours === c.id ? "Sending..." : "Validate and send the driver"}
+                    {enCours === c.id ? t("adm.dev.envoi") : t("adm.dev.valider")}
                   </BoutonMboa>
                   <BoutonMboa
                     variant="error"
@@ -119,17 +121,17 @@ export default function DevisAdminPage() {
                     disabled={enCours === c.id}
                     onClick={() => refuser(c)}
                   >
-                    Reject the quote
+                    {t("adm.dev.refuser")}
                   </BoutonMboa>
                 </div>
               )}
               {estNouveau && livreurs.length === 0 && (
-                <p className="text-aide text-[var(--mboa-error)] mt-2">No active driver</p>
+                <p className="text-aide text-[var(--mboa-error)] mt-2">{t("adm.dev.sansLivreur")}</p>
               )}
 
               {c.livreurNom && (
                 <p className="text-aide text-[var(--mboa-text-doux)] mt-2">
-                  Driver: {c.livreurNom}
+                  {t("adm.dev.livreur")} : {c.livreurNom}
                   {c.livreurTarif ? ` · ${formaterFcfa(c.livreurTarif)}` : ""}
                 </p>
               )}
