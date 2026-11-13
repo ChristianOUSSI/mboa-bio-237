@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/core/etat/store";
@@ -29,6 +29,94 @@ import { Profil } from "@/core/types/profil";
 import { ouvrirSessionLocale } from "@/core/data/depots";
 
 type Etape = "choix" | "splash" | "identifiant" | "inscription" | "nouveauMdp" | "resetMdp" | "superadmin";
+
+/**
+ * Élément flottant déplaçable à la souris/doigt.
+ * Un glissement > 6 px déplace l'élément ; en dessous, le clic passe
+ * (important pour le chou super admin).
+ */
+function Flottant({
+  emoji,
+  style,
+  onClick,
+  ariaLabel,
+}: {
+  emoji: string;
+  style: React.CSSProperties;
+  onClick?: () => void;
+  ariaLabel?: string;
+}) {
+  const ref = useRef<HTMLElement | null>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const drag = useRef<{ sx: number; sy: number; ox: number; oy: number; bouge: boolean } | null>(null);
+  const aGlisse = useRef(false);
+
+  function onPointerDown(e: React.PointerEvent) {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    drag.current = { sx: e.clientX, sy: e.clientY, ox: r.left, oy: r.top, bouge: false };
+    aGlisse.current = false;
+    el.setPointerCapture?.(e.pointerId);
+  }
+  function onPointerMove(e: React.PointerEvent) {
+    const d = drag.current;
+    if (!d) return;
+    const dx = e.clientX - d.sx;
+    const dy = e.clientY - d.sy;
+    if (Math.abs(dx) + Math.abs(dy) > 6) {
+      d.bouge = true;
+      aGlisse.current = true;
+      setPos({ x: d.ox + dx, y: d.oy + dy });
+    }
+  }
+  function onPointerUp() {
+    drag.current = null;
+  }
+  function handleClick() {
+    if (aGlisse.current) {
+      aGlisse.current = false;
+      return;
+    }
+    onClick?.();
+  }
+
+  const merged: React.CSSProperties = {
+    ...style,
+    ...(pos ? { left: pos.x, top: pos.y, right: "auto" } : {}),
+    pointerEvents: "auto",
+    cursor: "grab",
+    touchAction: "none",
+    userSelect: "none",
+  };
+  const handlers = { onPointerDown, onPointerMove, onPointerUp, onClick: onClick ? handleClick : undefined };
+
+  if (onClick) {
+    return (
+      <button
+        ref={ref as React.RefObject<HTMLButtonElement>}
+        type="button"
+        className="aliment-flottant"
+        style={{ ...merged, background: "none", border: "none", padding: 0 }}
+        aria-label={ariaLabel}
+        {...handlers}
+      >
+        {emoji}
+      </button>
+    );
+  }
+  return (
+    <span
+      ref={ref as React.RefObject<HTMLSpanElement>}
+      className="aliment-flottant"
+      style={merged}
+      aria-hidden
+      {...handlers}
+    >
+      {emoji}
+    </span>
+  );
+}
 
 /** Ordre d'affichage des espaces : le client d'abord. */
 const ROLES_ORDRE: AppRole[] = ["consommateur", "fournisseur", "livreur", "admin"];
@@ -373,33 +461,26 @@ export default function PageConnexion() {
           right: "right" in a ? a.right : undefined,
           fontSize: a.taille,
           animationDelay: a.delai,
-          ...(cliquable ? { zIndex: 20, cursor: "pointer" as const, pointerEvents: "auto" as const } : {}),
-        };
-        const ouvrirSuper = () => {
-          setIdentifiant(IDENTIFIANT_SUPERADMIN);
-          setMotDePasse("");
-          setErreur(null);
-          setEtape("superadmin");
+          ...(cliquable ? { zIndex: 20 } : {}),
         };
         // Le chou cliquable est un vrai bouton : il doit rester au-dessus des cartes.
-        if (cliquable) {
-          return (
-            <button
-              key={i}
-              type="button"
-              onClick={ouvrirSuper}
-              className="aliment-flottant"
-              style={{ ...style, background: "none", border: "none", padding: 0 }}
-              aria-label={t("super.accesCache")}
-            >
-              {a.emoji}
-            </button>
-          );
-        }
         return (
-          <span key={i} className="aliment-flottant" style={style} aria-hidden>
-            {a.emoji}
-          </span>
+          <Flottant
+            key={i}
+            emoji={a.emoji}
+            style={style}
+            onClick={
+              cliquable
+                ? () => {
+                    setIdentifiant(IDENTIFIANT_SUPERADMIN);
+                    setMotDePasse("");
+                    setErreur(null);
+                    setEtape("superadmin");
+                  }
+                : undefined
+            }
+            ariaLabel={cliquable ? t("super.accesCache") : undefined}
+          />
         );
       })}
 
@@ -503,9 +584,9 @@ export default function PageConnexion() {
               aria-hidden
             />
             {ROLE_DECOR[roleChoisi].map((d, i) => (
-              <span
+              <Flottant
                 key={i}
-                className="aliment-flottant"
+                emoji={d.emoji}
                 style={{
                   top: d.top,
                   left: d.left,
@@ -513,10 +594,7 @@ export default function PageConnexion() {
                   fontSize: d.taille,
                   animationDelay: d.delai,
                 }}
-                aria-hidden
-              >
-                {d.emoji}
-              </span>
+              />
             ))}
 
             <div className="relative z-10 flex flex-col items-center">
