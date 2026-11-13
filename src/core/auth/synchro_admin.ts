@@ -48,6 +48,19 @@ export function publierCompteAdmin(compte: CompteAuth): void {
     });
 }
 
+/** Supprime définitivement un compte de la table de synchro. */
+export function supprimerCompteDistant(id: string): void {
+  const client = mboaReseau();
+  if (!client) return;
+  void client
+    .from(TABLE)
+    .delete()
+    .eq("id", id)
+    .then(({ error }) => {
+      if (error) console.warn("[synchro] suppression compte:", error.message);
+    });
+}
+
 /**
  * Tire les comptes admin depuis Supabase et les fusionne dans le cache local.
  * Le distant gagne pour les champs de sécurité (motDePasse, actif, nom) ;

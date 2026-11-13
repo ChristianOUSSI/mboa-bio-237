@@ -142,6 +142,15 @@ export async function desactiverCompte(compte: CompteAuth): Promise<void> {
   await majCompte(compte, { actif: false });
 }
 
+/** Supprime définitivement un compte : cache local + synchro distante. */
+export async function supprimerCompte(compte: CompteAuth): Promise<void> {
+  await cacheEcrire(ENTITE, compte.id, null);
+  if (compte.telephone) await cacheEcrire(ENTITE, cleTel(compte.telephone), null);
+  if (compte.email) await cacheEcrire(ENTITE, cleMail(compte.email), null);
+  const { supprimerCompteDistant } = await import("./synchro_admin");
+  supprimerCompteDistant(compte.id);
+}
+
 /**
  * Vérifie si le compte a été connecté sur un autre appareil
  * et si son mot de passe est encore celui par défaut.

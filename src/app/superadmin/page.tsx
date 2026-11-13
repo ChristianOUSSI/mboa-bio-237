@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CarteMboa, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa, ChampMotDePasse } from "@/core/design_system/composants";
-import { tousComptes, majCompte, desactiverCompte, changerMotDePasse, creerCompte } from "@/core/auth/auth_service";
-import { CompteAuth, RoleAuth, validerMotDePasse } from "@/core/auth/auth_local";
+import { tousComptes, majCompte, desactiverCompte, changerMotDePasse, creerCompte, supprimerCompte } from "@/core/auth/auth_service";
+import { CompteAuth, RoleAuth, validerMotDePasse, normaliserTel } from "@/core/auth/auth_local";
 import { synchroniserComptesAdmin } from "@/core/auth/synchro_admin";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useSession } from "@/core/etat/store";
@@ -93,6 +93,13 @@ export default function SuperAdminPage() {
       setErreur(t("super.erreurId"));
       return;
     }
+    // L'identifiant doit être un email OU un téléphone normalisable —
+    // sinon le compte serait introuvable à la connexion.
+    const estEmail = id.includes("@");
+    if (!estEmail && !normaliserTel(id)) {
+      setErreur(t("super.erreurIdInvalide"));
+      return;
+    }
     setEnCours(true);
     try {
       const email = id.includes("@") ? id : null;
@@ -114,6 +121,17 @@ export default function SuperAdminPage() {
     } catch (e) {
       console.error(e);
       setErreur(t("connex.erreurGenerique"));
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  async function supprimer(c: CompteAuth) {
+    if (!window.confirm(`${t("super.confirmSupprimer")} ${c.nom} ?`)) return;
+    setEnCours(true);
+    try {
+      await supprimerCompte(c);
+      await charger();
     } finally {
       setEnCours(false);
     }
@@ -276,6 +294,16 @@ export default function SuperAdminPage() {
                       onClick={() => basculerActif(c)}
                     >
                       {c.actif ? `⛔ ${t("super.revoquer")}` : `✓ ${t("super.reactiver")}`}
+                    </BoutonMboa>
+                  )}
+                  {!c.actif && !estMoi && (
+                    <BoutonMboa
+                      variant="error"
+                      className="flex-1"
+                      disabled={enCours}
+                      onClick={() => supprimer(c)}
+                    >
+                      🗑️ {t("super.supprimer")}
                     </BoutonMboa>
                   )}
                 </div>
