@@ -114,7 +114,7 @@ export function EnTetePage({
       {onRetour && (
         <button
           onClick={onRetour}
-          className="btn-mboa btn-surface !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl !border-white/40 !bg-white/15 !text-white"
+          className="btn-mboa btn-surface relative z-10 !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl !border-white/40 !bg-white/15 !text-white"
           aria-label={t("a11y.retour")}
         >
           ←
@@ -128,7 +128,7 @@ export function EnTetePage({
       {onDeconnexion && (
         <button
           onClick={onDeconnexion}
-          className="btn-mboa btn-surface !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl !border-white/40 !bg-white/15 !text-white"
+          className="btn-mboa btn-surface relative z-10 !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl !border-white/40 !bg-white/15 !text-white"
           aria-label={t("a11y.deconnexion")}
           title={t("a11y.deconnexion")}
         >

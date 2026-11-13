@@ -300,6 +300,7 @@ body {
   border-radius: 9999px;
   background: radial-gradient(circle, rgba(174, 213, 129, 0.42) 0%, transparent 70%);
   animation: derive 11s ease-in-out infinite alternate;
+  pointer-events: none;
 }
 
 /* ============================================================
