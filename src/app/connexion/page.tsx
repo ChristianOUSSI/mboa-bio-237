@@ -210,7 +210,7 @@ export default function PageConnexion() {
           style={{ background: "white", padding: 6 }}
         />
         <h1 className="text-ecran text-white relative z-10">MBOA BIO 237</h1>
-        <p className="text-aide text-white/80 relative z-10">
+        <p className="text-aide text-white/90 relative z-10">
           The earth feeds us, quality sets us apart
         </p>
       </div>
