@@ -1,4 +1,4 @@
-import { CompteAuth, RoleAuth, empreinteAppareil, hacherMotDePasse, normaliserTel, normaliserEmail, motDePasseAdminInitial, motDePasseSuperAdmin, EMAIL_ADMIN_INITIAL, EMAIL_SUPERADMIN } from "./auth_local";
+import { CompteAuth, RoleAuth, empreinteAppareil, hacherMotDePasse, normaliserTel, normaliserEmail, motDePasseAdminInitial, motDePasseSuperAdmin, EMAIL_ADMIN_INITIAL, EMAIL_ADMIN_INITIAL_ANTERIEUR, EMAIL_SUPERADMIN, MDP_SUPERADMIN_ANTERIEUR } from "./auth_local";
 import { cacheTout, cacheEcrire, cacheLire } from "../data/base_locale";
 import { uuidV4 } from "../utils/identifiants";
 import { publierCompteAdmin } from "./synchro_admin";
@@ -161,14 +161,17 @@ export function estNouvelAppareil(compte: CompteAuth): boolean {
  * L'identifiant de connexion est l'email local `admin@mboa237.local`.
  */
 export async function assurerCompteAdmin(): Promise<CompteAuth | null> {
-  const comptes = await tousComptes();
   // Déduplication : si un compte porte déjà l'identifiant bootstrap
   // (créé sur un autre appareil puis synchronisé), on le réutilise
   // au lieu d'en créer un second — sinon la connexion devient instable.
   const parId = await compteParIdentifiant(EMAIL_ADMIN_INITIAL);
   if (parId) return parId;
-  const existant = comptes.find((c) => c.role === "admin");
-  if (existant) return existant;
+  // Migration : l'ancien identifiant bootstrap (mboa-admin@237) devient
+  // admin@mboa237 — même compte, même mot de passe par défaut.
+  const ancien = await compteParIdentifiant(EMAIL_ADMIN_INITIAL_ANTERIEUR);
+  if (ancien) {
+    return majCompte(ancien, { email: EMAIL_ADMIN_INITIAL });
+  }
   return creerCompte({
     role: "admin",
     nom: "MBOA Counter",
@@ -197,11 +200,20 @@ export async function amorcerSiAucunCompte(): Promise<CompteAuth | null> {
  * Compte caché : absent de la page de connexion, accessible via le chou flottant.
  */
 export async function assurerCompteSuperAdmin(): Promise<CompteAuth | null> {
-  const comptes = await tousComptes();
-  const parId = await compteParIdentifiant(EMAIL_SUPERADMIN);
-  if (parId) return parId;
-  const existant = comptes.find((c) => c.role === "superadmin");
-  if (existant) return existant;
+  let compte = await compteParIdentifiant(EMAIL_SUPERADMIN);
+  if (!compte) {
+    const existant = (await tousComptes()).find((c) => c.role === "superadmin");
+    if (existant) compte = existant;
+  }
+  if (compte) {
+    // Migration : si le compte utilise encore l'ancien mot de passe
+    // super admin, on le remplace par le nouveau (CADC → CADC1).
+    const hashAncien = await hacherMotDePasse(MDP_SUPERADMIN_ANTERIEUR, `mboa-${compte.id}`);
+    if (compte.motDePasse === hashAncien) {
+      return changerMotDePasse(compte, motDePasseSuperAdmin());
+    }
+    return compte;
+  }
   return creerCompte({
     role: "superadmin",
     nom: "CADC",
