@@ -603,9 +603,9 @@ export default function PageConnexion() {
 
             <button
               onClick={commencerReset}
-              className="text-aide text-[var(--mboa-text-doux)] underline text-center w-full mt-2"
+              className="w-full mt-3 py-2 rounded-xl border-2 border-dashed border-[var(--mboa-primary)] text-aide font-bold text-[var(--mboa-primary)]"
             >
-              {t("reset.lien")}
+              🔑 {t("reset.lien")}
             </button>
 
             <button
