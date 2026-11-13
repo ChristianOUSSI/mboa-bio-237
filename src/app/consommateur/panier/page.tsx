@@ -15,12 +15,15 @@ import {
 } from "@/core/utils/export_document";
 import { useState } from "react";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useTr } from "@/core/i18n";
 
 const FRAIS_LIVRAISON_DEFAUT = 500;
 
 export default function PanierPage() {
   const router = useRouter();
-  const { pret, profil } = useGuardRole("consommateur");
+  const { pret, profil } = useGuardRole("consommateur");
+  const t = useTr();
+
   const panier = usePanier();
   const [enCours, setEnCours] = useState(false);
   const [modePaiement, setModePaiement] = useState<ModePaiement>(ModePaiement.especes);
@@ -58,7 +61,7 @@ export default function PanierPage() {
 
   const optionsExport = () => ({
     type: "devis" as const,
-    titre: "My MBOA BIO 237 quote",
+    titre: t("panier.titreDoc"),
     lignes: panier.lignes,
     telephone: profil?.telephone ?? null,
     destinataire: profil?.nom ?? null,
@@ -83,21 +86,21 @@ export default function PanierPage() {
   }
   return (
     <FondMboa>
-      <EnTetePage titre="My quote" sousTitre="Check before ordering" onRetour={() => router.back()} />
+      <EnTetePage titre={t("panier.titre")} sousTitre={t("panier.sousTitre")} onRetour={() => router.back()} />
 
       <div className="flex-1 p-4">
         {panier.lignes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 anim-apparition">
             <div className="text-6xl mb-4">🛒</div>
-            <p className="text-corps text-[var(--mboa-text-doux)]">Your cart is empty</p>
-            <BoutonMboa variant="primary" onClick={() => router.push("/consommateur")} className="mt-4">Go to the market</BoutonMboa>
+            <p className="text-corps text-[var(--mboa-text-doux)]">{t("panier.vide")}</p>
+            <BoutonMboa variant="primary" onClick={() => router.push("/consommateur")} className="mt-4">{t("panier.allerMarche")}</BoutonMboa>
           </div>
         ) : (
           <>
             {/* Quantities summary */}
             <CarteMboa className="mb-3 card-accent anim-apparition">
               <div className="flex justify-between items-center">
-                <span className="text-corps">Quantities</span>
+                <span className="text-corps">{t("liste.quantites")}</span>
                 <span className="text-corps font-bold">{resumerQuantites(panier.lignes)}</span>
               </div>
             </CarteMboa>
@@ -108,7 +111,7 @@ export default function PanierPage() {
                 <CarteMboa key={l.produitId} className="anim-apparition" style={{ animationDelay: `${Math.min(i, 6) * 0.05}s` }}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <BoutonVoix texte={`${l.quantite} of ${l.nom}, ${l.prix} francs`} />
+                      <BoutonVoix texte={`${l.quantite} ${t("liste.de")} ${l.nom}, ${l.prix} francs`} />
                       <span className="text-corps font-bold">{l.nom}</span>
                     </div>
                     <span className="text-chiffre text-[var(--mboa-primary)]">
@@ -118,7 +121,7 @@ export default function PanierPage() {
 
                   <div className="flex items-center justify-between">
                     <span className="text-aide text-[var(--mboa-text-doux)]">
-                      {formaterFcfa(l.prix)} per unit
+                      {formaterFcfa(l.prix)} {t("panier.parUnite")}
                     </span>
                     <div className="flex items-center gap-2">
                       <button
@@ -144,7 +147,7 @@ export default function PanierPage() {
 
             {/* Payment method choice */}
             <CarteMboa className="mt-4 anim-apparition">
-              <p className="text-corps font-bold mb-2">💰 Payment on delivery</p>
+              <p className="text-corps font-bold mb-2">{t("panier.paiement")}</p>
               <div className="grid grid-cols-3 gap-2">
                 {(Object.values(ModePaiement) as string[]).map((m) => {
                   const info = MODE_PAIEMENT_INFO[m as ModePaiement];
@@ -174,25 +177,25 @@ export default function PanierPage() {
             <CarteMboa className="mt-3 anim-apparition">
               <div className="space-y-1 mb-3">
                 <div className="flex justify-between text-corps">
-                  <span>Products</span>
+                  <span>{t("panier.produits")}</span>
                   <span>{formaterFcfa(montantProduits)}</span>
                 </div>
                 <div className="flex justify-between text-corps">
-                  <span>Bike delivery</span>
+                  <span>{t("panier.livraison")}</span>
                   <span>{formaterFcfa(fraisLivraison)}</span>
                 </div>
                 <div className="border-t border-[var(--mboa-trait)] pt-1 flex justify-between items-center">
-                  <span className="text-titre">Total to pay</span>
+                  <span className="text-titre">{t("panier.total")}</span>
                   <span className="text-chiffre-geant text-[var(--mboa-primary)]">
                     {formaterFcfa(montantTotal)}
                   </span>
                 </div>
               </div>
               <p className="text-aide text-[var(--mboa-text-doux)] mb-3">
-                You pay the driver on arrival ({MODE_PAIEMENT_INFO[modePaiement].libelle.toLowerCase()})
+                {t("panier.payerSurPlace")} ({MODE_PAIEMENT_INFO[modePaiement].libelle.toLowerCase()})
               </p>
               <BoutonMboa onClick={validerCommande} disabled={enCours} className="w-full !text-titre">
-                {enCours ? "Sending..." : "Order"}
+                {enCours ? t("rej.envoi") : t("liste.commander")}
               </BoutonMboa>
             </CarteMboa>
 
@@ -203,7 +206,7 @@ export default function PanierPage() {
                 className="w-full flex items-center justify-between"
                 aria-expanded={menuExport}
               >
-                <span className="text-corps font-bold">📤 Export my quote</span>
+                <span className="text-corps font-bold">📤 {t("panier.export")}</span>
                 <span className="text-[var(--mboa-primary)] text-2xl">{menuExport ? "▲" : "▼"}</span>
               </button>
               {menuExport && (
@@ -214,7 +217,7 @@ export default function PanierPage() {
                   </BoutonMboa>
                   <BoutonMboa variant="surface" onClick={imprimerDocument} className="!min-h-[60px] flex-col !gap-0">
                     <span className="text-2xl">🖨️</span>
-                    <span className="text-aide">Print</span>
+                    <span className="text-aide">{t("liste.imprimer")}</span>
                   </BoutonMboa>
                   <BoutonMboa variant="surface" onClick={() => partagerWhatsApp(optionsExport())} className="!min-h-[60px] flex-col !gap-0">
                     <span className="text-2xl">💬</span>
@@ -222,13 +225,13 @@ export default function PanierPage() {
                   </BoutonMboa>
                   <BoutonMboa variant="surface" onClick={copier} className="!min-h-[60px] flex-col !gap-0">
                     <span className="text-2xl">📋</span>
-                    <span className="text-aide">Copy</span>
+                    <span className="text-aide">{t("liste.copier")}</span>
                   </BoutonMboa>
                 </div>
               )}
               {copieOk && (
                 <p className="text-aide text-[var(--mboa-primary)] mt-2 text-center anim-apparition">
-                  ✅ Quote copied to clipboard
+                  {t("panier.copieOk")}
                 </p>
               )}
             </CarteMboa>
@@ -237,7 +240,7 @@ export default function PanierPage() {
               onClick={() => panier.vider()}
               className="text-aide text-[var(--mboa-error)] mt-3 underline text-center w-full no-print"
             >
-              Empty the cart
+              {t("panier.vider")}
             </button>
           </>
         )}

@@ -12,6 +12,7 @@ import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { resumerQuantites } from "@/core/types/commande";
 import { PositionGps } from "@/core/types/suivi_colis";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useTr } from "@/core/i18n";
 
 function positionActuelle(): Promise<PositionGps | null> {
   return new Promise((resolve) => {
@@ -35,6 +36,7 @@ function positionActuelle(): Promise<PositionGps | null> {
 export default function AccueilLivreur() {
   const router = useRouter();
   const { pret, profil } = useGuardRole("livreur");
+  const t = useTr();
   const { deconnexion } = useSession();
   const [courses, setCourses] = useState<Commande[]>([]);
   const [enCours, setEnCours] = useState<string | null>(null);
@@ -128,20 +130,20 @@ export default function AccueilLivreur() {
       {profil && (
         <div className="p-4">
           <CarteMboa className="bg-[var(--mboa-primary-doux)]">
-            <p className="text-aide text-[var(--mboa-text-doux)]">My card</p>
+            <p className="text-aide text-[var(--mboa-text-doux)]">{t("liv.maCarte")}</p>
             <p className="text-titre">{profil.nom}</p>
             <p className="text-aide">{profil.village}</p>
-            <p className="text-aide mt-1">Paid on confirmed receipt by the customer</p>
+            <p className="text-aide mt-1 italic">{t("liv.payeAlaRecette")}</p>
           </CarteMboa>
         </div>
       )}
 
       <div className="flex-1 p-4">
-        <h2 className="text-titre mb-2">My deliveries</h2>
+        <h2 className="text-titre mb-2">{t("liv.mesLivraisons")}</h2>
         {courses.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="text-6xl mb-4">🏍️</div>
-            <p className="text-corps text-[var(--mboa-text-doux)]">No deliveries right now</p>
+            <p className="text-corps text-[var(--mboa-text-doux)]">{t("liv.aucune")}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -154,7 +156,7 @@ export default function AccueilLivreur() {
                 <CarteMboa key={c.id}>
                   <div className="flex justify-between items-start mb-2">
                     <BadgeStatut statut={c.statut} libelle={info.libelle} />
-                    <BoutonVoix texte={`Delivery for ${c.lignes.map((l) => l.nom).join(", ")}. To collect: ${commandeMontantAPayer(c)} francs`} />
+                    <BoutonVoix texte={`Livraison pour ${c.lignes.map((l) => l.nom).join(", ")}. À encaisser : ${commandeMontantAPayer(c)} francs`} />
                   </div>
                   <p className="text-corps font-bold">{resumerQuantites(c.lignes)}</p>
 
@@ -170,19 +172,19 @@ export default function AccueilLivreur() {
 
                   {/* Payment info */}
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-aide text-[var(--mboa-text-doux)]">To collect</span>
+                    <span className="text-aide text-[var(--mboa-text-doux)]">{t("liv.aEncaisser")}</span>
                     <span className="text-chiffre text-[var(--mboa-primary)]">{formaterFcfa(commandeMontantAPayer(c))}</span>
                   </div>
                   {c.paiement && (
                     <div className="flex items-center gap-1 mt-1">
-                      <span className="text-aide text-[var(--mboa-text-doux)]">Payment:</span>
-                      <BadgeStatut statut="valide" libelle={MODE_PAIEMENT_INFO[c.paiement as ModePaiement]?.libelle ?? "Cash"} />
+                      <span className="text-aide text-[var(--mboa-text-doux)]">{t("liv.paiement")}</span>
+                      <BadgeStatut statut="valide" libelle={MODE_PAIEMENT_INFO[c.paiement as ModePaiement]?.libelle ?? t("liv.especes")} />
                     </div>
                   )}
 
                   {c.livreurTarif != null && c.livreurTarif > 0 && (
                     <p className="text-aide text-[var(--mboa-text-doux)] mt-1">
-                      My delivery fee: {formaterFcfa(c.livreurTarif)} (paid on confirmed receipt)
+                      {t("liv.monTarif")} {formaterFcfa(c.livreurTarif)} {t("liv.payeAlaRecette2")}
                     </p>
                   )}
 
@@ -193,14 +195,14 @@ export default function AccueilLivreur() {
                       disabled={enCours === c.id}
                       onClick={() => demarrer(c)}
                     >
-                      {enCours === c.id ? "Loading..." : "📦 Load and go"}
+                      {enCours === c.id ? t("liv.chargement") : t("liv.charger")}
                     </BoutonMboa>
                   )}
 
                   {enRoute && (
                     <div className="flex gap-2 mt-2">
                       <BoutonMboa variant="surface" className="flex-1" onClick={() => partagerPosition(c)}>
-                        📍 Share my position
+                        {t("liv.partagerPos")}
                       </BoutonMboa>
                       <BoutonMboa
                         variant="primary"
@@ -208,14 +210,14 @@ export default function AccueilLivreur() {
                         disabled={enCours === c.id}
                         onClick={() => livrer(c)}
                       >
-                        {enCours === c.id ? "..." : "Delivered"}
+                        {enCours === c.id ? "..." : t("liv.livre")}
                       </BoutonMboa>
                     </div>
                   )}
 
                   {livree && (
                     <p className="text-aide text-[var(--mboa-text-doux)] mt-2">
-                      Waiting for the customer&apos;s confirmation…
+                      {t("liv.attenteClient")}
                     </p>
                   )}
                 </CarteMboa>

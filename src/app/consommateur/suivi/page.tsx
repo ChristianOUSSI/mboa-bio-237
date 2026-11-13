@@ -13,6 +13,7 @@ import { STATUT_COMMANDE_INFO, StatutCommande, Satisfaction, SATISFACTION_INFO, 
 import { SuiviColis, suiviTimeline, JALON_SUIVI_INFO, PositionGps } from "@/core/types/suivi_colis";
 import { resumerQuantites } from "@/core/types/commande";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useTr } from "@/core/i18n";
 
 function demandePosition(): Promise<PositionGps | null> {
   return new Promise((resolve) => {
@@ -35,7 +36,9 @@ function demandePosition(): Promise<PositionGps | null> {
 
 export default function SuiviPage() {
   const router = useRouter();
-  const { pret, profil } = useGuardRole("consommateur");
+  const { pret, profil } = useGuardRole("consommateur");
+  const t = useTr();
+
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [suivis, setSuivis] = useState<Map<string, SuiviColis>>(new Map());
   const [confirmationCmd, setConfirmationCmd] = useState<string | null>(null);
@@ -99,14 +102,14 @@ export default function SuiviPage() {
 
   return (
     <FondMboa>
-      <EnTetePage titre="My orders" onRetour={() => router.push("/consommateur")} />
+      <EnTetePage titre={t("march.mesCommandes")} onRetour={() => router.push("/consommateur")} />
 
       <div className="flex-1 p-4">
         {commandes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="text-6xl mb-4">📦</div>
-            <p className="text-corps text-[var(--mboa-text-doux)]">No orders yet</p>
-            <BoutonMboa variant="primary" onClick={() => router.push("/consommateur")} className="mt-4">Go to the market</BoutonMboa>
+            <p className="text-corps text-[var(--mboa-text-doux)]">{t("suivi.vide")}</p>
+            <BoutonMboa variant="primary" onClick={() => router.push("/consommateur")} className="mt-4">{t("panier.allerMarche")}</BoutonMboa>
           </div>
         ) : (
           <div className="space-y-3">
@@ -136,10 +139,10 @@ export default function SuiviPage() {
                   {/* Who is coming */}
                   {c.livreurNom && (
                     <div className="bg-[var(--mboa-primary-doux)] rounded-xl p-2 mb-2">
-                      <p className="text-aide text-[var(--mboa-text-doux)]">On the way</p>
+                      <p className="text-aide text-[var(--mboa-text-doux)]">{t("suivi.enRoute")}</p>
                       <p className="text-corps font-bold">
                         {c.livreurNom}
-                        {c.livreurPlaque ? ` · plate ${c.livreurPlaque}` : ""}
+                        {c.livreurPlaque ? ` · ${t("suivi.plaque")} ${c.livreurPlaque}` : ""}
                       </p>
                     </div>
                   )}
@@ -182,10 +185,10 @@ export default function SuiviPage() {
                     <div className="mt-3">
                       {confirmationCmd === c.id ? (
                         <div className="space-y-2">
-                          <p className="text-corps text-center">Everything okay?</p>
+                          <p className="text-corps text-center">{t("suivi.toutOk")}</p>
                           {satisfactionChoisie === Satisfaction.probleme ? (
                             <>
-                              <p className="text-aide text-[var(--mboa-text-doux)] text-center">What is the problem?</p>
+                              <p className="text-aide text-[var(--mboa-text-doux)] text-center">{t("suivi.problemeQ")}</p>
                               <div className="space-y-2">
                                 {Object.values(MotifReception).map((m) => (
                                   <button
@@ -203,7 +206,7 @@ export default function SuiviPage() {
                               </div>
                               <div className="flex gap-2">
                                 <BoutonMboa variant="surface" onClick={() => { setSatisfactionChoisie(null); setMotifChoisi(null); }} className="flex-1">
-                                  ← Back
+                                  {t("suivi.retour")}
                                 </BoutonMboa>
                                 <BoutonMboa
                                   variant="error"
@@ -211,7 +214,7 @@ export default function SuiviPage() {
                                   disabled={!motifChoisi}
                                   className="flex-1"
                                 >
-                                  Report
+                                  {t("suivi.signaler")}
                                 </BoutonMboa>
                               </div>
                             </>
@@ -221,14 +224,14 @@ export default function SuiviPage() {
                                 👍 {SATISFACTION_INFO[Satisfaction.bon].libelle}
                               </BoutonMboa>
                               <BoutonMboa variant="error" onClick={() => setSatisfactionChoisie(Satisfaction.probleme)} className="flex-1">
-                                👎 Problem
+                                {t("suivi.probleme")}
                               </BoutonMboa>
                             </div>
                           )}
                         </div>
                       ) : (
                         <BoutonMboa variant="primary" onClick={() => setConfirmationCmd(c.id)} className="w-full">
-                          Confirm receipt
+                          {t("suivi.confirmer")}
                         </BoutonMboa>
                       )}
                     </div>
@@ -236,7 +239,7 @@ export default function SuiviPage() {
 
                   {commandeEstAnnule(c) && c.motifAnnulation && (
                     <p className="text-aide text-[var(--mboa-error)] mt-2">
-                      Cancelled: {c.motifAnnulation}
+                      {t("suivi.annule")} {c.motifAnnulation}
                     </p>
                   )}
                 </CarteMboa>

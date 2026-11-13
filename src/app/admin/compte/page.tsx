@@ -13,10 +13,12 @@ import {
 } from "@/core/auth/auth_service";
 import { CompteAuth, estMotDePasseInitial, validerMotDePasse } from "@/core/auth/auth_local";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useTr } from "@/core/i18n";
 
 export default function AdminComptePage() {
   const router = useRouter();
   const { pret, profil } = useGuardRole("admin");
+  const t = useTr();
   const [compte, setCompte] = useState<CompteAuth | null>(null);
   const [actuel, setActuel] = useState("");
   const [nouveau, setNouveau] = useState("");
@@ -53,18 +55,18 @@ export default function AdminComptePage() {
       return;
     }
     if (nouveau !== confirmation) {
-      setErreur("The two passwords do not match");
+      setErreur(t("adm.cpt.erreurNonCorrespond"));
       return;
     }
     if (estMotDePasseInitial(nouveau)) {
-      setErreur("The initial password cannot be reused");
+      setErreur(t("adm.cpt.erreurInitial"));
       return;
     }
     setEnCours(true);
     try {
       const bon = await verifierMotDePasse(compte, actuel);
       if (!bon) {
-        setErreur("Current password incorrect");
+        setErreur(t("adm.cpt.erreurActuel"));
         return;
       }
       const maj = await changerMotDePasse(compte, nouveau);
@@ -72,10 +74,10 @@ export default function AdminComptePage() {
       setActuel("");
       setNouveau("");
       setConfirmation("");
-      setSucces("Password updated");
+      setSucces(t("adm.cpt.succes"));
     } catch (e) {
       console.error(e);
-      setErreur("Error while changing");
+      setErreur(t("adm.cpt.erreur"));
     } finally {
       setEnCours(false);
     }
@@ -89,7 +91,7 @@ export default function AdminComptePage() {
       setCompte(admin);
       setConfirmPurge(false);
       setSucces(
-        `${n} account(s) deleted. The admin account was reset.`
+        t("adm.cpt.purge").replace("{n}", String(n))
       );
       await charger();
     } finally {
@@ -108,46 +110,46 @@ export default function AdminComptePage() {
   }
   return (
     <FondMboa>
-      <EnTetePage titre="Account & security" onRetour={() => router.back()} />
+      <EnTetePage titre={t("adm.compte")} onRetour={() => router.back()} />
 
       <div className="flex-1 p-4 space-y-3">
         {/* État du compte */}
         <CarteMboa className="card-accent">
-          <h2 className="text-titre mb-2">Admin account</h2>
+          <h2 className="text-titre mb-2">{t("adm.cpt.titre")}</h2>
           {compte ? (
             <>
-              <p className="text-corps">Name: {compte.nom}</p>
+              <p className="text-corps">{t("adm.cpt.nom")} : {compte.nom}</p>
               <p className="text-aide text-[var(--mboa-text-doux)]">
-                Initial password: to be changed
+                {t("adm.cpt.mdpInitial")}
               </p>
               <p className="text-aide text-[var(--mboa-text-doux)]">
-                Still default: {compte.motDePasseParDefaut ? "YES — change it now" : "no"}
+                {t("adm.cpt.toujoursDefaut")} : {compte.motDePasseParDefaut ? t("adm.cpt.oui") : t("adm.cpt.non")}
               </p>
               <p className="text-aide text-[var(--mboa-text-doux)]">
-                Active accounts: {nbComptes}
+                {t("adm.cpt.comptesActifs")} : {nbComptes}
               </p>
             </>
           ) : (
-            <p className="text-corps">Loading…</p>
+            <p className="text-corps">{t("chargement")}</p>
           )}
         </CarteMboa>
 
         {compte?.motDePasseParDefaut && (
           <CarteMboa className="bg-[var(--mboa-error-doux)] anim-apparition">
             <p className="text-corps font-bold text-[var(--mboa-error)]">
-              ⚠ Initial password never changed
+              {t("adm.cpt.alerte")}
             </p>
             <p className="text-aide text-[var(--mboa-error)] mt-1">
-              Change it now to secure the counter.
+              {t("adm.cpt.alerte2")}
             </p>
           </CarteMboa>
         )}
 
         {/* Changement de mot de passe */}
         <CarteMboa>
-          <h2 className="text-titre mb-3">Change my password</h2>
+          <h2 className="text-titre mb-3">{t("adm.cpt.changerTitre")}</h2>
 
-          <label className="text-aide block mb-1">Current password</label>
+          <label className="text-aide block mb-1">{t("adm.cpt.actuel")}</label>
           <input
             type="password"
             placeholder="••••••"
@@ -157,20 +159,20 @@ export default function AdminComptePage() {
             style={{ fontSize: 20 }}
           />
 
-          <label className="text-aide block mb-1">New password</label>
+          <label className="text-aide block mb-1">{t("adm.cpt.nouveau")}</label>
           <input
             type="password"
-            placeholder="6 characters minimum, with a digit"
+            placeholder={t("adm.cpt.nouveauHint")}
             value={nouveau}
             onChange={(e) => setNouveau(e.target.value)}
             className="champ-mboa mb-3"
             style={{ fontSize: 20 }}
           />
 
-          <label className="text-aide block mb-1">Confirm</label>
+          <label className="text-aide block mb-1">{t("adm.cpt.confirm")}</label>
           <input
             type="password"
-            placeholder="Re-type the password"
+            placeholder={t("adm.cpt.confirmHint")}
             value={confirmation}
             onChange={(e) => setConfirmation(e.target.value)}
             className="champ-mboa mb-3"
@@ -187,16 +189,15 @@ export default function AdminComptePage() {
           )}
 
           <BoutonMboa onClick={enregistrerMdp} disabled={enCours} className="w-full">
-            {enCours ? "Saving..." : "Save"}
+            {enCours ? t("adm.cpt.sauvegarde") : t("adm.cpt.enregistrer")}
           </BoutonMboa>
         </CarteMboa>
 
         {/* Zone sensible */}
         <CarteMboa className="border-2 border-dashed border-[var(--mboa-error)]">
-          <h2 className="text-titre mb-1">Zone sensible</h2>
+          <h2 className="text-titre mb-1">{t("adm.cpt.zone")}</h2>
           <p className="text-aide text-[var(--mboa-text-doux)] mb-3">
-            Deletes all customer, supplier and driver accounts. The admin password
-            goes back to its initial value.
+            {t("adm.cpt.zoneTexte")}
           </p>
           {confirmPurge ? (
             <div className="flex gap-2">
@@ -206,10 +207,10 @@ export default function AdminComptePage() {
                 disabled={enCours}
                 className="flex-1"
               >
-                {enCours ? "Deleting..." : "Confirm"}
+                {enCours ? t("adm.cpt.suppression") : t("adm.cpt.confirmer")}
               </BoutonMboa>
               <BoutonMboa variant="surface" onClick={() => setConfirmPurge(false)} className="flex-1">
-                Cancel
+                {t("adm.cpt.annuler")}
               </BoutonMboa>
             </div>
           ) : (
@@ -218,7 +219,7 @@ export default function AdminComptePage() {
               onClick={() => setConfirmPurge(true)}
               className="w-full"
             >
-              🗑 Erase everything
+              {t("adm.cpt.toutEffacer")}
             </BoutonMboa>
           )}
         </CarteMboa>

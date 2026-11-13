@@ -14,10 +14,12 @@ import { StatutCommande } from "@/core/types/statuts";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { tousComptes, CompteAuth } from "@/core/auth/auth_service";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useTr } from "@/core/i18n";
 
 export default function TableauAdmin() {
   const router = useRouter();
   const { pret, profil } = useGuardRole("admin");
+  const t = useTr();
   const { deconnexion } = useSession();
   const [achats, setAchats] = useState<Achat[]>([]);
   const [commandes, setCommandes] = useState<Commande[]>([]);
@@ -83,7 +85,7 @@ export default function TableauAdmin() {
     <FondMboa>
       <EnTetePage
         titre="MBOA ADMIN"
-        sousTitre="The counter"
+        sousTitre={t("adm.sousTitre")}
         onDeconnexion={() => {
           deconnexion();
           router.push("/connexion");
@@ -93,15 +95,15 @@ export default function TableauAdmin() {
       {/* Compteurs rapides */}
       <div className="p-4 grid grid-cols-3 gap-3">
         <CarteMboa className="text-center anim-apparition card-accent">
-          <p className="text-aide text-[var(--mboa-text-doux)]">Quotes</p>
+          <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.devis")}</p>
           <p className="text-chiffre-geant text-[var(--mboa-primary)]">{devisNouveaux}</p>
         </CarteMboa>
         <CarteMboa className="text-center anim-apparition anim-retard-1 card-accent">
-          <p className="text-aide text-[var(--mboa-text-doux)]">Harvests</p>
+          <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.recoltes")}</p>
           <p className="text-chiffre-geant text-[var(--mboa-primary)]">{achats.length}</p>
         </CarteMboa>
         <CarteMboa className="text-center anim-apparition anim-retard-2 card-accent">
-          <p className="text-aide text-[var(--mboa-text-doux)]">To sign off</p>
+          <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.aSigner")}</p>
           <p className="text-chiffre-geant text-[var(--mboa-error)]">{aPointer}</p>
         </CarteMboa>
       </div>
@@ -111,16 +113,16 @@ export default function TableauAdmin() {
         <div className="px-4 pb-2">
           <CarteMboa className="bg-[var(--mboa-error-doux)] anim-secousse">
             <p className="text-corps font-bold text-[var(--mboa-error)]">
-              🔐 Default admin password
+              🔐 {t("adm.alerteMdp")}
             </p>
             <p className="text-aide text-[var(--mboa-error)] mt-1">
-              Change it to secure the counter.
+              {t("adm.alerteMdp2")}
             </p>
             <button
               onClick={() => router.push("/admin/compte")}
               className="text-aide text-[var(--mboa-error)] underline mt-2 font-bold"
             >
-              Change now →
+              {t("adm.changer")}
             </button>
           </CarteMboa>
         </div>
@@ -128,14 +130,14 @@ export default function TableauAdmin() {
 
       {/* Statistiques du jour */}
       <div className="px-4">
-        <h2 className="text-titre mb-2">Today</h2>
+        <h2 className="text-titre mb-2">{t("adm.aujourdhui")}</h2>
         <div className="grid grid-cols-2 gap-3">
           <CarteMboa className="text-center">
-            <p className="text-aide text-[var(--mboa-text-doux)]">Orders</p>
+            <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.commandes")}</p>
             <p className="text-chiffre text-[var(--mboa-primary)]">{commandesJour.length}</p>
           </CarteMboa>
           <CarteMboa className="text-center">
-            <p className="text-aide text-[var(--mboa-text-doux)]">Today&apos;s revenue</p>
+            <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.caJour")}</p>
             <p className="text-chiffre text-[var(--mboa-primary)]">{formaterFcfa(caJour)}</p>
           </CarteMboa>
         </div>
@@ -143,26 +145,26 @@ export default function TableauAdmin() {
 
       {/* Vue d'ensemble */}
       <div className="p-4">
-        <h2 className="text-titre mb-2">Overview</h2>
+        <h2 className="text-titre mb-2">{t("adm.vue")}</h2>
         <CarteMboa className="space-y-1">
           <div className="flex justify-between text-corps">
-            <span className="text-[var(--mboa-text-doux)]">Total revenue (completed deliveries)</span>
+            <span className="text-[var(--mboa-text-doux)]">{t("adm.caTotal")}</span>
             <span className="font-bold text-[var(--mboa-primary)]">{formaterFcfa(caTotal)}</span>
           </div>
           <div className="flex justify-between text-corps">
-            <span className="text-[var(--mboa-text-doux)]">Stock value (sale)</span>
+            <span className="text-[var(--mboa-text-doux)]">{t("adm.valeurStock")}</span>
             <span className="font-bold">{formaterFcfa(valeurStock)}</span>
           </div>
           <div className="flex justify-between text-corps">
-            <span className="text-[var(--mboa-text-doux)]">Stock cost</span>
+            <span className="text-[var(--mboa-text-doux)]">{t("adm.coutStock")}</span>
             <span className="font-bold">{formaterFcfa(coutStock)}</span>
           </div>
           <div className="flex justify-between text-corps border-t border-[var(--mboa-trait)] pt-1">
-            <span className="text-[var(--mboa-text-doux)]">Potential margin</span>
+            <span className="text-[var(--mboa-text-doux)]">{t("adm.marge")}</span>
             <span className="font-bold text-[var(--mboa-primary)]">{formaterFcfa(margePotentielle)}</span>
           </div>
           <div className="flex justify-between text-corps">
-            <span className="text-[var(--mboa-text-doux)]">Out for delivery now</span>
+            <span className="text-[var(--mboa-text-doux)]">{t("adm.enRoute")}</span>
             <span className="font-bold text-[var(--mboa-secondary)]">{enLivraison}</span>
           </div>
         </CarteMboa>
@@ -171,10 +173,10 @@ export default function TableauAdmin() {
       {/* Alertes stock */}
       {(stockBas.length > 0 || ruptures.length > 0) && (
         <div className="px-4">
-          <h2 className="text-titre mb-2">⚠ Stock alerts</h2>
+          <h2 className="text-titre mb-2">{t("adm.alertes")}</h2>
           {ruptures.length > 0 && (
             <CarteMboa className="mb-2 bg-[var(--mboa-error-doux)]">
-              <p className="text-aide text-[var(--mboa-error)] font-bold mb-1">Out of stock ({ruptures.length})</p>
+              <p className="text-aide text-[var(--mboa-error)] font-bold mb-1">{t("adm.rupture")} ({ruptures.length})</p>
               <div className="flex flex-wrap gap-1">
                 {ruptures.map((p) => (
                   <span key={p.id} className="text-aide bg-white px-2 py-0.5 rounded-full">{p.nom}</span>
@@ -184,7 +186,7 @@ export default function TableauAdmin() {
           )}
           {stockBas.length > 0 && (
             <CarteMboa className="bg-yellow-50">
-              <p className="text-aide text-yellow-800 font-bold mb-1">Low stock ({stockBas.length})</p>
+              <p className="text-aide text-yellow-800 font-bold mb-1">{t("adm.stockBas")} ({stockBas.length})</p>
               <div className="flex flex-wrap gap-1">
                 {stockBas.map((p) => (
                   <span key={p.id} className="text-aide bg-white px-2 py-0.5 rounded-full">{p.nom} ({p.quantite})</span>
@@ -197,30 +199,30 @@ export default function TableauAdmin() {
 
       {/* Raccourcis */}
       <div className="px-4 space-y-2">
-        <h2 className="text-titre mb-2">Management</h2>
+        <h2 className="text-titre mb-2">{t("adm.gestion")}</h2>
         <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/achats")}>
-          📋 Purchase queue ({achats.length})
+          📋 {t("adm.fileAchats")} ({achats.length})
         </BoutonMboa>
         <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/stock")}>
-          📦 Stock ({stock.length})
+          📦 {t("adm.stock")} ({stock.length})
         </BoutonMboa>
         <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/devis")}>
-          📝 Quotes ({commandes.length})
+          📝 {t("adm.devis2")} ({commandes.length})
         </BoutonMboa>
         <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/livraisons")}>
-          🏍️ Deliveries ({aPointer})
+          🏍️ {t("adm.livraisons")} ({aPointer})
         </BoutonMboa>
         <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/fournisseurs")}>
-          👨‍🌾 Suppliers ({fournisseurs.length})
+          👨‍🌾 {t("adm.fournisseurs")} ({fournisseurs.length})
         </BoutonMboa>
         <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/packs")}>
-          🍲 Dish packs
+          🍲 {t("adm.packs")}
         </BoutonMboa>
         <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/livreurs")}>
-          🛵 Drivers ({livreurs.length})
+          🛵 {t("adm.livreurs")} ({livreurs.length})
         </BoutonMboa>
         <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/compte")}>
-          🔐 Account & security
+          🔐 {t("adm.compte")}
         </BoutonMboa>
       </div>
     </FondMboa>

@@ -9,10 +9,13 @@ import { Achat, achatMontant, achatResume } from "@/core/types/achat";
 import { STATUT_ACHAT_INFO } from "@/core/types/achat";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useTr } from "@/core/i18n";
 
 export default function MesAchatsPage() {
   const router = useRouter();
-  const { pret, profil } = useGuardRole("fournisseur");
+  const { pret, profil } = useGuardRole("fournisseur");
+  const t = useTr();
+
   const [achats, setAchats] = useState<Achat[]>([]);
 
   useEffect(() => {
@@ -34,12 +37,12 @@ export default function MesAchatsPage() {
   }
   return (
     <FondMboa>
-      <EnTetePage titre="My purchases" onRetour={() => router.back()} />
+      <EnTetePage titre={t("fourn.achats.titre")} onRetour={() => router.back()} />
       <div className="flex-1 p-4 space-y-2">
         {achats.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="text-6xl mb-4">📋</div>
-            <p className="text-corps text-[var(--mboa-text-doux)]">No purchases yet</p>
+            <p className="text-corps text-[var(--mboa-text-doux)]">{t("fourn.achats.vide")}</p>
           </div>
         ) : (
           achats.map((a) => (

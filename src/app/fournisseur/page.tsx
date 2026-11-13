@@ -9,10 +9,12 @@ import { Achat, achatMontant, achatEstPayee, achatEstDu } from "@/core/types/ach
 import { STATUT_ACHAT_INFO } from "@/core/types/achat";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useTr } from "@/core/i18n";
 
 export default function AccueilFournisseur() {
   const router = useRouter();
   const { pret, profil } = useGuardRole("fournisseur");
+  const t = useTr();
   const { deconnexion } = useSession();
   const { enLigne } = useReseau();
   const [achats, setAchats] = useState<Achat[]>([]);
@@ -53,17 +55,17 @@ export default function AccueilFournisseur() {
       />
 
       <div className="px-4 py-1 text-center text-aide">
-        {enLigne ? "● Online" : "● Offline"}
+        {enLigne ? `● ${t("march.enLigne")}` : `● ${t("march.horsLigne")}`}
       </div>
 
       {/* Gains */}
       <div className="p-4 grid grid-cols-2 gap-3">
         <CarteMboa>
-          <p className="text-aide text-[var(--mboa-text-doux)]">Already paid by Mboa</p>
+          <p className="text-aide text-[var(--mboa-text-doux)]">{t("fourn.gainsPaye")}</p>
           <p className="text-chiffre text-[var(--mboa-primary)]">{formaterFcfa(gainsPaye)}</p>
         </CarteMboa>
         <CarteMboa>
-          <p className="text-aide text-[var(--mboa-text-doux)]">To receive</p>
+          <p className="text-aide text-[var(--mboa-text-doux)]">{t("fourn.gainsAttente")}</p>
           <p className="text-chiffre text-[var(--mboa-error)]">{formaterFcfa(gainsEnAttente)}</p>
         </CarteMboa>
       </div>
@@ -71,20 +73,20 @@ export default function AccueilFournisseur() {
       {/* Boutons */}
       <div className="flex-1 p-4 space-y-3">
         <BoutonMboa variant="primary" className="w-full !text-titre" onClick={() => router.push("/fournisseur/proposer")}>
-          🏷️ Sell my harvest to Mboa
+          {t("fourn.vendre")}
         </BoutonMboa>
         <BoutonMboa variant="surface" className="w-full !text-titre" onClick={() => router.push("/fournisseur/achats")}>
-          📋 My sales to Mboa ({achats.length})
+          {t("fourn.ventes")} ({achats.length})
         </BoutonMboa>
         <BoutonMboa variant="surface" className="w-full !text-titre" onClick={() => router.push("/fournisseur/stock")}>
-          📦 My stock at the counter
+          {t("fourn.stock")}
         </BoutonMboa>
       </div>
 
       {/* Ventes récentes */}
       {achats.length > 0 && (
         <div className="p-4">
-          <h2 className="text-titre mb-2">Recent sales to Mboa</h2>
+          <h2 className="text-titre mb-2">{t("fourn.ventesRecentes")}</h2>
           {achats.slice(0, 3).map((a) => (
             <CarteMboa key={a.id} className="mb-2">
               <div className="flex justify-between items-center">

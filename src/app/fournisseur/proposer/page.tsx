@@ -4,15 +4,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { CarteMboa, BoutonMboa, EnTetePage, PictoCategorie, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
-import { CATEGORIES_ORDREES, CATEGORIE_INFO, Categorie } from "@/core/types/categorie";
+import { CATEGORIES_ORDREES, Categorie } from "@/core/types/categorie";
 import { Unite, UNITE_INFO, uniteAvec } from "@/core/types/unite";
 import { proposerAchat } from "@/core/data/depots";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useTr, useCategorieLibelle } from "@/core/i18n";
 
 export default function ProposerRecoltePage() {
   const router = useRouter();
-  const { pret, profil } = useGuardRole("fournisseur");
+  const { pret, profil } = useGuardRole("fournisseur");
+  const t = useTr();
+  const catLibelle = useCategorieLibelle();
+
   const [nom, setNom] = useState("");
   const [categorie, setCategorie] = useState<Categorie>(Categorie.fruit);
   const [unite, setUnite] = useState<Unite>(Unite.kg);
@@ -77,30 +81,30 @@ export default function ProposerRecoltePage() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center min-h-screen bg-[var(--mboa-background)]">
         <div className="text-6xl mb-4">✅</div>
-        <h1 className="text-ecran text-[var(--mboa-primary)]">Offer sent</h1>
-        <p className="text-corps text-[var(--mboa-text-doux)] mt-2">The counter will review your produce</p>
+        <h1 className="text-ecran text-[var(--mboa-primary)]">{t("prop.succes.titre")}</h1>
+        <p className="text-corps text-[var(--mboa-text-doux)] mt-2 italic">{t("prop.succes.texte")}</p>
       </div>
     );
   }
 
   return (
     <FondMboa>
-      <EnTetePage titre="Sell my harvest" onRetour={() => router.back()} />
+      <EnTetePage titre={t("fourn.vendre")} onRetour={() => router.back()} />
 
       <div className="flex-1 p-4 space-y-3">
         {/* Photo of the goods */}
         <CarteMboa>
-          <p className="text-corps mb-2">Photograph the goods</p>
+          <p className="text-corps mb-2">{t("prop.photo")}</p>
           <div
             onClick={prendrePhoto}
             className="w-full h-48 bg-[var(--mboa-background)] rounded-xl flex items-center justify-center cursor-pointer border-2 border-dashed border-[var(--mboa-primary)]"
           >
             {photoUrl ? (
-              <img src={photoUrl} alt="Goods" className="w-full h-full object-cover rounded-xl" />
+              <img src={photoUrl} alt={t("rej.photoAlt")} className="w-full h-full object-cover rounded-xl" />
             ) : (
               <div className="text-center">
                 <div className="text-5xl">📷</div>
-                <p className="text-aide text-[var(--mboa-text-doux)] mt-2">Tap to take a photo</p>
+                <p className="text-aide text-[var(--mboa-text-doux)] mt-2">{t("prop.photoPh")}</p>
               </div>
             )}
           </div>
@@ -108,10 +112,10 @@ export default function ProposerRecoltePage() {
 
         {/* Product name */}
         <CarteMboa>
-          <label className="text-corps block mb-2">Product name</label>
+          <label className="text-corps block mb-2">{t("prop.nomLabel")}</label>
           <input
             type="text"
-            placeholder="E.g.: Cassava, Macabo, Beef..."
+            placeholder={t("prop.nomPh")}
             value={nom}
             onChange={(e) => setNom(e.target.value)}
             className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl"
@@ -121,7 +125,7 @@ export default function ProposerRecoltePage() {
 
         {/* Category (8 tiles) */}
         <CarteMboa>
-          <label className="text-corps block mb-2">Category</label>
+          <label className="text-corps block mb-2">{t("prop.categorie")}</label>
           <div className="grid grid-cols-4 gap-2">
             {CATEGORIES_ORDREES.map((c) => (
               <button
@@ -135,7 +139,7 @@ export default function ProposerRecoltePage() {
                 }}
               >
                 <PictoCategorie categorie={c} size={28} />
-                <span className="text-aide mt-1 text-center" style={{ fontSize: 14 }}>{CATEGORIE_INFO[c].libelle}</span>
+                <span className="text-aide mt-1 text-center" style={{ fontSize: 14 }}>{catLibelle(c)}</span>
               </button>
             ))}
           </div>
@@ -143,7 +147,7 @@ export default function ProposerRecoltePage() {
 
         {/* Unit */}
         <CarteMboa>
-          <label className="text-corps block mb-2">Unit of measure</label>
+          <label className="text-corps block mb-2">{t("prop.unite")}</label>
           <select
             value={unite}
             onChange={(e) => setUnite(e.target.value as Unite)}
@@ -158,7 +162,7 @@ export default function ProposerRecoltePage() {
 
         {/* Quantity */}
         <CarteMboa>
-          <label className="text-corps block mb-2">Quantity: {uniteAvec(unite, quantite)}</label>
+          <label className="text-corps block mb-2">{t("prop.quantite")}: {uniteAvec(unite, quantite)}</label>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setQuantite(Math.max(0.5, quantite - 1))}
@@ -174,7 +178,7 @@ export default function ProposerRecoltePage() {
 
         {/* Asking price */}
         <CarteMboa>
-          <label className="text-corps block mb-2">Asking price per {uniteAvec(unite, 1)}</label>
+          <label className="text-corps block mb-2">{t("prop.prix")} {uniteAvec(unite, 1)}</label>
           <input
             type="number"
             inputMode="numeric"
@@ -186,7 +190,7 @@ export default function ProposerRecoltePage() {
           />
           {prix && quantite > 0 && (
             <p className="text-aide text-[var(--mboa-text-doux)] mt-2">
-              Total asked: {formaterFcfa(Math.round(quantite * (parseInt(prix) || 0)))}
+              {t("prop.total")} {formaterFcfa(Math.round(quantite * (parseInt(prix) || 0)))}
             </p>
           )}
         </CarteMboa>
@@ -198,7 +202,7 @@ export default function ProposerRecoltePage() {
           disabled={!nom.trim() || !prix || enCours}
           className="w-full !text-titre"
         >
-          {enCours ? "Sending..." : "Send my offer"}
+          {enCours ? t("rej.envoi") : t("prop.envoyer")}
         </BoutonMboa>
       </div>
     </FondMboa>
