@@ -8,7 +8,7 @@ import { chargerVitrine, chargerCatalogue, commandesCliente, compterFile } from 
 import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { CATEGORIES_ORDREES } from "@/core/types/categorie";
 import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
-import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstVitrine } from "@/core/types/produit";
+import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstVitrine, produitEstPack } from "@/core/types/produit";
 import { Commande } from "@/core/types/commande_full";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
@@ -196,7 +196,7 @@ export default function MarchePage() {
                     {p.emoji ?? <PictoCategorie categorie={p.categorie} size={24} />}
                     <h3 className="text-corps font-bold">{p.nom}</h3>
                   </div>
-                  <BoutonVoix texte={produitAnnonceVocale(p)} />
+                  <BoutonVoix texte={produitAnnonceVocale(p, true)} />
                 </div>
 
                 {/* Photo or pictogram */}
@@ -212,7 +212,7 @@ export default function MarchePage() {
 
                 {/* Availability + gauge */}
                 <p className="text-aide text-[var(--mboa-text-doux)] mb-1">
-                  {produitDisponibilite(p)}
+                  {produitEstRupture(p) ? t("march.rupture") : t("march.disponible")}
                 </p>
                 <JaugeMboa valeur={produitJauge(p)} />
 
@@ -231,6 +231,14 @@ export default function MarchePage() {
                     </button>
                   )}
                 </div>
+                {produitEstPack(p) && (
+                  <Link
+                    href={`/consommateur/pack/${encodeURIComponent(p.slug)}`}
+                    className="block text-center text-aide text-[var(--mboa-primary)] font-bold mt-2 underline"
+                  >
+                    🍲 {t("pack.voir")}
+                  </Link>
+                )}
               </CarteMboa>
             ))}
           </div>

@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CarteMboa, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa, ChampMotDePasse } from "@/core/design_system/composants";
-import { tousComptes, majCompte, desactiverCompte, changerMotDePasse, verifierMotDePasse } from "@/core/auth/auth_service";
-import { CompteAuth, validerMotDePasse } from "@/core/auth/auth_local";
+import { tousComptes, majCompte, desactiverCompte, changerMotDePasse, creerCompte } from "@/core/auth/auth_service";
+import { CompteAuth, RoleAuth, validerMotDePasse } from "@/core/auth/auth_local";
 import { synchroniserComptesAdmin } from "@/core/auth/synchro_admin";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useSession } from "@/core/etat/store";
@@ -28,6 +28,11 @@ export default function SuperAdminPage() {
   const [erreur, setErreur] = useState<string | null>(null);
   const [succes, setSucces] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
+  const [creation, setCreation] = useState(false);
+  const [nvRole, setNvRole] = useState<RoleAuth>("consommateur");
+  const [nvNom, setNvNom] = useState("");
+  const [nvId, setNvId] = useState("");
+  const [nvMdp, setNvMdp] = useState("");
 
   async function charger() {
     await synchroniserComptesAdmin().catch(() => 0);
@@ -63,6 +68,48 @@ export default function SuperAdminPage() {
       setNomEdit("");
       setMdpEdit("");
       setSucces(t("super.confirme"));
+      await charger();
+    } catch (e) {
+      console.error(e);
+      setErreur(t("connex.erreurGenerique"));
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  async function creer() {
+    setErreur(null);
+    if (nvNom.trim().length < 2) {
+      setErreur(t("super.erreurNom"));
+      return;
+    }
+    const err = validerMotDePasse(nvMdp);
+    if (!err.ok) {
+      setErreur(t("super.erreurMdp"));
+      return;
+    }
+    const id = nvId.trim();
+    if (!id) {
+      setErreur(t("super.erreurId"));
+      return;
+    }
+    setEnCours(true);
+    try {
+      const email = id.includes("@") ? id : null;
+      const telephone = email ? null : id;
+      await creerCompte({
+        role: nvRole,
+        nom: nvNom.trim(),
+        telephone,
+        email,
+        village: "Douala",
+        motDePasse: nvMdp,
+      });
+      setCreation(false);
+      setNvNom("");
+      setNvId("");
+      setNvMdp("");
+      setSucces(t("super.compteCree"));
       await charger();
     } catch (e) {
       console.error(e);
@@ -113,6 +160,37 @@ export default function SuperAdminPage() {
         <p className="text-aide text-[var(--mboa-text-doux)]">
           {t("super.comptes")} : {tries.length} {t("super.actif")} / {comptes.length}
         </p>
+
+        <CarteMboa>
+          {!creation ? (
+            <BoutonMboa variant="surface" className="w-full" onClick={() => { setCreation(true); setErreur(null); setSucces(null); }}>
+              ➕ {t("super.creer")}
+            </BoutonMboa>
+          ) : (
+            <div className="space-y-2">
+              <h2 className="text-titre">{t("super.nouveauCompte")}</h2>
+              <select
+                value={nvRole}
+                onChange={(e) => setNvRole(e.target.value as RoleAuth)}
+                className="champ-mboa"
+                style={{ fontSize: 16 }}
+              >
+                <option value="consommateur">{t("role.consommateur.nom")}</option>
+                <option value="fournisseur">{t("role.fournisseur.nom")}</option>
+                <option value="livreur">{t("role.livreur.nom")}</option>
+                <option value="admin">{t("role.admin.nom")}</option>
+              </select>
+              <input type="text" placeholder={t("super.nomPh")} value={nvNom} onChange={(e) => setNvNom(e.target.value)} className="champ-mboa" style={{ fontSize: 16 }} />
+              <input type="text" placeholder={t("super.idPh")} value={nvId} onChange={(e) => setNvId(e.target.value)} className="champ-mboa" style={{ fontSize: 16 }} />
+              <ChampMotDePasse autoComplete="new-password" placeholder={t("super.mdpPh")} value={nvMdp} onChange={(e) => setNvMdp(e.target.value)} className="champ-mboa" style={{ fontSize: 16 }} />
+              {erreur && <p className="text-[var(--mboa-error)] text-aide font-bold">{erreur}</p>}
+              <div className="flex gap-2">
+                <BoutonMboa className="flex-1" disabled={enCours} onClick={creer}>{t("super.creerBtn")}</BoutonMboa>
+                <BoutonMboa variant="surface" className="flex-1" onClick={() => setCreation(false)}>{t("adm.cpt.annuler")}</BoutonMboa>
+              </div>
+            </div>
+          )}
+        </CarteMboa>
         {comptes.length === 0 && (
           <CarteMboa>
             <p className="text-corps text-[var(--mboa-text-doux)] text-center">{t("super.vide")}</p>

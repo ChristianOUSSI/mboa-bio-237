@@ -1,11 +1,12 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { chargerVitrine } from "@/core/data/depots";
 import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
-import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstVitrine } from "@/core/types/produit";
+import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstVitrine, produitEstPack } from "@/core/types/produit";
 import { usePanier } from "@/core/etat/store";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
@@ -99,7 +100,7 @@ function PageCategorieInterne() {
                     {p.emoji ?? <PictoCategorie categorie={p.categorie} size={24} />}
                     <h3 className="text-corps font-bold">{p.nom}</h3>
                   </div>
-                  <BoutonVoix texte={produitAnnonceVocale(p)} />
+                  <BoutonVoix texte={produitAnnonceVocale(p, true)} />
                 </div>
 
                 <div className="w-full h-32 bg-[var(--mboa-background)] rounded-xl flex items-center justify-center mb-2">
@@ -113,7 +114,7 @@ function PageCategorieInterne() {
                 </div>
 
                 <p className="text-aide text-[var(--mboa-text-doux)] mb-1">
-                  {produitDisponibilite(p)}
+                  {produitEstRupture(p) ? t("march.rupture") : t("march.disponible")}
                 </p>
                 <JaugeMboa valeur={produitJauge(p)} />
 
@@ -131,6 +132,14 @@ function PageCategorieInterne() {
                     </button>
                   )}
                 </div>
+                {produitEstPack(p) && (
+                  <Link
+                    href={`/consommateur/pack/${encodeURIComponent(p.slug)}`}
+                    className="block text-center text-aide text-[var(--mboa-primary)] font-bold mt-2 underline"
+                  >
+                    🍲 {t("pack.voir")}
+                  </Link>
+                )}
               </CarteMboa>
             ))}
           </div>

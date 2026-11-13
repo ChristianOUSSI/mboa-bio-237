@@ -22,11 +22,12 @@ import {
   validerMotDePasse,
   IDENTIFIANT_SUPERADMIN,
   EMAIL_SUPERADMIN,
+  type CompteAuth,
 } from "@/core/auth/auth_local";
 import { Profil } from "@/core/types/profil";
 import { ouvrirSessionLocale } from "@/core/data/depots";
 
-type Etape = "choix" | "splash" | "identifiant" | "inscription" | "nouveauMdp" | "superadmin";
+type Etape = "choix" | "splash" | "identifiant" | "inscription" | "nouveauMdp" | "resetMdp" | "superadmin";
 
 /** Ordre d'affichage des espaces : le client d'abord. */
 const ROLES_ORDRE: AppRole[] = ["consommateur", "fournisseur", "livreur", "admin"];
@@ -125,6 +126,7 @@ export default function PageConnexion() {
   const [roleChoisi, setRoleChoisi] = useState<AppRole>("consommateur");
   const [modeInscription, setModeInscription] = useState<"telephone" | "email">("telephone");
   const [mdpParDefaut, setMdpParDefaut] = useState(false);
+  const [compteOublie, setCompteOublie] = useState<CompteAuth | null>(null);
 
   // Bootstrap : sur une première installation (base vide), crée le compte admin
   // et le compte super admin caché.
@@ -255,6 +257,44 @@ export default function PageConnexion() {
         return;
       }
       const maj = await changerMotDePasse(compte, nouveauMdp);
+      ouvrirSession(maj);
+    } catch (e) {
+      console.error(e);
+      setErreur(t("insc.erreurMdp"));
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  /** « Mot de passe oublié » : réinitialisation locale du compte sur cet appareil. */
+  async function commencerReset() {
+    setErreur(null);
+    const compte = await compteParIdentifiant(identifiant);
+    if (!compte || !compte.actif) {
+      setErreur(t("reset.introuvable"));
+      return;
+    }
+    setCompteOublie(compte);
+    setNouveauMdp("");
+    setConfirmationMdp("");
+    setEtape("resetMdp");
+  }
+
+  async function appliquerReset() {
+    if (!compteOublie) return;
+    const err = validerMotDePasse(nouveauMdp);
+    if (!err.ok) {
+      setErreur(err.message === "Password must be at least 6 characters" ? t("connex.erreurMdp") : t("connex.erreurMdpChiffre"));
+      return;
+    }
+    if (nouveauMdp !== confirmationMdp) {
+      setErreur(t("connex.erreurMdpPaire"));
+      return;
+    }
+    setEnCours(true);
+    setErreur(null);
+    try {
+      const maj = await changerMotDePasse(compteOublie, nouveauMdp);
       ouvrirSession(maj);
     } catch (e) {
       console.error(e);
@@ -556,6 +596,13 @@ export default function PageConnexion() {
             )}
 
             <button
+              onClick={commencerReset}
+              className="text-aide text-[var(--mboa-text-doux)] underline text-center w-full mt-2"
+            >
+              {t("reset.lien")}
+            </button>
+
+            <button
               onClick={() => setEtape("choix")}
               className="text-aide text-[var(--mboa-text-doux)] underline text-center w-full mt-2"
             >
@@ -700,6 +747,53 @@ export default function PageConnexion() {
             <BoutonMboa onClick={appliquerNouveauMdp} disabled={enCours} className="w-full">
               {enCours ? t("mdp.btnCours") : `🔒 ${t("mdp.btn")}`}
             </BoutonMboa>
+          </CarteMboa>
+        )}
+
+        {etape === "resetMdp" && compteOublie && (
+          <CarteMboa className="w-full max-w-md anim-apparition">
+            <div className="text-center mb-4">
+              <div className="text-5xl mb-2">🔑</div>
+              <h2 className="text-titre">{t("reset.titre")}</h2>
+              <p className="text-aide text-[var(--mboa-text-doux)] italic">
+                {t("reset.sousTitre")} {compteOublie.email ?? (compteOublie.telephone ? `+${compteOublie.telephone}` : "")}
+              </p>
+            </div>
+
+            <label className="text-aide block mb-1 font-bold">{t("insc.mdpLabel")}</label>
+            <ChampMotDePasse
+              autoComplete="new-password"
+              placeholder={t("insc.mdpPlaceholder")}
+              value={nouveauMdp}
+              onChange={(e) => setNouveauMdp(e.target.value)}
+              className="champ-mboa mb-3"
+              style={{ fontSize: 20 }}
+            />
+
+            <label className="text-aide block mb-1 font-bold">{t("insc.mdpConfirmLabel")}</label>
+            <ChampMotDePasse
+              autoComplete="new-password"
+              placeholder={t("insc.mdpConfirmPlaceholder")}
+              value={confirmationMdp}
+              onChange={(e) => setConfirmationMdp(e.target.value)}
+              className="champ-mboa mb-3"
+              style={{ fontSize: 20 }}
+            />
+
+            {erreur && (
+              <p className="text-[var(--mboa-error)] text-aide mb-2 text-center anim-secousse font-bold">{erreur}</p>
+            )}
+
+            <BoutonMboa onClick={appliquerReset} disabled={enCours} className="w-full">
+              {enCours ? t("connex.btnCours") : `→ ${t("reset.btn")}`}
+            </BoutonMboa>
+
+            <button
+              onClick={() => setEtape("identifiant")}
+              className="text-aide text-[var(--mboa-text-doux)] underline text-center w-full mt-2"
+            >
+              ← {t("connex.switch")}
+            </button>
           </CarteMboa>
         )}
 

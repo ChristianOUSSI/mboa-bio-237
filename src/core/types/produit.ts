@@ -52,7 +52,10 @@ export function produitJauge(p: Produit): number {
   return Math.min(p.quantite / plafond, 1);
 }
 
-export function produitAnnonceVocale(p: Produit): string {
+export function produitAnnonceVocale(p: Produit, discret = false): string {
+  // discret = côté client : on n'annonce jamais la quantité exacte en stock,
+  // seule l'admin la voit.
+  if (discret) return `${p.nom}, disponible au comptoir`;
   const u = produitUniteReelle(p);
   return `${p.nom}, ${uniteAvec(u, p.quantite)} disponibles, ${p.prix} francs ${uniteAvecArticle(u)}`;
 }

@@ -14,6 +14,8 @@ export enum Unite {
   plateau = "plateau",
   regime = "regime",
   sachet = "sachet",
+  boite = "boite",
+  verre = "verre",
 }
 
 export const UNITE_INFO: Record<
@@ -31,6 +33,8 @@ export const UNITE_INFO: Record<
   [Unite.plateau]: { un: "plateau", pluriel: "plateaux", article: "par" },
   [Unite.regime]: { un: "régime", pluriel: "régimes", article: "par" },
   [Unite.sachet]: { un: "sachet", pluriel: "sachets", article: "par" },
+  [Unite.boite]: { un: "boîte", pluriel: "boîtes", article: "par" },
+  [Unite.verre]: { un: "verre", pluriel: "verres", article: "par" },
 };
 
 export function uniteResolve(slug?: string | null): Unite {

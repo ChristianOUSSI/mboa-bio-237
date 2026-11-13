@@ -1,6 +1,7 @@
 "use client";
 
 import { mboaReseau } from "./mboa_reseau";
+import { creerCategoriePerso } from "./categories";
 import { cacheTout, cacheEcrire, cacheLire, etatEcrire, etatLire, fileAjouter, fileCompte } from "./base_locale";
 import { CATALOGUE_HORS_LIGNE } from "./catalogue_hors_ligne";
 import { supabaseConfigure } from "../config/app_env";
@@ -571,18 +572,22 @@ export async function payerLivreur(commandeId: string, montant: number): Promise
 /** L'admin compose un pack par plat (ingrédients + prix unique). */
 export async function sauverPack(params: {
   nom: string;
-  categorie: string;
+  categorie?: string;
   photo: string;
   prix: number;
   quantite?: number;
   composants: { slug: string; nom: string; quantite: number; unite: string }[];
 }): Promise<Produit | null> {
   const slug = slugDe(params.nom);
+  // Chaque plat devient sa propre catégorie (ex. « Ndolé sauce ») pour que les
+  // clientes le retrouvent dans la grille des catégories du marché.
+  const categorie =
+    (await creerCategoriePerso(params.nom, "🍲"))?.slug ?? params.categorie ?? slug;
   const produit: Produit = {
     id: uuidV4(),
     slug,
     nom: params.nom,
-    categorie: params.categorie as never,
+    categorie: categorie as never,
     photoReelle: params.photo,
     photoFiligranee: null,
     quantite: params.quantite ?? 1,
@@ -604,13 +609,39 @@ export async function sauverPack(params: {
   if (mboaReseau()) {
     const { data, error } = await mboaReseau()!.rpc("creer_pack", {
       p_nom: params.nom,
-      p_categorie: params.categorie,
+      p_categorie: categorie,
       p_photo: params.photo,
       p_prix: params.prix,
       p_composants: params.composants,
     });
     if (!error && data) {
       resultat = produitFromMap(data as unknown as Record<string, unknown>);
+    } else {
+      // RPC absente ou en échec : insertion directe dans `produits` pour que
+      // le plat soit visible sur TOUS les appareils (sinon il reste local à
+      // l'admin et le client ne le voit jamais).
+      const packJson = JSON.parse(JSON.stringify(params.composants));
+      const { data: ins, error: errIns } = await mboaReseau()!
+        .from("produits")
+        .insert({
+          slug,
+          nom: params.nom,
+          categorie,
+          unite: "part",
+          prix: params.prix,
+          quantite: produit.quantite,
+          photo_reelle: params.photo,
+          perissable: false,
+          actif: true,
+          pack_composants: packJson,
+        })
+        .select("*")
+        .maybeSingle();
+      if (!errIns && ins) {
+        resultat = produitFromMap(ins as unknown as Record<string, unknown>);
+      } else if (errIns) {
+        console.warn("[pack] insert direct:", errIns.message);
+      }
     }
   }
   const final = resultat ?? produit;
@@ -619,6 +650,52 @@ export async function sauverPack(params: {
   await fileAjouter("produit", final.id, "rpc:creer_pack", params);
   void notifierActiviteAdmin("act.packCree", final.nom);
   return final;
+}
+
+/** L'admin modifie la composition d'un plat existant (ajout/retrait d'ingrédients). */
+export async function majPackComposants(
+  produitId: string,
+  composants: { slug: string; nom: string; quantite: number; unite: string }[],
+): Promise<Produit | null> {
+  let produit = await cacheLire<Produit>("produit", produitId);
+  if (!produit) produit = await cacheLire<Produit>("vitrine", produitId);
+  if (!produit && mboaReseau()) {
+    const { data } = await mboaReseau()!
+      .from("produits")
+      .select("*")
+      .eq("id", produitId)
+      .maybeSingle();
+    if (data) produit = produitFromMap(data as unknown as Record<string, unknown>);
+  }
+  if (!produit) return null;
+
+  produit.composants = composants.map((c) => ({
+    slug: c.slug,
+    nom: c.nom,
+    quantite: c.quantite,
+    unite: uniteResolve(c.unite),
+  }));
+
+  if (mboaReseau()) {
+    const packJson = JSON.parse(JSON.stringify(produit.composants));
+    const { error } = await mboaReseau()!
+      .from("produits")
+      .update({ pack_composants: packJson })
+      .eq("id", produitId);
+    if (!error) {
+      // La vitrine n'a pas toujours la colonne pack_composants : on tente,
+      // l'échec est sans gravité (le cache local fait foi hors ligne).
+      await mboaReseau()!
+        .from("vitrine")
+        .update({ pack_composants: packJson })
+        .eq("id", produitId);
+    }
+  }
+  await cacheEcrire("produit", produit.id, produit);
+  await cacheEcrire("vitrine", produit.id, produit);
+  await fileAjouter("produit", produit.id, "maj:pack_composants", { composants });
+  void notifierActiviteAdmin("act.packModifie", produit.nom);
+  return produit;
 }
 
 export async function suiviCommande(commandeId: string): Promise<SuiviColis> {

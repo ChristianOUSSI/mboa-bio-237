@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { chargerCatalogue, chargerStock, sauverPack } from "@/core/data/depots";
+import { chargerCatalogue, chargerStock, sauverPack, majPackComposants } from "@/core/data/depots";
 import { CarteMboa, BoutonMboa, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { EntreeCatalogue, catalogueUniteReelle } from "@/core/types/catalogue";
 import { Produit, produitEstPack } from "@/core/types/produit";
-import { CATEGORIES_ORDREES, Categorie } from "@/core/types/categorie";
 import { Unite, UNITE_INFO, unitePour } from "@/core/types/unite";
-import { PackComposant } from "@/core/types/pack_composant";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
@@ -20,19 +18,102 @@ interface ComposantDraft {
   unite: Unite;
 }
 
+/** Éditeur d'ingrédients réutilisé à la création et à la modification d'un plat. */
+function EditeurComposants({
+  catalogue,
+  composants,
+  onChange,
+}: {
+  catalogue: EntreeCatalogue[];
+  composants: ComposantDraft[];
+  onChange: (suite: ComposantDraft[]) => void;
+}) {
+  const t = useTr();
+
+  function maj(i: number, patch: Partial<ComposantDraft>) {
+    onChange(composants.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
+  }
+
+  function choisir(i: number, slug: string) {
+    const entree = catalogue.find((e) => e.slug === slug);
+    if (!entree) return;
+    maj(i, { slug: entree.slug, nom: entree.nom, unite: catalogueUniteReelle(entree) });
+  }
+
+  function ajouter() {
+    const premier = catalogue[0];
+    if (!premier) return;
+    onChange([
+      ...composants,
+      { slug: premier.slug, nom: premier.nom, quantite: 1, unite: catalogueUniteReelle(premier) },
+    ]);
+  }
+
+  return (
+    <div>
+      <p className="text-corps font-bold mb-2">{t("adm.pack.ingredients")}</p>
+      {composants.map((c, i) => (
+        <div key={i} className="flex gap-2 mb-2 items-center">
+          <select
+            value={c.slug}
+            onChange={(e) => choisir(i, e.target.value)}
+            className="flex-1 p-2 border-2 border-[var(--mboa-primary)] rounded-xl"
+            style={{ fontSize: 16 }}
+          >
+            {catalogue.map((e) => (
+              <option key={e.slug} value={e.slug}>{e.nom}</option>
+            ))}
+          </select>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={c.quantite}
+            onChange={(e) => maj(i, { quantite: parseInt(e.target.value) || 1 })}
+            className="w-16 p-2 border-2 border-[var(--mboa-primary)] rounded-xl text-center"
+            style={{ fontSize: 18 }}
+          />
+          <select
+            value={c.unite}
+            onChange={(e) => maj(i, { unite: e.target.value as Unite })}
+            className="w-28 p-2 border-2 border-[var(--mboa-primary)] rounded-xl"
+            style={{ fontSize: 16 }}
+          >
+            {Object.values(Unite).map((u) => (
+              <option key={u} value={u}>{UNITE_INFO[u].un}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => onChange(composants.filter((_, idx) => idx !== i))}
+            className="text-[var(--mboa-error)] text-2xl px-1"
+            aria-label={t("adm.pack.retirer")}
+          >
+            ×
+          </button>
+        </div>
+      ))}
+      <BoutonMboa variant="surface" onClick={ajouter} className="w-full mb-3">
+        {t("adm.pack.ajouter")}
+      </BoutonMboa>
+    </div>
+  );
+}
+
 export default function PacksAdminPage() {
   const router = useRouter();
-  const { pret, profil } = useGuardRole("admin");
+  const { pret } = useGuardRole("admin");
   const t = useTr();
   const [catalogue, setCatalogue] = useState<EntreeCatalogue[]>([]);
   const [packs, setPacks] = useState<Produit[]>([]);
   const [nom, setNom] = useState("");
-  const [categorie, setCategorie] = useState<Categorie>(Categorie.fruit);
   const [photo, setPhoto] = useState("");
   const [prix, setPrix] = useState("");
   const [stock, setStock] = useState("10");
   const [composants, setComposants] = useState<ComposantDraft[]>([]);
   const [enCours, setEnCours] = useState(false);
+  const [editionId, setEditionId] = useState<string | null>(null);
+  const [editionComposants, setEditionComposants] = useState<ComposantDraft[]>([]);
+  const [editionEnCours, setEditionEnCours] = useState(false);
 
   useEffect(() => {
     async function charger() {
@@ -43,38 +124,6 @@ export default function PacksAdminPage() {
     charger();
   }, []);
 
-  function ajouterComposant() {
-    const premier = catalogue[0];
-    if (!premier) return;
-    setComposants([
-      ...composants,
-      {
-        slug: premier.slug,
-        nom: premier.nom,
-        quantite: 1,
-        unite: catalogueUniteReelle(premier),
-      },
-    ]);
-  }
-
-  function majComposant(i: number, maj: Partial<ComposantDraft>) {
-    setComposants(composants.map((c, idx) => (idx === i ? { ...c, ...maj } : c)));
-  }
-
-  function retirerComposant(i: number) {
-    setComposants(composants.filter((_, idx) => idx !== i));
-  }
-
-  function choisirIngredient(i: number, slug: string) {
-    const entree = catalogue.find((e) => e.slug === slug);
-    if (!entree) return;
-    majComposant(i, {
-      slug: entree.slug,
-      nom: entree.nom,
-      unite: catalogueUniteReelle(entree),
-    });
-  }
-
   async function sauver() {
     const prixNum = parseInt(prix) || 0;
     if (!nom.trim() || prixNum <= 0 || composants.length === 0) return;
@@ -82,7 +131,6 @@ export default function PacksAdminPage() {
     try {
       const p = await sauverPack({
         nom: nom.trim(),
-        categorie,
         photo,
         prix: prixNum,
         quantite: Math.max(1, parseInt(stock) || 1),
@@ -104,6 +152,40 @@ export default function PacksAdminPage() {
     }
   }
 
+  function ouvrirEdition(p: Produit) {
+    setEditionId(p.id);
+    setEditionComposants(
+      p.composants.map((c) => ({
+        slug: c.slug,
+        nom: c.nom?.trim() || c.slug.replaceAll("_", " "),
+        quantite: c.quantite,
+        unite: c.unite,
+      })),
+    );
+  }
+
+  async function sauverEdition() {
+    if (!editionId || editionComposants.length === 0) return;
+    setEditionEnCours(true);
+    try {
+      const maj = await majPackComposants(
+        editionId,
+        editionComposants.map((c) => ({
+          slug: c.slug,
+          nom: c.nom,
+          quantite: c.quantite,
+          unite: c.unite,
+        })),
+      );
+      if (maj) {
+        setPacks(packs.map((p) => (p.id === maj.id ? maj : p)));
+      }
+      setEditionId(null);
+    } finally {
+      setEditionEnCours(false);
+    }
+  }
+
   if (!pret) {
     return (
       <FondMboa>
@@ -118,7 +200,7 @@ export default function PacksAdminPage() {
       <EnTetePage titre={t("adm.pack.titre")} sousTitre={t("adm.pack.sousTitre")} onRetour={() => router.back()} />
 
       <div className="flex-1 p-4 space-y-3">
-        {/* Composition d'un nouveau pack */}
+        {/* Composition d'un nouveau plat */}
         <CarteMboa>
           <h2 className="text-titre mb-3">{t("adm.pack.composer")}</h2>
 
@@ -131,66 +213,16 @@ export default function PacksAdminPage() {
             style={{ fontSize: 20 }}
           />
 
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            <select
-              value={categorie}
-              onChange={(e) => setCategorie(e.target.value as Categorie)}
-              className="p-3 border-2 border-[var(--mboa-primary)] rounded-xl"
-              style={{ fontSize: 18 }}
-            >
-              {CATEGORIES_ORDREES.map((c) => (
-                <option key={c} value={c}>{t(`cat.${c}`)}</option>
-              ))}
-            </select>
-            <input
-              type="text"
-              placeholder={t("adm.pack.photo")}
-              value={photo}
-              onChange={(e) => setPhoto(e.target.value)}
-              className="p-3 border-2 border-[var(--mboa-primary)] rounded-xl"
-              style={{ fontSize: 18 }}
-            />
-          </div>
+          <input
+            type="text"
+            placeholder={t("adm.pack.photo")}
+            value={photo}
+            onChange={(e) => setPhoto(e.target.value)}
+            className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
+            style={{ fontSize: 18 }}
+          />
 
-          {/* Ingredients */}
-          <p className="text-corps font-bold mb-2">{t("adm.pack.ingredients")}</p>
-          {composants.map((c, i) => (
-            <div key={i} className="flex gap-2 mb-2 items-center">
-              <select
-                value={c.slug}
-                onChange={(e) => choisirIngredient(i, e.target.value)}
-                className="flex-1 p-2 border-2 border-[var(--mboa-primary)] rounded-xl"
-                style={{ fontSize: 16 }}
-              >
-                {catalogue.map((e) => (
-                  <option key={e.slug} value={e.slug}>{e.nom}</option>
-                ))}
-              </select>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={1}
-                value={c.quantite}
-                onChange={(e) => majComposant(i, { quantite: parseInt(e.target.value) || 1 })}
-                className="w-16 p-2 border-2 border-[var(--mboa-primary)] rounded-xl text-center"
-                style={{ fontSize: 18 }}
-              />
-              <select
-                value={c.unite}
-                onChange={(e) => majComposant(i, { unite: e.target.value as Unite })}
-                className="w-28 p-2 border-2 border-[var(--mboa-primary)] rounded-xl"
-                style={{ fontSize: 16 }}
-              >
-                {Object.values(Unite).map((u) => (
-                  <option key={u} value={u}>{UNITE_INFO[u].un}</option>
-                ))}
-              </select>
-              <button onClick={() => retirerComposant(i)} className="text-[var(--mboa-error)] text-2xl px-1">×</button>
-            </div>
-          ))}
-          <BoutonMboa variant="surface" onClick={ajouterComposant} className="w-full mb-3">
-            {t("adm.pack.ajouter")}
-          </BoutonMboa>
+          <EditeurComposants catalogue={catalogue} composants={composants} onChange={setComposants} />
 
           {/* Prix unique + stock de parts */}
           <div className="grid grid-cols-2 gap-2 mb-3">
@@ -220,6 +252,8 @@ export default function PacksAdminPage() {
             </div>
           </div>
 
+          <p className="text-aide text-[var(--mboa-text-doux)] mb-2 italic">{t("adm.pack.autoCategorie")}</p>
+
           <BoutonMboa
             variant="primary"
             onClick={sauver}
@@ -230,7 +264,7 @@ export default function PacksAdminPage() {
           </BoutonMboa>
         </CarteMboa>
 
-        {/* Packs existants */}
+        {/* Plats existants */}
         <h2 className="text-titre">{t("adm.pack.liste")} ({packs.length})</h2>
         {packs.map((p) => (
           <CarteMboa key={p.id}>
@@ -240,9 +274,36 @@ export default function PacksAdminPage() {
             </div>
             <p className="text-aide text-[var(--mboa-text-doux)]">
               {p.composants
-                .map((c: PackComposant) => `${c.quantite} ${unitePour(c.unite, c.quantite)} ${t("adm.pack.de")} ${c.nom?.trim() || c.slug.replaceAll("_", " ")}`)
+                .map((c) => `${c.quantite} ${unitePour(c.unite, c.quantite)} ${t("adm.pack.de")} ${c.nom?.trim() || c.slug.replaceAll("_", " ")}`)
                 .join(" · ")}
             </p>
+
+            {editionId === p.id ? (
+              <div className="mt-3 pt-3 border-t-2 border-[var(--mboa-primary)]">
+                <EditeurComposants
+                  catalogue={catalogue}
+                  composants={editionComposants}
+                  onChange={setEditionComposants}
+                />
+                <div className="flex gap-2">
+                  <BoutonMboa
+                    variant="primary"
+                    onClick={sauverEdition}
+                    disabled={editionComposants.length === 0 || editionEnCours}
+                    className="flex-1"
+                  >
+                    {editionEnCours ? t("adm.pack.sauvegarde") : t("adm.pack.enregistrerModif")}
+                  </BoutonMboa>
+                  <BoutonMboa variant="surface" onClick={() => setEditionId(null)} className="flex-1">
+                    {t("adm.pack.annuler")}
+                  </BoutonMboa>
+                </div>
+              </div>
+            ) : (
+              <BoutonMboa variant="surface" onClick={() => ouvrirEdition(p)} className="w-full mt-3">
+                ✏️ {t("adm.pack.modifier")}
+              </BoutonMboa>
+            )}
           </CarteMboa>
         ))}
       </div>
