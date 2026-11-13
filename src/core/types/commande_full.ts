@@ -24,6 +24,10 @@ export interface Commande {
   photoLivraison?: string | null;
   signature?: string | null;
   appelVocalFait: boolean;
+  /** La cliente veut être appelée par le livreur à l'arrivée. */
+  appelSouhaite: boolean;
+  /** Numéro à joindre pour cet appel (sinon le téléphone du profil). */
+  numeroContact?: string | null;
   createdLe: string;
   livreeLe?: string | null;
   recueLe?: string | null;
@@ -139,6 +143,8 @@ export function commandeFromMap(map: Record<string, unknown>): Commande {
     photoLivraison: (map.photo_livraison_url as string) ?? null,
     signature: (map.signature_url as string) ?? null,
     appelVocalFait: (map.appel_vocal_fait as boolean) ?? false,
+    appelSouhaite: (map.appel_souhaite as boolean) ?? false,
+    numeroContact: (map.numero_contact as string) ?? null,
     createdLe: (map.created_at as string) ?? new Date().toISOString(),
     livreeLe: (map.livree_le as string) ?? null,
     recueLe: (map.recue_le as string) ?? null,

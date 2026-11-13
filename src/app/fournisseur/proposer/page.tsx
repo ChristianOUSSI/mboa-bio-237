@@ -9,6 +9,7 @@ import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } fro
 import { Unite, UNITE_INFO, uniteAvec } from "@/core/types/unite";
 import { proposerAchat } from "@/core/data/depots";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
+import { choisirPhotoDepuisAppareil } from "@/core/utils/photo";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr, useCategorieLibelle } from "@/core/i18n";
 
@@ -66,21 +67,9 @@ export default function ProposerRecoltePage() {
     }
   }
 
-  function prendrePhoto() {
-    // In a PWA we use a file input with capture
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.capture = "environment";
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = () => setPhotoUrl(reader.result as string);
-        reader.readAsDataURL(file);
-      }
-    };
-    input.click();
+  async function prendrePhoto() {
+    const dataUrl = await choisirPhotoDepuisAppareil();
+    if (dataUrl) setPhotoUrl(dataUrl);
   }
 
   if (succes) {

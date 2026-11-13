@@ -8,6 +8,7 @@ import { EntreeCatalogue, catalogueUniteReelle } from "@/core/types/catalogue";
 import { Produit, produitEstPack } from "@/core/types/produit";
 import { Unite, UNITE_INFO, unitePour } from "@/core/types/unite";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
+import { choisirPhotoDepuisAppareil } from "@/core/utils/photo";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
 
@@ -213,14 +214,31 @@ export default function PacksAdminPage() {
             style={{ fontSize: 20 }}
           />
 
-          <input
-            type="text"
-            placeholder={t("adm.pack.photo")}
-            value={photo}
-            onChange={(e) => setPhoto(e.target.value)}
-            className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
-            style={{ fontSize: 18 }}
-          />
+          <div className="flex gap-2 mb-2">
+            <input
+              type="text"
+              placeholder={t("adm.pack.photo")}
+              value={photo.startsWith("data:") ? "" : photo}
+              onChange={(e) => setPhoto(e.target.value)}
+              className="flex-1 p-3 border-2 border-[var(--mboa-primary)] rounded-xl"
+              style={{ fontSize: 18 }}
+            />
+            <button
+              type="button"
+              onClick={async () => {
+                const dataUrl = await choisirPhotoDepuisAppareil();
+                if (dataUrl) setPhoto(dataUrl);
+              }}
+              className="px-4 rounded-xl border-2 border-[var(--mboa-primary)] bg-[var(--mboa-primary)] text-white font-bold"
+              style={{ fontSize: 18 }}
+              aria-label={t("adm.pack.photo")}
+            >
+              📷
+            </button>
+          </div>
+          {photo.startsWith("data:") && (
+            <img src={photo} alt="" className="w-full h-32 object-cover rounded-xl mb-2" />
+          )}
 
           <EditeurComposants catalogue={catalogue} composants={composants} onChange={setComposants} />
 

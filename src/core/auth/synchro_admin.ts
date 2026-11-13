@@ -18,13 +18,20 @@ import type { CompteAuth } from "./auth_local";
 
 const TABLE = "admin_comptes";
 
+/** Rôles « à privilèges » : déduplication anti-doublons bootstrap activée. */
 function estCompteAdmin(c: CompteAuth): boolean {
   return c.role === "admin" || c.role === "superadmin";
 }
 
-/** Pousse un compte admin vers Supabase (fire-and-forget, jamais bloquant). */
+/** Tous les comptes synchronisent entre appareils (créés par le super admin
+ *  ou par l'utilisateur lui-même), pas seulement les admins. */
+function estCompteSynchronise(_c: CompteAuth): boolean {
+  return true;
+}
+
+/** Pousse un compte vers Supabase (fire-and-forget, jamais bloquant). */
 export function publierCompteAdmin(compte: CompteAuth): void {
-  if (!estCompteAdmin(compte)) return;
+  if (!estCompteSynchronise(compte)) return;
   const client = mboaReseau();
   if (!client) return;
   void client
@@ -53,7 +60,7 @@ export async function synchroniserComptesAdmin(): Promise<number> {
   let fusionnes = 0;
   for (const ligne of data as { id: string; data: CompteAuth }[]) {
     const distant = ligne.data;
-    if (!distant || !estCompteAdmin(distant)) continue;
+    if (!distant || !estCompteSynchronise(distant)) continue;
     const local = await cacheLire<CompteAuth>("compte", distant.id);
     // Pas de timestamp fiable côté local : le distant gagne si le local
     // est absent, inactif, ou si le distant a un createdLe plus récent.

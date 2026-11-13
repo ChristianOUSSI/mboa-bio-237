@@ -170,6 +170,13 @@ export default function AccueilLivreur() {
                     ))}
                   </div>
 
+                  {c.appelSouhaite && (
+                    <p className="text-aide mt-2 font-bold" style={{ color: "var(--mboa-primary)" }}>
+                      📞 {t("liv.appelerAvant")}
+                      {c.numeroContact ? ` : ${c.numeroContact}` : ""}
+                    </p>
+                  )}
+
                   {/* Payment info */}
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-aide text-[var(--mboa-text-doux)]">{t("liv.aEncaisser")}</span>

@@ -108,7 +108,7 @@ export async function toutesCommandes(): Promise<Commande[]> {
   return cacheTout<Commande>("commande");
 }
 
-export async function commander(lignes: { produitId: string; slug: string; nom: string; categorie: string; quantite: number; prix: number; unite: string; photo: string; composants?: { slug: string; nom?: string | null; quantite: number; unite: string }[] }[], consommateurId: string): Promise<Commande | null> {
+export async function commander(lignes: { produitId: string; slug: string; nom: string; categorie: string; quantite: number; prix: number; unite: string; photo: string; composants?: { slug: string; nom?: string | null; quantite: number; unite: string }[] }[], consommateurId: string, contact?: { appelSouhaite?: boolean; numeroContact?: string | null }): Promise<Commande | null> {
   const produitsJson = lignes.map((l) => ({
     produit_id: l.produitId,
     slug: l.slug,
@@ -138,7 +138,21 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
       p_montant: montantTotal,
     });
     if (!error && data) {
-      return commandeFromMap(data as unknown as Record<string, unknown>);
+      const commande = commandeFromMap(data as unknown as Record<string, unknown>);
+      // Le RPC ne connaît pas les champs contact : on les pose en update direct.
+      const patch = {
+        appel_souhaite: contact?.appelSouhaite ?? false,
+        numero_contact: contact?.numeroContact ?? null,
+      };
+      if (patch.appel_souhaite || patch.numero_contact) {
+        void mboaReseau()!.from("commandes").update(patch).eq("id", commande.id);
+        return {
+          ...commande,
+          appelSouhaite: patch.appel_souhaite,
+          numeroContact: patch.numero_contact,
+        };
+      }
+      return commande;
     }
   }
   // Offline : création locale
@@ -168,6 +182,8 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
     livraisonMoto: true,
     stockSorti: false,
     appelVocalFait: false,
+    appelSouhaite: contact?.appelSouhaite ?? false,
+    numeroContact: contact?.numeroContact ?? null,
     createdLe: new Date().toISOString(),
     clos: false,
   };
@@ -1086,6 +1102,8 @@ export async function notifierActiviteAdmin(action: string, detail?: string): Pr
     ) {
       new Notification("MBOA Admin", { body: `${auteur} - ${detail ?? action}` });
     }
+    const { jouerNotificationSonore } = await import("../utils/son");
+    jouerNotificationSonore();
   } catch {
     // La notification ne doit jamais faire échouer l'action métier.
   }

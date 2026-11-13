@@ -135,6 +135,13 @@ export default function DevisAdminPage() {
                   {c.livreurTarif ? ` · ${formaterFcfa(c.livreurTarif)}` : ""}
                 </p>
               )}
+
+              {c.appelSouhaite && (
+                <p className="text-aide mt-2 font-bold" style={{ color: "var(--mboa-primary)" }}>
+                  📞 {t("adm.dev.appelAvant")}
+                  {c.numeroContact ? ` : ${c.numeroContact}` : ""}
+                </p>
+              )}
             </CarteMboa>
           );
         })}

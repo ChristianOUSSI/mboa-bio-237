@@ -15,6 +15,22 @@ import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { tousComptes, CompteAuth } from "@/core/auth/auth_service";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
+import { sonNotificationActif, basculerSonNotification } from "@/core/utils/son";
+
+function SonToggle() {
+  const t = useTr();
+  const [actif, setActif] = useState(() => sonNotificationActif());
+  return (
+    <button
+      onClick={() => setActif(basculerSonNotification())}
+      className="text-aide font-bold"
+      style={{ color: actif ? "var(--mboa-primary)" : "var(--mboa-text-doux)" }}
+      aria-pressed={actif}
+    >
+      {actif ? `🔔 ${t("adm.act.sonOn")}` : `🔕 ${t("adm.act.sonOff")}`}
+    </button>
+  );
+}
 
 export default function TableauAdmin() {
   const router = useRouter();
@@ -46,7 +62,10 @@ export default function TableauAdmin() {
       setLivreurs(l);
       setFournisseurs(f);
       setComptes(cp);
-      setActivites(await activitesAdmin());
+      const acts = await activitesAdmin();
+      setActivites(acts);
+      const { verifierNouvellesActivitesAdmin } = await import("@/core/utils/son");
+      verifierNouvellesActivitesAdmin(acts.map((a) => a.id));
       if (typeof Notification !== "undefined") setNotifOk(Notification.permission === "granted");
     }
     charger();
@@ -220,6 +239,7 @@ export default function TableauAdmin() {
             </button>
           )}
           {notifOk && <span className="text-aide text-[var(--mboa-text-doux)]">{t("adm.act.notifOk")}</span>}
+          <SonToggle />
         </div>
         {activites.length === 0 ? (
           <CarteMboa>

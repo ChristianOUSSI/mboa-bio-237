@@ -10,6 +10,7 @@ import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } fro
 import { Unite, UNITE_INFO } from "@/core/types/unite";
 import { EntreeCatalogue, catalogueUniteReelle } from "@/core/types/catalogue";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
+import { choisirPhotoDepuisAppareil } from "@/core/utils/photo";
 import { useLangue, useTr, Lang } from "@/core/i18n";
 import { useEffect } from "react";
 
@@ -93,20 +94,9 @@ export default function RejoindrePage() {
     }
   }
 
-  function prendrePhoto(i: number) {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.capture = "environment";
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = () => majProduit(i, { photoUrl: reader.result as string });
-        reader.readAsDataURL(file);
-      }
-    };
-    input.click();
+  async function prendrePhoto(i: number) {
+    const dataUrl = await choisirPhotoDepuisAppareil();
+    if (dataUrl) majProduit(i, { photoUrl: dataUrl });
   }
 
   function valider(): string[] {

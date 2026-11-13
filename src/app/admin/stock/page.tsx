@@ -9,6 +9,7 @@ import { CATEGORIES_ORDREES } from "@/core/types/categorie";
 import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
 import { Unite, UNITE_INFO } from "@/core/types/unite";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
+import { choisirPhotoDepuisAppareil } from "@/core/utils/photo";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
 
@@ -100,20 +101,9 @@ export default function StockAdminPage() {
     }
   }
 
-  function prendrePhotoProduit() {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.capture = "environment";
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = () => setNpPhoto(reader.result as string);
-        reader.readAsDataURL(file);
-      }
-    };
-    input.click();
+  async function prendrePhotoProduit() {
+    const dataUrl = await choisirPhotoDepuisAppareil();
+    if (dataUrl) setNpPhoto(dataUrl);
   }
 
   const stockFiltre = stock.filter((p) => {

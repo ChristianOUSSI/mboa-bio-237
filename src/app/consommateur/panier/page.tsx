@@ -28,6 +28,8 @@ export default function PanierPage() {
   const [enCours, setEnCours] = useState(false);
   const [modePaiement, setModePaiement] = useState<ModePaiement>(ModePaiement.especes);
   const [menuExport, setMenuExport] = useState(false);
+  const [appelSouhaite, setAppelSouhaite] = useState(false);
+  const [numeroContact, setNumeroContact] = useState("");
   const [copieOk, setCopieOk] = useState(false);
 
   const montantProduits = panier.montantTotal();
@@ -49,7 +51,10 @@ export default function PanierPage() {
         photo: l.photo,
         composants: l.composants,
       }));
-      await commander(lignes, profil.id);
+      await commander(lignes, profil.id, {
+        appelSouhaite,
+        numeroContact: appelSouhaite ? numeroContact.trim() || profil.telephone || null : null,
+      });
       panier.vider();
       router.push("/consommateur/suivi");
     } catch (e) {
@@ -194,6 +199,29 @@ export default function PanierPage() {
               <p className="text-aide text-[var(--mboa-text-doux)] mb-3">
                 {t("panier.payerSurPlace")} ({MODE_PAIEMENT_INFO[modePaiement].libelle.toLowerCase()})
               </p>
+
+              {/* Appel du livreur à l'arrivée */}
+              <label className="flex items-center gap-2 mb-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={appelSouhaite}
+                  onChange={(e) => setAppelSouhaite(e.target.checked)}
+                  className="w-5 h-5 accent-[var(--mboa-primary)]"
+                />
+                <span className="text-corps font-bold">📞 {t("panier.appelLivreur")}</span>
+              </label>
+              {appelSouhaite && (
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  placeholder={t("panier.numeroContactPh")}
+                  value={numeroContact}
+                  onChange={(e) => setNumeroContact(e.target.value)}
+                  className="champ-mboa mb-3"
+                  style={{ fontSize: 18 }}
+                />
+              )}
+
               <BoutonMboa onClick={validerCommande} disabled={enCours} className="w-full !text-titre">
                 {enCours ? t("rej.envoi") : t("liste.commander")}
               </BoutonMboa>
