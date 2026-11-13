@@ -8,6 +8,7 @@ import { Livreur, livreurRepere } from "@/core/types/livreur";
 import { creerCompte } from "@/core/auth/auth_service";
 import { validerMotDePasse } from "@/core/auth/auth_local";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useTr } from "@/core/i18n";
 
 interface FormulaireLivreur {
   nom: string;
@@ -30,6 +31,7 @@ const FORMULAIRE_VIDE: FormulaireLivreur = {
 export default function LivreursAdminPage() {
   const router = useRouter();
   const { pret, profil } = useGuardRole("admin");
+  const t = useTr();
   const [livreurs, setLivreurs] = useState<Livreur[]>([]);
   const [form, setForm] = useState<FormulaireLivreur>(FORMULAIRE_VIDE);
   const [mdpGenere, setMdpGenere] = useState<{ nom: string; telephone: string; mdp: string } | null>(null);
@@ -53,15 +55,15 @@ export default function LivreursAdminPage() {
   async function creerLivreur() {
     setErreur(null);
     if (form.nom.trim().length === 0) {
-      setErreur("The driver name is required");
+      setErreur(t("adm.livr.erreurNom"));
       return;
     }
     if (form.telephone.replace(/\D/g, "").length < 9) {
-      setErreur("Invalid phone number");
+      setErreur(t("adm.livr.erreurTel"));
       return;
     }
     if (form.zone.trim().length === 0) {
-      setErreur("The coverage area is required");
+      setErreur(t("adm.livr.erreurZone"));
       return;
     }
     const tarif = parseInt(form.tarifCourse) || 0;
@@ -100,7 +102,7 @@ export default function LivreursAdminPage() {
       await charger();
     } catch (e) {
       console.error(e);
-      setErreur("Error while creating the driver");
+      setErreur(t("adm.livr.erreur"));
     } finally {
       setEnCours(false);
     }
@@ -118,8 +120,8 @@ export default function LivreursAdminPage() {
   return (
     <FondMboa>
       <EnTetePage
-        titre="Drivers"
-        sousTitre="The counter creates driver accounts"
+        titre={t("adm.livr.titre")}
+        sousTitre={t("adm.livr.sousTitre")}
         onRetour={() => router.back()}
       />
 
@@ -128,18 +130,18 @@ export default function LivreursAdminPage() {
         {mdpGenere && (
           <CarteMboa className="card-accent bg-[var(--mboa-secondary-doux)] anim-apparition">
             <p className="text-corps font-bold text-[var(--mboa-primary)] mb-1">
-              🔑 Credentials for {mdpGenere.nom}
+              🔑 {t("adm.livr.identifiants")} {mdpGenere.nom}
             </p>
-            <p className="text-aide">Phone: +{mdpGenere.telephone}</p>
-            <p className="text-aide">Password: {mdpGenere.mdp}</p>
+            <p className="text-aide">{t("adm.livr.tel")} : +{mdpGenere.telephone}</p>
+            <p className="text-aide">{t("adm.livr.mdp")} : {mdpGenere.mdp}</p>
             <p className="text-aide text-[var(--mboa-text-doux)] mt-1">
-              Give these credentials to the driver. They will change them at first sign-in.
+              {t("adm.livr.identifiantsNote")}
             </p>
             <button
               onClick={() => setMdpGenere(null)}
               className="text-aide text-[var(--mboa-primary)] underline mt-2"
             >
-              Close
+              {t("adm.livr.fermer")}
             </button>
           </CarteMboa>
         )}
@@ -150,25 +152,25 @@ export default function LivreursAdminPage() {
           onClick={() => setModeCreation(!modeCreation)}
           className="w-full"
         >
-          {modeCreation ? "Cancel creation" : "🛵 Create a driver"}
+          {modeCreation ? t("adm.livr.annulerCreation") : t("adm.livr.creer")}
         </BoutonMboa>
 
         {/* Formulaire de création */}
         {modeCreation && (
           <CarteMboa className="anim-apparition">
-            <h2 className="text-titre mb-3">New driver</h2>
+            <h2 className="text-titre mb-3">{t("adm.livr.nouveau")}</h2>
 
-            <label className="text-aide block mb-1">Full name</label>
+            <label className="text-aide block mb-1">{t("adm.livr.nom")}</label>
             <input
               type="text"
-              placeholder="E.g.: Moto Moussa"
+              placeholder={t("adm.livr.nomHint")}
               value={form.nom}
               onChange={(e) => setForm({ ...form, nom: e.target.value })}
               className="champ-mboa mb-3"
               style={{ fontSize: 20 }}
             />
 
-            <label className="text-aide block mb-1">Phone</label>
+            <label className="text-aide block mb-1">{t("adm.livr.telLabel")}</label>
             <input
               type="tel"
               inputMode="numeric"
@@ -179,10 +181,10 @@ export default function LivreursAdminPage() {
               style={{ fontSize: 20 }}
             />
 
-            <label className="text-aide block mb-1">Coverage area</label>
+            <label className="text-aide block mb-1">{t("adm.livr.zone")}</label>
             <input
               type="text"
-              placeholder="Ex : Douala et environs"
+              placeholder="Douala et environs"
               value={form.zone}
               onChange={(e) => setForm({ ...form, zone: e.target.value })}
               className="champ-mboa mb-3"
@@ -191,10 +193,10 @@ export default function LivreursAdminPage() {
 
             <div className="grid grid-cols-2 gap-2 mb-3">
               <div>
-                <label className="text-aide block mb-1">Bike (optional)</label>
+                <label className="text-aide block mb-1">{t("adm.livr.moto")}</label>
                 <input
                   type="text"
-                  placeholder="E.g.: Honda"
+                  placeholder={t("adm.livr.motoHint")}
                   value={form.moto}
                   onChange={(e) => setForm({ ...form, moto: e.target.value })}
                   className="champ-mboa"
@@ -202,10 +204,10 @@ export default function LivreursAdminPage() {
                 />
               </div>
               <div>
-                <label className="text-aide block mb-1">Plate (optional)</label>
+                <label className="text-aide block mb-1">{t("adm.livr.plaque")}</label>
                 <input
                   type="text"
-                  placeholder="E.g.: LT 456 AB"
+                  placeholder={t("adm.livr.plaqueHint")}
                   value={form.plaque}
                   onChange={(e) => setForm({ ...form, plaque: e.target.value })}
                   className="champ-mboa"
@@ -214,7 +216,7 @@ export default function LivreursAdminPage() {
               </div>
             </div>
 
-            <label className="text-aide block mb-1">Delivery fee per run (FCFA)</label>
+            <label className="text-aide block mb-1">{t("adm.livr.tarif")}</label>
             <input
               type="number"
               inputMode="numeric"
@@ -232,7 +234,7 @@ export default function LivreursAdminPage() {
             )}
 
             <BoutonMboa onClick={creerLivreur} disabled={enCours} className="w-full">
-              {enCours ? "Creating..." : "Create the driver and their credentials"}
+              {enCours ? t("adm.livr.creation") : t("adm.livr.creerBtn")}
             </BoutonMboa>
           </CarteMboa>
         )}
@@ -241,7 +243,7 @@ export default function LivreursAdminPage() {
         {livreurs.length === 0 && !modeCreation && (
           <CarteMboa>
             <p className="text-corps text-[var(--mboa-text-doux)] text-center">
-              No drivers registered. Create the first one to start deliveries.
+              {t("adm.livr.vide")}
             </p>
           </CarteMboa>
         )}
@@ -250,19 +252,19 @@ export default function LivreursAdminPage() {
             <div className="flex justify-between items-start">
               <div>
                 <span className="text-corps font-bold">{l.nom}</span>
-                <p className="text-aide text-[var(--mboa-text-doux)]">Area: {l.zone}</p>
-                <p className="text-aide text-[var(--mboa-text-doux)]">Marker: {livreurRepere(l)}</p>
+                <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.livr.zone2")} : {l.zone}</p>
+                <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.livr.repere")} : {livreurRepere(l)}</p>
                 {l.telephone && (
-                  <p className="text-aide text-[var(--mboa-text-doux)]">Phone: {l.telephone}</p>
+                  <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.livr.tel2")} : {l.telephone}</p>
                 )}
                 {l.plaque && (
-                  <p className="text-aide text-[var(--mboa-text-doux)]">Plate: {l.plaque}</p>
+                  <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.livr.plaque2")} : {l.plaque}</p>
                 )}
                 {l.tarifCourse > 0 && (
-                  <p className="text-aide text-[var(--mboa-text-doux)]">Fee: {l.tarifCourse} F</p>
+                  <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.livr.tarif2")} : {l.tarifCourse} F</p>
                 )}
               </div>
-              <BoutonVoix texte={`${l.nom}, de ${l.zone}. Marker: ${livreurRepere(l)}`} />
+              <BoutonVoix texte={`${l.nom}, ${t("adm.livr.zone2")} ${l.zone}. ${t("adm.livr.repere")} : ${livreurRepere(l)}`} />
             </div>
           </CarteMboa>
         ))}

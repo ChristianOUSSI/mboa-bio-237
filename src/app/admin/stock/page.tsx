@@ -5,16 +5,18 @@ import { useRouter } from "next/navigation";
 import { chargerStock, ajusterProduit, creerProduit, supprimerProduit, basculerProduitActif } from "@/core/data/depots";
 import { CarteMboa, EnTetePage, JaugeMboa, BoutonVoix, BadgeStatut, BoutonMboa, PictoCategorie, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { Produit, produitJauge, produitMargeUnitaire, produitMargePct, produitEstAPerte, produitDisponibilite, produitEstPack } from "@/core/types/produit";
-import { CATEGORIES_ORDREES, CATEGORIE_INFO, Categorie } from "@/core/types/categorie";
+import { CATEGORIES_ORDREES, Categorie } from "@/core/types/categorie";
 import { Unite, UNITE_INFO } from "@/core/types/unite";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useTr } from "@/core/i18n";
 
 type Onglet = "stock" | "ajouter";
 
 export default function StockAdminPage() {
   const router = useRouter();
   const { pret, profil } = useGuardRole("admin");
+  const t = useTr();
   const [stock, setStock] = useState<Produit[]>([]);
   const [prixEdit, setPrixEdit] = useState<Record<string, string>>({});
   const [onglet, setOnglet] = useState<Onglet>("stock");
@@ -128,7 +130,7 @@ export default function StockAdminPage() {
   }
   return (
     <FondMboa>
-      <EnTetePage titre="Stock" sousTitre="Full counter management" onRetour={() => router.back()} />
+      <EnTetePage titre={t("adm.stock")} sousTitre={t("adm.stk.sousTitre")} onRetour={() => router.back()} />
 
       {/* Onglets */}
       <div className="flex gap-1 p-2 bg-[var(--mboa-surface)]">
@@ -140,7 +142,7 @@ export default function StockAdminPage() {
             color: onglet === "stock" ? "white" : "var(--mboa-text)",
           }}
         >
-          📦 Stock ({stock.length})
+          📦 {t("adm.stock")} ({stock.length})
         </button>
         <button
           onClick={() => setOnglet("ajouter")}
@@ -150,7 +152,7 @@ export default function StockAdminPage() {
             color: onglet === "ajouter" ? "white" : "var(--mboa-text)",
           }}
         >
-          + Add a product
+          {t("adm.stk.ajouter")}
         </button>
       </div>
 
@@ -160,7 +162,7 @@ export default function StockAdminPage() {
           <CarteMboa>
             <input
               type="text"
-              placeholder="🔍 Search for a product..."
+              placeholder={t("adm.stk.recherche")}
               value={recherche}
               onChange={(e) => setRecherche(e.target.value)}
               className="w-full p-2 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
@@ -175,7 +177,7 @@ export default function StockAdminPage() {
                   color: !filtreCat ? "white" : "var(--mboa-text)",
                 }}
               >
-                Tout
+                {t("adm.stk.tout")}
               </button>
               {CATEGORIES_ORDREES.map((c) => (
                 <button
@@ -188,7 +190,7 @@ export default function StockAdminPage() {
                   }}
                 >
                   <PictoCategorie categorie={c} size={14} />
-                  {CATEGORIE_INFO[c].libelle}
+                  {t(`cat.${c}`)}
                 </button>
               ))}
             </div>
@@ -198,8 +200,8 @@ export default function StockAdminPage() {
             <CarteMboa>
               <p className="text-corps text-[var(--mboa-text-doux)] text-center">
                 {stock.length === 0
-                  ? "Empty stock — buy from suppliers or add a product"
-                  : "No product matches your search"}
+                  ? t("adm.stk.vide1")
+                  : t("adm.stk.vide2")}
               </p>
             </CarteMboa>
           )}
@@ -213,18 +215,18 @@ export default function StockAdminPage() {
                   <div className="flex items-center gap-2">
                     <BoutonVoix texte={`${p.nom}, ${produitDisponibilite(p)}`} />
                     <span className="text-corps font-bold">{p.nom}</span>
-                    {produitEstPack(p) && <BadgeStatut statut="valide" libelle="Pack" />}
-                    {!p.actif && <BadgeStatut statut="annule" libelle="Inactive" />}
+                    {produitEstPack(p) && <BadgeStatut statut="valide" libelle={t("adm.stk.pack")} />}
+                    {!p.actif && <BadgeStatut statut="annule" libelle={t("adm.stk.inactif")} />}
                   </div>
-                  {aPerte && <BadgeStatut statut="litige" libelle="At a loss" />}
+                  {aPerte && <BadgeStatut statut="litige" libelle={t("adm.stk.aPerte")} />}
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center mb-2">
                   <div>
-                    <p className="text-aide text-[var(--mboa-text-doux)]">Cost</p>
+                    <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.stk.cout")}</p>
                     <p className="text-corps font-bold">{p.prixAchat != null ? formaterFcfa(p.prixAchat) : "—"}</p>
                   </div>
                   <div>
-                    <p className="text-aide text-[var(--mboa-text-doux)]">Sale price</p>
+                    <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.stk.prixVente")}</p>
                     <div className="flex items-center justify-center gap-1">
                       <input
                         type="number"
@@ -240,7 +242,7 @@ export default function StockAdminPage() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-aide text-[var(--mboa-text-doux)]">Margin</p>
+                    <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.stk.marge")}</p>
                     <p className="text-corps font-bold text-[var(--mboa-primary)]">
                       {margeU != null ? `${formaterFcfa(margeU)} (${margePct}%)` : "—"}
                     </p>
@@ -271,7 +273,7 @@ export default function StockAdminPage() {
                       color: p.actif ? "var(--mboa-error)" : "var(--mboa-primary)",
                     }}
                   >
-                    {p.actif ? "⊘ Deactivate" : "✓ Reactivate"}
+                    {p.actif ? t("adm.stk.desactiver") : t("adm.stk.reactiver")}
                   </button>
                   {confirmSuppr === p.id ? (
                     <div className="flex gap-1 flex-1">
@@ -279,13 +281,13 @@ export default function StockAdminPage() {
                         onClick={() => confirmerSuppression(p)}
                         className="flex-1 p-2 rounded-xl text-aide font-bold bg-[var(--mboa-error)] text-white"
                       >
-                        Confirm?
+                        {t("adm.stk.confirmer")}
                       </button>
                       <button
                         onClick={() => setConfirmSuppr(null)}
                         className="flex-1 p-2 rounded-xl text-aide bg-[var(--mboa-background)]"
                       >
-                        Cancel
+                        {t("adm.stk.annuler")}
                       </button>
                     </div>
                   ) : (
@@ -293,7 +295,7 @@ export default function StockAdminPage() {
                       onClick={() => setConfirmSuppr(p.id)}
                       className="flex-1 p-2 rounded-xl text-aide bg-[var(--mboa-error-doux)] text-[var(--mboa-error)]"
                     >
-                      🗑 Delete
+                      {t("adm.stk.supprimer")}
                     </button>
                   )}
                 </div>
@@ -307,22 +309,22 @@ export default function StockAdminPage() {
         <div className="flex-1 p-4 space-y-3">
           {npSucces && (
             <div className="bg-[var(--mboa-secondary-doux)] rounded-xl p-3 text-center">
-              <p className="text-corps text-[var(--mboa-primary)] font-bold">✅ Product added to stock</p>
+              <p className="text-corps text-[var(--mboa-primary)] font-bold">{t("adm.stk.succes")}</p>
             </div>
           )}
           <CarteMboa>
-            <h2 className="text-titre mb-3">New product</h2>
+            <h2 className="text-titre mb-3">{t("adm.stk.nouveau")}</h2>
 
             <input
               type="text"
-              placeholder="Product name"
+              placeholder={t("adm.stk.nom")}
               value={npNom}
               onChange={(e) => setNpNom(e.target.value)}
               className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
               style={{ fontSize: 20 }}
             />
 
-            <label className="text-corps block mb-1">Category</label>
+            <label className="text-corps block mb-1">{t("adm.stk.categorie")}</label>
             <div className="grid grid-cols-4 gap-2 mb-2">
               {CATEGORIES_ORDREES.map((c) => (
                 <button
@@ -336,12 +338,12 @@ export default function StockAdminPage() {
                   }}
                 >
                   <PictoCategorie categorie={c} size={20} />
-                  <span className="text-aide mt-1 text-center" style={{ fontSize: 10 }}>{CATEGORIE_INFO[c].libelle}</span>
+                  <span className="text-aide mt-1 text-center" style={{ fontSize: 10 }}>{t(`cat.${c}`)}</span>
                 </button>
               ))}
             </div>
 
-            <label className="text-corps block mb-1">Unit</label>
+            <label className="text-corps block mb-1">{t("adm.stk.unite")}</label>
             <select
               value={npUnite}
               onChange={(e) => setNpUnite(e.target.value as Unite)}
@@ -355,7 +357,7 @@ export default function StockAdminPage() {
 
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div>
-                <label className="text-aide text-[var(--mboa-text-doux)] block mb-1">Sale price (FCFA)</label>
+                <label className="text-aide text-[var(--mboa-text-doux)] block mb-1">{t("adm.stk.prixVente2")}</label>
                 <input
                   type="number"
                   inputMode="numeric"
@@ -367,7 +369,7 @@ export default function StockAdminPage() {
                 />
               </div>
               <div>
-                <label className="text-aide text-[var(--mboa-text-doux)] block mb-1">Purchase cost (optional)</label>
+                <label className="text-aide text-[var(--mboa-text-doux)] block mb-1">{t("adm.stk.prixAchat")}</label>
                 <input
                   type="number"
                   inputMode="numeric"
@@ -382,7 +384,7 @@ export default function StockAdminPage() {
 
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div>
-                <label className="text-aide text-[var(--mboa-text-doux)] block mb-1">Stock quantity</label>
+                <label className="text-aide text-[var(--mboa-text-doux)] block mb-1">{t("adm.stk.quantite")}</label>
                 <input
                   type="number"
                   inputMode="numeric"
@@ -394,7 +396,7 @@ export default function StockAdminPage() {
                 />
               </div>
               <div>
-                <label className="text-aide text-[var(--mboa-text-doux)] block mb-1">Perishable?</label>
+                <label className="text-aide text-[var(--mboa-text-doux)] block mb-1">{t("adm.stk.perissable")}</label>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setNpPerissable(true)}
@@ -404,7 +406,7 @@ export default function StockAdminPage() {
                       color: npPerissable ? "white" : "var(--mboa-text)",
                     }}
                   >
-                    Yes
+                    {t("adm.stk.oui")}
                   </button>
                   <button
                     onClick={() => setNpPerissable(false)}
@@ -414,7 +416,7 @@ export default function StockAdminPage() {
                       color: !npPerissable ? "white" : "var(--mboa-text)",
                     }}
                   >
-                    No
+                    {t("adm.stk.non")}
                   </button>
                 </div>
               </div>
@@ -430,7 +432,7 @@ export default function StockAdminPage() {
               ) : (
                 <div className="text-center">
                   <div className="text-4xl">📷</div>
-                  <p className="text-aide text-[var(--mboa-text-doux)] mt-1">Photo (optional)</p>
+                  <p className="text-aide text-[var(--mboa-text-doux)] mt-1">{t("adm.stk.photo")}</p>
                 </div>
               )}
             </div>
@@ -441,7 +443,7 @@ export default function StockAdminPage() {
               disabled={!npNom.trim() || !npPrix || npEnCours}
               className="w-full"
             >
-              {npEnCours ? "Saving..." : "Add to stock"}
+              {npEnCours ? t("adm.stk.sauvegarde") : t("adm.stk.ajouterBtn")}
             </BoutonMboa>
           </CarteMboa>
         </div>

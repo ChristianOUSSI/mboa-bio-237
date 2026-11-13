@@ -6,11 +6,12 @@ import { chargerCatalogue, chargerStock, sauverPack } from "@/core/data/depots";
 import { CarteMboa, BoutonMboa, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { EntreeCatalogue, catalogueUniteReelle } from "@/core/types/catalogue";
 import { Produit, produitEstPack } from "@/core/types/produit";
-import { CATEGORIES_ORDREES, CATEGORIE_INFO, Categorie } from "@/core/types/categorie";
+import { CATEGORIES_ORDREES, Categorie } from "@/core/types/categorie";
 import { Unite, UNITE_INFO, unitePour } from "@/core/types/unite";
 import { PackComposant } from "@/core/types/pack_composant";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useTr } from "@/core/i18n";
 
 interface ComposantDraft {
   slug: string;
@@ -22,6 +23,7 @@ interface ComposantDraft {
 export default function PacksAdminPage() {
   const router = useRouter();
   const { pret, profil } = useGuardRole("admin");
+  const t = useTr();
   const [catalogue, setCatalogue] = useState<EntreeCatalogue[]>([]);
   const [packs, setPacks] = useState<Produit[]>([]);
   const [nom, setNom] = useState("");
@@ -113,16 +115,16 @@ export default function PacksAdminPage() {
   }
   return (
     <FondMboa>
-      <EnTetePage titre="Dish packs" sousTitre="One dish, its ingredients, one price" onRetour={() => router.back()} />
+      <EnTetePage titre={t("adm.pack.titre")} sousTitre={t("adm.pack.sousTitre")} onRetour={() => router.back()} />
 
       <div className="flex-1 p-4 space-y-3">
         {/* Composition d'un nouveau pack */}
         <CarteMboa>
-          <h2 className="text-titre mb-3">Compose a dish</h2>
+          <h2 className="text-titre mb-3">{t("adm.pack.composer")}</h2>
 
           <input
             type="text"
-            placeholder="Dish name (e.g.: Eru peanut sauce)"
+            placeholder={t("adm.pack.nomHint")}
             value={nom}
             onChange={(e) => setNom(e.target.value)}
             className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
@@ -137,12 +139,12 @@ export default function PacksAdminPage() {
               style={{ fontSize: 18 }}
             >
               {CATEGORIES_ORDREES.map((c) => (
-                <option key={c} value={c}>{CATEGORIE_INFO[c].libelle}</option>
+                <option key={c} value={c}>{t(`cat.${c}`)}</option>
               ))}
             </select>
             <input
               type="text"
-              placeholder="Photo (URL)"
+              placeholder={t("adm.pack.photo")}
               value={photo}
               onChange={(e) => setPhoto(e.target.value)}
               className="p-3 border-2 border-[var(--mboa-primary)] rounded-xl"
@@ -151,7 +153,7 @@ export default function PacksAdminPage() {
           </div>
 
           {/* Ingredients */}
-          <p className="text-corps font-bold mb-2">Ingredients</p>
+          <p className="text-corps font-bold mb-2">{t("adm.pack.ingredients")}</p>
           {composants.map((c, i) => (
             <div key={i} className="flex gap-2 mb-2 items-center">
               <select
@@ -187,13 +189,13 @@ export default function PacksAdminPage() {
             </div>
           ))}
           <BoutonMboa variant="surface" onClick={ajouterComposant} className="w-full mb-3">
-            + Add an ingredient
+            {t("adm.pack.ajouter")}
           </BoutonMboa>
 
           {/* Prix unique + stock de parts */}
           <div className="grid grid-cols-2 gap-2 mb-3">
             <div>
-              <label className="text-corps block mb-1">Single price (FCFA)</label>
+              <label className="text-corps block mb-1">{t("adm.pack.prix")}</label>
               <input
                 type="number"
                 inputMode="numeric"
@@ -205,7 +207,7 @@ export default function PacksAdminPage() {
               />
             </div>
             <div>
-              <label className="text-corps block mb-1">Servings in stock</label>
+              <label className="text-corps block mb-1">{t("adm.pack.stock")}</label>
               <input
                 type="number"
                 inputMode="numeric"
@@ -224,12 +226,12 @@ export default function PacksAdminPage() {
             disabled={!nom.trim() || !prix || composants.length === 0 || enCours}
             className="w-full"
           >
-            {enCours ? "Saving..." : "Save the pack"}
+            {enCours ? t("adm.pack.sauvegarde") : t("adm.pack.sauver")}
           </BoutonMboa>
         </CarteMboa>
 
         {/* Packs existants */}
-        <h2 className="text-titre">Packs at the counter ({packs.length})</h2>
+        <h2 className="text-titre">{t("adm.pack.liste")} ({packs.length})</h2>
         {packs.map((p) => (
           <CarteMboa key={p.id}>
             <div className="flex justify-between items-start mb-1">
@@ -238,7 +240,7 @@ export default function PacksAdminPage() {
             </div>
             <p className="text-aide text-[var(--mboa-text-doux)]">
               {p.composants
-                .map((c: PackComposant) => `${c.quantite} ${unitePour(c.unite, c.quantite)} of ${c.nom?.trim() || c.slug.replaceAll("_", " ")}`)
+                .map((c: PackComposant) => `${c.quantite} ${unitePour(c.unite, c.quantite)} ${t("adm.pack.de")} ${c.nom?.trim() || c.slug.replaceAll("_", " ")}`)
                 .join(" · ")}
             </p>
           </CarteMboa>
