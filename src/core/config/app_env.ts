@@ -3,11 +3,11 @@
 export type AppRole = "fournisseur" | "admin" | "consommateur" | "livreur" | "superadmin";
 
 export const APP_ROLE_INFO: Record<AppRole, { appName: string; description: string }> = {
-  fournisseur: { appName: "MBOA SUPPLIER", description: "Farmers in the field" },
-  admin: { appName: "MBOA ADMIN", description: "Quality control" },
-  consommateur: { appName: "MBOA BIO 237", description: "The market customer" },
-  livreur: { appName: "MBOA DRIVER", description: "The bike that carries the basket" },
-  superadmin: { appName: "MBOA SUPER", description: "Root access" },
+  fournisseur: { appName: "MBOA FOURNISSEUR", description: "Les paysans au champ" },
+  admin: { appName: "MBOA ADMIN", description: "Contrôle qualité" },
+  consommateur: { appName: "MBOA BIO 237", description: "Le client du marché" },
+  livreur: { appName: "MBOA LIVREUR", description: "La moto qui porte le panier" },
+  superadmin: { appName: "MBOA SUPER", description: "Accès racine" },
 };
 
 export function roleResolve(slug?: string | null): AppRole {
@@ -36,4 +36,4 @@ export const DELAI_RELANCE_HEURES = 12;
 /** Message d'avertissement quand Supabase n'est pas configuré. */
 export const problemeConfig = supabaseConfigure
   ? null
-  : "Demo mode: no Supabase database configured. Data stays local to the browser.";
+  : "Mode démo : aucune base Supabase configurée. Les données restent locales au navigateur.";

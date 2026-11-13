@@ -18,34 +18,34 @@ export const STATUT_COMMANDE_INFO: Record<
   { libelle: string; actionRestante: string; annonce: string }
 > = {
   [StatutCommande.nouvelle]: {
-    libelle: "New",
-    actionRestante: "Mboa must validate",
-    annonce: "Quote registered",
+    libelle: "Nouvelle",
+    actionRestante: "Mboa doit valider",
+    annonce: "Devis enregistré",
   },
   [StatutCommande.valideeAdmin]: {
-    libelle: "Validated",
-    actionRestante: "The bike must leave",
-    annonce: "Mboa validated your quote, the goods are reserved",
+    libelle: "Validée",
+    actionRestante: "La moto doit partir",
+    annonce: "Mboa a validé votre devis, la marchandise est réservée",
   },
   [StatutCommande.enLivraison]: {
-    libelle: "On the way",
-    actionRestante: "The bike is on the way",
-    annonce: "The bike is on the way",
+    libelle: "En route",
+    actionRestante: "La moto est en route",
+    annonce: "La moto est en route",
   },
   [StatutCommande.livree]: {
-    libelle: "Delivered",
-    actionRestante: "Say if everything is fine",
-    annonce: "Your order has arrived. Is everything fine?",
+    libelle: "Livrée",
+    actionRestante: "Dites si tout est bon",
+    annonce: "Votre commande est arrivée. Tout est bon ?",
   },
   [StatutCommande.recue]: {
-    libelle: "Received",
-    actionRestante: "It's over",
-    annonce: "Thank you, it's noted",
+    libelle: "Reçue",
+    actionRestante: "C'est terminé",
+    annonce: "Merci, c'est noté",
   },
   [StatutCommande.annulee]: {
-    libelle: "Cancelled",
-    actionRestante: "The goods are back",
-    annonce: "Your quote was cancelled",
+    libelle: "Annulée",
+    actionRestante: "La marchandise revient",
+    annonce: "Votre devis a été annulé",
   },
 };
 
@@ -96,7 +96,7 @@ export const MODE_PAIEMENT_INFO: Record<
   ModePaiement,
   { libelle: string; marque: string | null }
 > = {
-  [ModePaiement.especes]: { libelle: "Cash on delivery", marque: null },
+  [ModePaiement.especes]: { libelle: "Espèces à la livraison", marque: null },
   [ModePaiement.momo]: { libelle: "MTN MoMo", marque: null },
   [ModePaiement.orangeMoney]: { libelle: "Orange Money", marque: null },
 };
@@ -117,8 +117,8 @@ export const SATISFACTION_INFO: Record<
   Satisfaction,
   { libelle: string; annonceAuComptoir: string }
 > = {
-  [Satisfaction.bon]: { libelle: "All good", annonceAuComptoir: "The customer accepted the goods" },
-  [Satisfaction.probleme]: { libelle: "There's a problem", annonceAuComptoir: "The customer reported a problem" },
+  [Satisfaction.bon]: { libelle: "Tout est bon", annonceAuComptoir: "La cliente a accepté la marchandise" },
+  [Satisfaction.probleme]: { libelle: "Il y a un problème", annonceAuComptoir: "La cliente a signalé un problème" },
 };
 
 export function satisfactionParse(slug?: string | null): Satisfaction | null {
@@ -137,7 +137,7 @@ export enum MotifReception {
 }
 
 export const MOTIF_RECEPTION_INFO: Record<MotifReception, string> = {
-  [MotifReception.rienRecu]: "Nothing arrived",
-  [MotifReception.quantite]: "Wrong quantity",
-  [MotifReception.abime]: "The product is damaged",
+  [MotifReception.rienRecu]: "Rien reçu",
+  [MotifReception.quantite]: "Mauvaise quantité",
+  [MotifReception.abime]: "Le produit est abîmé",
 };

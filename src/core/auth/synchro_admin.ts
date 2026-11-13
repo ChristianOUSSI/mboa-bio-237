@@ -7,7 +7,7 @@ import type { CompteAuth } from "./auth_local";
 /**
  * Synchro multi-appareils des comptes admin / super admin.
  *
- * Sans Supabase configuré, tout reste local (IndexedDB) — comportement inchangé.
+ * Sans Supabase configuré, tout reste local (IndexedDB) - comportement inchangé.
  * Avec Supabase, les comptes admin sont répliqués dans la table `admin_comptes`
  * pour que chaque admin puisse se connecter depuis son propre PC ou téléphone.
  *

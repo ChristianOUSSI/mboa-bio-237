@@ -7,7 +7,7 @@ let _client: SupabaseClient | null = null;
 
 /**
  * Wrapper unique pour Supabase.
- * Retourne null quand non configuré — les depots tombent sur le cache local.
+ * Retourne null quand non configuré - les depots tombent sur le cache local.
  */
 export function mboaReseau(): SupabaseClient | null {
   if (!supabaseConfigure) return null;

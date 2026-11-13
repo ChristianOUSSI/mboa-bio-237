@@ -480,6 +480,12 @@ const DICT: Record<Lang, Record<string, string>> = {
     "super.roleAutre": "Autre",
     "super.roleSuper": "Super admin",
 
+    // Accessibilité
+    "a11y.retour": "Retour",
+    "a11y.deconnexion": "Déconnexion",
+    "a11y.ecouter": "Écouter",
+    "a11y.langue": "Langue",
+
     // Petits plus
     "plus.horsLigne": "Fonctionne sans internet",
     "plus.livraison": "Livraison à domicile",
@@ -942,6 +948,12 @@ const DICT: Record<Lang, Record<string, string>> = {
     "super.roleAdmin": "Admin",
     "super.roleAutre": "Other",
     "super.roleSuper": "Super admin",
+
+    // Accessibilité
+    "a11y.retour": "Back",
+    "a11y.deconnexion": "Sign out",
+    "a11y.ecouter": "Listen",
+    "a11y.langue": "Language",
 
     // Petits plus
     "plus.horsLigne": "Works offline",

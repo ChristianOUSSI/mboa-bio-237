@@ -26,7 +26,7 @@ export function livreurRepere(l: Livreur): string {
 export function livreurFromMap(map: Record<string, unknown>): Livreur {
   return {
     id: map.id as string,
-    nom: (map.nom as string) ?? "Driver",
+    nom: (map.nom as string) ?? "Livreur",
     telephone: (map.telephone_237 as string) ?? "",
     zone: (map.zone as string) ?? "",
     profilId: (map.profil_id as string) ?? null,
@@ -74,7 +74,7 @@ export function coursePaiementDu(c: CourseLivreur): boolean {
 
 export function courseClienteLabel(c: CourseLivreur): string {
   const nom = c.clienteNom.trim();
-  const base = nom.length === 0 ? "The customer" : nom;
+  const base = nom.length === 0 ? "La cliente" : nom;
   const village = c.clienteVillage.trim();
   return village.length === 0 ? base : `${base}, ${village}`;
 }
@@ -90,9 +90,9 @@ export function courseMontantAEncaisser(c: CourseLivreur): number {
 
 /** Statut du paiement pour affichage. */
 export function courseStatutPaiement(c: CourseLivreur): { label: string; couleur: "vert" | "orange" | "gris" } {
-  if (courseEstPayee(c) && c.payeLe) return { label: "Paid", couleur: "vert" };
-  if (coursePaiementDu(c)) return { label: "To collect (receipt confirmed)", couleur: "orange" };
-  return { label: "Out for delivery", couleur: "gris" };
+  if (courseEstPayee(c) && c.payeLe) return { label: "Payé", couleur: "vert" };
+  if (coursePaiementDu(c)) return { label: "À encaisser (réception confirmée)", couleur: "orange" };
+  return { label: "En livraison", couleur: "gris" };
 }
 
 export function courseFromMap(map: Record<string, unknown>): CourseLivreur {

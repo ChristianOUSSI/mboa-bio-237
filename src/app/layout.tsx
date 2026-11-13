@@ -4,7 +4,7 @@ import { ServiceWorkerRegister } from "./sw-register";
 
 export const metadata: Metadata = {
   title: "MBOA BIO 237",
-  description: "Ultra-accessible fresh market counter for Cameroon. One codebase, four roles.",
+  description: "Comptoir du marché frais ultra accessible pour le Cameroun. Un code, quatre espaces.",
   manifest: "/manifest.json",
   applicationName: "MBOA BIO 237",
   appleWebApp: {
@@ -34,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="fr" className="h-full antialiased">
       <head>
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

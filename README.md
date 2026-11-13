@@ -1,4 +1,4 @@
-# MBOA BIO 237 — Version PWA (Next.js)
+# MBOA BIO 237 - Version PWA (Next.js)
 
 Comptoir vivrier ultra-accessible pour le Cameroun. Une codebase, quatre rôles.
 Portage du projet Flutter original vers une PWA Next.js + TypeScript.
@@ -108,7 +108,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx
 | Couleur | Hex | Usage |
 |---------|-----|-------|
 | Vert foncé | `#1E5128` | Primaire (surfaces sombres, texte, icônes) |
-| Vert clair | `#8BC34A` | Décoration (jauge, halo) — interdit comme texte |
+| Vert clair | `#8BC34A` | Décoration (jauge, halo) - interdit comme texte |
 | Beige | `#F8F9E9` | Fond général |
 | Blanc | `#FFFFFF` | Surface des cartes |
 | Rouge | `#D32F2F` | Erreur et litige |

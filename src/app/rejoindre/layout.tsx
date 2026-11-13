@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Become a supplier — MBOA BIO 237",
-  description: "Join the MBOA BIO 237 counter as a producer and sell your harvest directly.",
+  title: "Devenir fournisseur - MBOA BIO 237",
+  description: "Rejoignez le comptoir MBOA BIO 237 en tant que producteur et vendez votre récolte directement.",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

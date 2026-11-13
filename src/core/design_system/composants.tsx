@@ -1,8 +1,9 @@
 "use client";
 
 import { ReactNode } from "react";
+import { useTr } from "../i18n";
 
-/** Bouton MBOA — cible tactile minimale 72px, coins arrondis 20px. */
+/** Bouton MBOA - cible tactile minimale 72px, coins arrondis 20px. */
 export function BoutonMboa({
   children,
   variant = "primary",
@@ -34,7 +35,7 @@ export function BoutonMboa({
   );
 }
 
-/** Carte MBOA — surface blanche, ombre douce, coins arrondis. */
+/** Carte MBOA - surface blanche, ombre douce, coins arrondis. */
 export function CarteMboa({
   children,
   className = "",
@@ -58,7 +59,7 @@ export function CarteMboa({
   );
 }
 
-/** Jauge de stock — dégradé vert sur fond trait. */
+/** Jauge de stock - dégradé vert sur fond trait. */
 export function JaugeMboa({ valeur }: { valeur: number }) {
   return (
     <div className="jauge-mboa">
@@ -70,7 +71,7 @@ export function JaugeMboa({ valeur }: { valeur: number }) {
   );
 }
 
-/** Badge de statut — couleur selon le statut de commande. */
+/** Badge de statut - couleur selon le statut de commande. */
 export function BadgeStatut({ statut, libelle }: { statut: string; libelle: string }) {
   const couleurs: Record<string, string> = {
     nouvelle: "bg-[var(--mboa-primary-doux)] text-[var(--mboa-primary)]",
@@ -93,7 +94,7 @@ export function BadgeStatut({ statut, libelle }: { statut: string; libelle: stri
   );
 }
 
-/** En-tête de page — dégradé vert animé, titre et bouton retour. */
+/** En-tête de page - dégradé vert animé, titre et bouton retour. */
 export function EnTetePage({
   titre,
   sousTitre,
@@ -107,13 +108,14 @@ export function EnTetePage({
   action?: ReactNode;
   onDeconnexion?: () => void;
 }) {
+  const t = useTr();
   return (
     <div className="entete-mboa flex items-center gap-3 p-4">
       {onRetour && (
         <button
           onClick={onRetour}
           className="btn-mboa btn-surface !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl !border-white/40 !bg-white/15 !text-white"
-          aria-label="Back"
+          aria-label={t("a11y.retour")}
         >
           ←
         </button>
@@ -127,8 +129,8 @@ export function EnTetePage({
         <button
           onClick={onDeconnexion}
           className="btn-mboa btn-surface !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl !border-white/40 !bg-white/15 !text-white"
-          aria-label="Sign out"
-          title="Sign out"
+          aria-label={t("a11y.deconnexion")}
+          title={t("a11y.deconnexion")}
         >
           ⏻
         </button>
@@ -137,7 +139,7 @@ export function EnTetePage({
   );
 }
 
-/** Pictogramme de catégorie — icône SVG au trait. */
+/** Pictogramme de catégorie - icône SVG au trait. */
 export function PictoCategorie({ categorie, size = 48 }: { categorie: string; size?: number }) {
   const emojis: Record<string, string> = {
     fruit: "🥭",
@@ -156,22 +158,23 @@ export function PictoCategorie({ categorie, size = 48 }: { categorie: string; si
   );
 }
 
-/** Bouton haut-parleur — dit le texte via TTS. */
+/** Bouton haut-parleur - dit le texte via TTS. */
 export function BoutonVoix({ texte, label = "🔊" }: { texte: string; label?: string }) {
+  const t = useTr();
   return (
     <button
       className="btn-mboa btn-secondary !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl !shadow-none"
       onClick={() => {
         import("../voice/tts_service").then(({ ttsParler }) => ttsParler(texte));
       }}
-      aria-label="Listen"
+      aria-label={t("a11y.ecouter")}
     >
       {label}
     </button>
   );
 }
 
-/** Fond vivant — halos animés et filigrane logo. */
+/** Fond vivant - halos animés et filigrane logo. */
 export function FondMboa({ children }: { children: ReactNode }) {
   return (
     <div className="fond-mboa flex-1 flex flex-col min-h-screen">
@@ -183,8 +186,10 @@ export function FondMboa({ children }: { children: ReactNode }) {
   );
 }
 
-/** Splash screen animé — logo MBOA BIO 237. */
-export function SplashMboa({ message = "The earth feeds us" }: { message?: string }) {
+/** Splash screen animé - logo MBOA BIO 237. */
+export function SplashMboa({ message }: { message?: string }) {
+  const t = useTr();
+  const slogan = message ?? t("app.slogan");
   return (
     <div className="splash-mboa">
       <div className="halo-mboa" style={{ width: 300, height: 300, top: "8%", left: "-10%", background: "rgba(174,213,129,0.30)" }} aria-hidden />
@@ -194,7 +199,7 @@ export function SplashMboa({ message = "The earth feeds us" }: { message?: strin
       <div className="splash-titre text-center">
         <h1 className="text-chiffre-geant text-white">MBOA BIO</h1>
         <p className="text-ecran text-[var(--mboa-secondary)]">237</p>
-        <p className="text-aide text-white/75 mt-2">{message}</p>
+        <p className="text-aide text-white/75 mt-2">{slogan}</p>
       </div>
       <div className="splash-barre">
         <div className="splash-barre-remplissage" />
@@ -213,7 +218,7 @@ export function PastilleCompteur({ n }: { n: number }) {
   );
 }
 
-/** Skeleton de chargement — placeholder animé pendant le fetch des données. */
+/** Skeleton de chargement - placeholder animé pendant le fetch des données. */
 export function SkeletonMboa({ lignes = 3, hauteur = 80 }: { lignes?: number; hauteur?: number }) {
   return (
     <div className="space-y-3 p-4">

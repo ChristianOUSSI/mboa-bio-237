@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Driver space — MBOA BIO 237",
-  description: "MBOA BIO driver space: assigned deliveries and tracking.",
+  title: "Espace livreur - MBOA BIO 237",
+  description: "Espace livreur MBOA BIO : courses assignées et suivi.",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

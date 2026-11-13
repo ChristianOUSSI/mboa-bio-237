@@ -138,7 +138,7 @@ interface ListeState {
 export const useListe = create<ListeState>()(
   persist(
     (set, get) => ({
-      titre: "My list",
+      titre: "Ma liste",
       lignes: [],
       modifiee: false,
       charger: (titre, lignes) =>

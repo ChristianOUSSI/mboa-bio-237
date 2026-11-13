@@ -416,7 +416,7 @@ export default function PageConnexion() {
         </p>
         {/* Sélecteur de langue */}
         <div className="absolute top-4 right-4 z-20">
-          <div className="selecteur-langue" role="group" aria-label="Language">
+          <div className="selecteur-langue" role="group" aria-label={t("a11y.langue")}>
             {(["fr", "en"] as Lang[]).map((l) => (
               <button
                 key={l}
@@ -473,10 +473,6 @@ export default function PageConnexion() {
               <span className="puce-info">💵 {t("plus.paiement")}</span>
               <span className="puce-info">🌿 {t("plus.frais")}</span>
             </div>
-
-            <p className="text-aide text-center text-[var(--mboa-text-doux)] italic">
-              {t("choix.note")}
-            </p>
           </div>
         )}
 
@@ -524,6 +520,12 @@ export default function PageConnexion() {
               <p className="text-aide text-white/90 italic mt-2 leading-relaxed">
                 {t(`role.${roleChoisi}.desc`)}
               </p>
+
+              {roleChoisi === "livreur" && (
+                <p className="alerte-splash mt-4">
+                  🛵 {t("choix.note")}
+                </p>
+              )}
 
               <BoutonMboa variant="surface" onClick={allerConnexion} className="w-full mt-6">
                 {t("choix.continuer")} →

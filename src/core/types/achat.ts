@@ -16,11 +16,11 @@ export const STATUT_ACHAT_INFO: Record<
   StatutAchat,
   { libelle: string; annonce: string }
 > = {
-  [StatutAchat.propose]: { libelle: "Waiting for the counter", annonce: "The counter is still reviewing" },
-  [StatutAchat.valide]: { libelle: "Purchased", annonce: "The counter bought it, the goods are in stock" },
-  [StatutAchat.paye]: { libelle: "Paid", annonce: "The counter has paid" },
-  [StatutAchat.litige]: { libelle: "Refused", annonce: "A problem was reported at reception" },
-  [StatutAchat.annule]: { libelle: "Not retained", annonce: "The counter did not keep the goods" },
+  [StatutAchat.propose]: { libelle: "En attente du comptoir", annonce: "Le comptoir examine encore" },
+  [StatutAchat.valide]: { libelle: "Acheté", annonce: "Le comptoir l'a acheté, la marchandise est en stock" },
+  [StatutAchat.paye]: { libelle: "Payé", annonce: "Le comptoir a payé" },
+  [StatutAchat.litige]: { libelle: "Refusé", annonce: "Un problème a été signalé à la réception" },
+  [StatutAchat.annule]: { libelle: "Non retenu", annonce: "Le comptoir n'a pas gardé la marchandise" },
 };
 
 export function statutAchatResolve(slug?: string | null): StatutAchat {
@@ -73,7 +73,7 @@ export function achatMontant(a: Achat): number {
 export function achatAnnonce(a: Achat): string {
   const u = a.unite;
   const prix = a.prixMarchand ?? a.prixDemande;
-  return `${a.quantite} ${u} of ${a.nom}, at ${prix} francs`;
+  return `${a.quantite} ${u} de ${a.nom}, à ${prix} francs`;
 }
 
 export function achatResume(a: Achat): string {

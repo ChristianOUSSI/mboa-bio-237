@@ -54,13 +54,13 @@ export function produitJauge(p: Produit): number {
 
 export function produitAnnonceVocale(p: Produit): string {
   const u = produitUniteReelle(p);
-  return `${p.nom}, ${uniteAvec(u, p.quantite)} available, ${p.prix} francs ${uniteAvecArticle(u)}`;
+  return `${p.nom}, ${uniteAvec(u, p.quantite)} disponibles, ${p.prix} francs ${uniteAvecArticle(u)}`;
 }
 
 export function produitDisponibilite(p: Produit): string {
-  if (produitEstRupture(p)) return "nothing left at the counter";
+  if (produitEstRupture(p)) return "plus rien au comptoir";
   const u = produitUniteReelle(p);
-  return `${uniteAvec(u, p.quantite)} available`;
+  return `${uniteAvec(u, p.quantite)} disponibles`;
 }
 
 export function produitPrixLabel(p: Produit): string {

@@ -40,7 +40,7 @@ export function construireTexteDocument(opts: ExportOptions): string {
   const sousTotal = lignes.reduce((s, l) => s + Math.round(l.quantite * l.prix), 0);
   const frais = opts.fraisLivraison ?? 0;
   const total = sousTotal + frais;
-  const date = opts.date ?? new Date().toLocaleDateString("en-CM", { day: "2-digit", month: "long", year: "numeric" });
+  const date = opts.date ?? new Date().toLocaleDateString("fr-CM", { day: "2-digit", month: "long", year: "numeric" });
 
   const lignesDetail = lignes.map((l, i) => {
     const unite = libelleUnite(String(l.unite ?? "kg"));
@@ -50,30 +50,30 @@ export function construireTexteDocument(opts: ExportOptions): string {
 
   const entete =
     opts.type === "devis"
-      ? `MBOA BIO 237 QUOTE\nReference: ${opts.reference ?? "—"}`
-      : `MBOA BIO 237 MARKET LIST`;
+      ? `DEVIS MBOA BIO 237\nRéférence : ${opts.reference ?? "-"}`
+      : `LISTE DE MARCHÉ MBOA BIO 237`;
 
   const pied =
     opts.type === "devis"
-      ? `\nQuote valid for 24 hours. Stock is reserved after validation by Mboa Bio.`
-      : `\nThis list is not a quote yet. Send it to the counter to turn it into a quote.`;
+      ? `\nDevis valable 24 heures. Le stock est réservé après validation par Mboa Bio.`
+      : `\nCette liste n'est pas encore un devis. Envoyez-la au comptoir pour en faire un devis.`;
 
   return [
     "🌿 MBOA BIO 237",
-    "The earth feeds us, quality sets us apart",
+    "La terre nous nourrit, la qualité nous distingue",
     "",
     entete,
-    opts.code ? `List code: ${opts.code}` : "",
-    `Date: ${date}`,
+    opts.code ? `Code de la liste : ${opts.code}` : "",
+    `Date : ${date}`,
     "",
-    "ITEMS",
+    "ARTICLES",
     ...lignesDetail,
     "",
-    `Subtotal: ${formaterFcfa(sousTotal)}`,
-    ...(frais > 0 ? [`Bike delivery: ${formaterFcfa(frais)}`] : []),
-    `TOTAL: ${formaterFcfa(total)}`,
+    `Sous-total : ${formaterFcfa(sousTotal)}`,
+    ...(frais > 0 ? [`Livraison moto : ${formaterFcfa(frais)}`] : []),
+    `TOTAL : ${formaterFcfa(total)}`,
     "",
-    ...(opts.destinataire ? [`For: ${opts.destinataire}`] : []),
+    ...(opts.destinataire ? [`Pour : ${opts.destinataire}`] : []),
     pied,
   ]
     .filter((l) => l !== "")
@@ -89,21 +89,21 @@ export function construireMessageWhatsApp(opts: ExportOptions): string {
   const articles = opts.lignes
     .map((l) => {
       const unite = libelleUnite(String(l.unite ?? "kg"));
-      return `• ${l.quantite} ${unite} ${l.nom} — ${formaterFcfa(Math.round(l.quantite * l.prix))}`;
+      return `• ${l.quantite} ${unite} ${l.nom} · ${formaterFcfa(Math.round(l.quantite * l.prix))}`;
     })
     .join("\n");
 
-  const titre = opts.type === "devis" ? "My MBOA BIO 237 QUOTE" : "My MBOA BIO 237 MARKET LIST";
+  const titre = opts.type === "devis" ? "Mon devis MBOA BIO 237" : "Ma liste de marché MBOA BIO 237";
 
   return [
     `🌿 ${titre}`,
     "",
     articles,
     "",
-    `Total: ${formaterFcfa(total)}`,
-    ...(opts.code ? [`Code: ${opts.code}`] : []),
+    `Total : ${formaterFcfa(total)}`,
+    ...(opts.code ? [`Code : ${opts.code}`] : []),
     "",
-    "Sent from MBOA BIO 237",
+    "Envoyé depuis MBOA BIO 237",
   ].join("\n");
 }
 
@@ -141,7 +141,7 @@ export function imprimerDocument(): void {
 /**
  * Export PDF sans dépendance externe.
  * On construit un document HTML minimal dans une fenêtre séparée,
- * puis on déclenche l'impression — l'utilisateur choisit "Enregistrer en PDF".
+ * puis on déclenche l'impression - l'utilisateur choisit "Enregistrer en PDF".
  */
 export function exporterPdf(opts: ExportOptions): void {
   if (typeof window === "undefined") return;
@@ -153,7 +153,7 @@ export function exporterPdf(opts: ExportOptions): void {
       if (l.startsWith("•") || l.includes("×")) {
         return `<div style='white-space:pre-wrap;margin:2px 0'>${echapper(l)}</div>`;
       }
-      if (l.startsWith("TOTAL") || l.startsWith("Subtotal") || l.startsWith("Bike delivery")) {
+      if (l.startsWith("TOTAL") || l.startsWith("Sous-total") || l.startsWith("Livraison moto")) {
         return `<div style='white-space:pre-wrap;margin:2px 0;font-weight:700'>${echapper(l)}</div>`;
       }
       return `<div style='white-space:pre-wrap;margin:2px 0'>${echapper(l)}</div>`;
@@ -161,11 +161,11 @@ export function exporterPdf(opts: ExportOptions): void {
     .join("");
 
   const html = `<!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${opts.type === "devis" ? "Quote" : "Market list"} — MBOA BIO 237</title>
+<title>${opts.type === "devis" ? "Devis" : "Liste de marché"} - MBOA BIO 237</title>
 <style>
   body { font-family: 'Nunito', Arial, sans-serif; color: #212121; padding: 24px; max-width: 720px; margin: 0 auto; }
   h1 { color: #1E5128; font-size: 24px; margin: 0 0 4px; }
@@ -176,10 +176,10 @@ export function exporterPdf(opts: ExportOptions): void {
 </head>
 <body>
 <h1>🌿 MBOA BIO 237</h1>
-<div style="font-size:13px;color:#666">The earth feeds us, quality sets us apart</div>
+<div style="font-size:13px;color:#666">La terre nous nourrit, la qualité nous distingue</div>
 <div class="filet"></div>
 ${corps}
-<div class="pied">Document generated by MBOA BIO 237 — Cameroon's fresh market counter</div>
+<div class="pied">Document généré par MBOA BIO 237, le comptoir du marché frais au Cameroun</div>
 <script>window.onload = function () { setTimeout(function () { window.print(); }, 350); };</script>
 </body>
 </html>`;
@@ -206,13 +206,13 @@ function echapper(s: string): string {
 export function optionsDepuisCommande(c: Commande, telephone?: string | null): ExportOptions {
   return {
     type: "devis",
-    titre: "MBOA BIO 237 quote",
+    titre: "Devis MBOA BIO 237",
     lignes: c.lignes,
     telephone,
     code: null,
     fraisLivraison: c.livreurTarif ?? 0,
     reference: c.id.slice(0, 8).toUpperCase(),
-    date: new Date(c.createdLe).toLocaleDateString("en-CM", {
+    date: new Date(c.createdLe).toLocaleDateString("fr-CM", {
       day: "2-digit",
       month: "long",
       year: "numeric",

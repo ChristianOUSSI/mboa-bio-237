@@ -215,7 +215,7 @@ export async function reinitialiserAdmin(): Promise<CompteAuth> {
   const admin = comptes.find((c) => c.role === "admin");
   if (!admin) {
     const neuf = await assurerCompteAdmin();
-    if (!neuf) throw new Error("Unable to create the admin account");
+    if (!neuf) throw new Error("Impossible de créer le compte admin");
     return neuf;
   }
   const motDePasse = await hacherMotDePasse(motDePasseAdminInitial(), `mboa-${admin.id}`);

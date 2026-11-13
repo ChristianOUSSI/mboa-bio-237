@@ -21,7 +21,7 @@ export function fournisseurLie(f: Fournisseur): boolean {
 export function fournisseurProduction(f: Fournisseur): string {
   const libre = f.productionLibre.trim();
   if (libre.length > 0) return libre;
-  return f.productionCategorie ? CATEGORIE_INFO[f.productionCategorie].libelle : "Production to be specified";
+  return f.productionCategorie ? CATEGORIE_INFO[f.productionCategorie].libelle : "Production à préciser";
 }
 
 export function fournisseurFromMap(map: Record<string, unknown>): Fournisseur {
@@ -29,9 +29,9 @@ export function fournisseurFromMap(map: Record<string, unknown>): Fournisseur {
   return {
     id: map.id as string,
     profilId: (map.profil_id as string) ?? null,
-    nom: (map.nom as string) ?? "Supplier",
+    nom: (map.nom as string) ?? "Fournisseur",
     telephone: (map.telephone_237 as string) ?? "",
-    village: (map.village as string) ?? "Unknown",
+    village: (map.village as string) ?? "Inconnu",
     photo: (map.photo as string) ?? null,
     productionCategorie: catSlug && catSlug.length > 0 ? (catSlug as Categorie) : null,
     productionLibre: (map.production_libre as string) ?? "",

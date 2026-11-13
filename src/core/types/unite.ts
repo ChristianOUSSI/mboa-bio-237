@@ -20,17 +20,17 @@ export const UNITE_INFO: Record<
   Unite,
   { un: string; pluriel: string; article: string }
 > = {
-  [Unite.kg]: { un: "kilo", pluriel: "kilos", article: "per" },
-  [Unite.boule]: { un: "ball", pluriel: "balls", article: "per" },
-  [Unite.bouteille]: { un: "bottle", pluriel: "bottles", article: "per" },
-  [Unite.botte]: { un: "bunch", pluriel: "bunches", article: "per" },
-  [Unite.morceau]: { un: "piece", pluriel: "pieces", article: "per" },
-  [Unite.part]: { un: "serving", pluriel: "servings", article: "per" },
-  [Unite.litre]: { un: "liter", pluriel: "liters", article: "per" },
-  [Unite.paquet]: { un: "pack", pluriel: "packs", article: "per" },
-  [Unite.plateau]: { un: "tray", pluriel: "trays", article: "per" },
-  [Unite.regime]: { un: "bunch", pluriel: "bunches", article: "per" },
-  [Unite.sachet]: { un: "sachet", pluriel: "sachets", article: "per" },
+  [Unite.kg]: { un: "kilo", pluriel: "kilos", article: "par" },
+  [Unite.boule]: { un: "boule", pluriel: "boules", article: "par" },
+  [Unite.bouteille]: { un: "bouteille", pluriel: "bouteilles", article: "par" },
+  [Unite.botte]: { un: "botte", pluriel: "bottes", article: "par" },
+  [Unite.morceau]: { un: "pièce", pluriel: "pièces", article: "par" },
+  [Unite.part]: { un: "part", pluriel: "parts", article: "par" },
+  [Unite.litre]: { un: "litre", pluriel: "litres", article: "par" },
+  [Unite.paquet]: { un: "paquet", pluriel: "paquets", article: "par" },
+  [Unite.plateau]: { un: "plateau", pluriel: "plateaux", article: "par" },
+  [Unite.regime]: { un: "régime", pluriel: "régimes", article: "par" },
+  [Unite.sachet]: { un: "sachet", pluriel: "sachets", article: "par" },
 };
 
 export function uniteResolve(slug?: string | null): Unite {

@@ -98,7 +98,7 @@ export default function AdminComptePage() {
 
     const err = validerMotDePasse(nouveau);
     if (!err.ok) {
-      setErreur(err.message);
+      setErreur(err.message === "Password must be at least 6 characters" ? t("connex.erreurMdp") : t("connex.erreurMdpChiffre"));
       return;
     }
     if (nouveau !== confirmation) {

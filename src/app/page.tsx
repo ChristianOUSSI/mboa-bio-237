@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SplashMboa, FondMboa } from "@/core/design_system/composants";
 import { useSession } from "@/core/etat/store";
+import { useTr } from "@/core/i18n";
 import { profilActuel } from "@/core/data/depots";
 
 export default function PageAccueil() {
   const router = useRouter();
   const { profil, setSession } = useSession();
+  const t = useTr();
   const [enChargement, setEnChargement] = useState(true);
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export default function PageAccueil() {
     <FondMboa>
       <div className="flex-1 flex flex-col items-center justify-center min-h-screen">
         <p className="text-corps text-[var(--mboa-text-doux)]">
-          The earth feeds us, quality sets us apart
+          {t("app.slogan")}
         </p>
       </div>
     </FondMboa>

@@ -11,11 +11,11 @@ export const JALON_SUIVI_INFO: Record<
   JalonSuivi,
   { libelle: string; description: string }
 > = {
-  [JalonSuivi.panierPrepare]: { libelle: "Basket prepared", description: "The counter packed the goods" },
-  [JalonSuivi.motoPartie]: { libelle: "The bike left", description: "The driver loaded and left the depot" },
-  [JalonSuivi.enApproche]: { libelle: "Driver approaching", description: "He is close, get ready" },
-  [JalonSuivi.arrive]: { libelle: "Arrived at yours", description: "The bike is at your door" },
-  [JalonSuivi.remis]: { libelle: "Handed over", description: "You confirmed reception" },
+  [JalonSuivi.panierPrepare]: { libelle: "Panier préparé", description: "Le comptoir a emballé la marchandise" },
+  [JalonSuivi.motoPartie]: { libelle: "La moto est partie", description: "Le livreur a chargé et quitté le dépôt" },
+  [JalonSuivi.enApproche]: { libelle: "Livreur en approche", description: "Il est proche, préparez-vous" },
+  [JalonSuivi.arrive]: { libelle: "Arrivé chez vous", description: "La moto est devant votre porte" },
+  [JalonSuivi.remis]: { libelle: "Remis", description: "Vous avez confirmé la réception" },
 };
 
 export const JALON_SUIVI_ORDRE: JalonSuivi[] = [
@@ -173,7 +173,7 @@ export function distanceGps(a: PositionGps, b: PositionGps): number {
 
 /** Estime la distance restante en km, arrondie. */
 export function distanceRestante(s: SuiviColis): string {
-  if (!s.positionActuelle || !s.positionDestination) return "—";
+  if (!s.positionActuelle || !s.positionDestination) return "N/A";
   const d = distanceGps(s.positionActuelle, s.positionDestination);
   if (d < 1000) return `${d} m`;
   return `${(d / 1000).toFixed(1)} km`;
@@ -181,7 +181,7 @@ export function distanceRestante(s: SuiviColis): string {
 
 /** Estime le temps restant en minutes, à 30 km/h moyen en ville. */
 export function tempsRestant(s: SuiviColis): string {
-  if (!s.positionActuelle || !s.positionDestination) return "—";
+  if (!s.positionActuelle || !s.positionDestination) return "N/A";
   const d = distanceGps(s.positionActuelle, s.positionDestination);
   const minutes = Math.round((d / 30000) * 60);
   if (minutes < 1) return "< 1 min";

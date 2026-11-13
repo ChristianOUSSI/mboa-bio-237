@@ -36,7 +36,7 @@ export function ligneQuantiteAffichee(l: LigneCommande): string {
 }
 
 export function ligneAnnonce(l: LigneCommande): string {
-  return `${ligneQuantiteAffichee(l)} of ${l.nom}`;
+  return `${ligneQuantiteAffichee(l)} de ${l.nom}`;
 }
 
 export function ligneSousTotal(l: LigneCommande): number {
@@ -100,7 +100,7 @@ export function resumerQuantites(lignes: LigneCommande[]): string {
     const u = ligneUniteReelle(l);
     parUnite.set(u, (parUnite.get(u) ?? 0) + l.quantite);
   }
-  if (parUnite.size === 0) return "nothing";
+  if (parUnite.size === 0) return "rien";
   return Array.from(parUnite.entries())
     .map(([u, val]) => uniteAvec(u, val))
     .join(" · ");
