@@ -22,6 +22,7 @@ import {
   validerMotDePasse,
   IDENTIFIANT_SUPERADMIN,
   EMAIL_SUPERADMIN,
+  motDePasseSuperAdmin,
   type CompteAuth,
 } from "@/core/auth/auth_local";
 import { Profil } from "@/core/types/profil";
@@ -316,11 +317,6 @@ export default function PageConnexion() {
       setErreur(t("super.erreur"));
       return;
     }
-    const err = validerMotDePasse(motDePasse);
-    if (!err.ok) {
-      setErreur(t("super.erreur"));
-      return;
-    }
     setEnCours(true);
     setErreur(null);
     try {
@@ -329,7 +325,9 @@ export default function PageConnexion() {
         setErreur(t("super.erreur"));
         return;
       }
-      const bon = await verifierMotDePasse(compte, motDePasse);
+      // Compte à identifiants fixes : comparaison directe (le validateur
+      // « 6 caractères + chiffre » ne s'applique pas à une clé maître).
+      const bon = motDePasse === motDePasseSuperAdmin();
       if (!bon) {
         setErreur(t("super.erreur"));
         return;
