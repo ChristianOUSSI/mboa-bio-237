@@ -11,7 +11,7 @@ import { EntreeCatalogue } from "../types/catalogue";
 import { Categorie } from "../types/categorie";
 import { Commande, commandeFromMap } from "../types/commande_full";
 import { LigneCommande, ligneUniteReelle } from "../types/commande";
-import { Achat, achatFromMap } from "../types/achat";
+import { Achat, achatFromMap, achatMontant } from "../types/achat";
 import { Profil, profilFromMap } from "../types/profil";
 import { roleResolve } from "../config/app_env";
 import { Livreur, livreurFromMap } from "../types/livreur";
@@ -227,11 +227,13 @@ export async function validerDevis(commande: Commande): Promise<void> {
       .eq("id", commandeId);
     if (!error) {
       for (const l of commande.lignes) await decrementerStock(l);
+      void notifierActiviteAdmin("act.devisValide", commande.lignes.map((l) => l.nom).join(", "));
       return;
     }
   }
   await fileAjouter("commande", commandeId, "update:statut=validee_admin", {});
   for (const l of commande.lignes) await decrementerStock(l);
+  void notifierActiviteAdmin("act.devisValide", commande.lignes.map((l) => l.nom).join(", "));
 }
 
 /** L'admin assigne un livreur au devis validé. */
@@ -244,9 +246,13 @@ export async function assignerLivreur(commandeId: string, livreurId: string, tar
         tarif_livreur: tarifCourse,
       })
       .eq("id", commandeId);
-    if (!error) return;
+    if (!error) {
+      void notifierActiviteAdmin("act.livreurAssigne", livreurId);
+      return;
+    }
   }
   await fileAjouter("commande", commandeId, "update:assigner_livreur", { livreurId, tarifCourse });
+  void notifierActiviteAdmin("act.livreurAssigne", livreurId);
 }
 
 /** Le livreur démarre la livraison : statut validee_admin → en_livraison. */
@@ -278,6 +284,7 @@ export async function refuserDevis(commandeId: string): Promise<void> {
   if (cmd) {
     await cacheEcrire("commande", commandeId, { ...cmd, statut: "annulee" as never });
   }
+  void notifierActiviteAdmin("act.devisRefuse", commandeId.slice(0, 8));
 }
 
 /** Le comptoir ajuste le stock ou le prix d'un produit (admin). */
@@ -308,6 +315,7 @@ export async function ajusterProduit(produitId: string, maj: { quantite?: number
   }
   await cacheEcrire("produit", produit.id, produit);
   await cacheEcrire("vitrine", produit.id, produit);
+  void notifierActiviteAdmin("act.stockAjuste", `${produit.nom} → ${produit.quantite}`);
 }
 
 /** L'admin crée manuellement un produit dans le stock (hors achat fournisseur). */
@@ -360,12 +368,14 @@ export async function creerProduit(params: {
       const cree = produitFromMap(data as unknown as Record<string, unknown>);
       await cacheEcrire("produit", cree.id, cree);
       await cacheEcrire("vitrine", cree.id, cree);
+      void notifierActiviteAdmin("act.produitCree", cree.nom);
       return cree;
     }
   }
   await cacheEcrire("produit", produit.id, produit);
   await cacheEcrire("vitrine", produit.id, produit);
   await fileAjouter("produit", produit.id, "insert:produit", params);
+  void notifierActiviteAdmin("act.produitCree", produit.nom);
   return produit;
 }
 
@@ -382,6 +392,7 @@ export async function supprimerProduit(produitId: string): Promise<void> {
   if (produit) {
     await cacheEcrire("produit", produitId, { ...produit, actif: false, quantite: 0 });
     await cacheEcrire("vitrine", produitId, { ...produit, actif: false, quantite: 0 });
+    void notifierActiviteAdmin("act.produitSupprime", produit.nom);
   }
 }
 
@@ -397,6 +408,7 @@ export async function basculerProduitActif(produitId: string, actif: boolean): P
     await cacheEcrire("vitrine", produitId, { ...produit, actif });
   }
   await fileAjouter("produit", produitId, "update:actif", { actif });
+  void notifierActiviteAdmin(actif ? "act.produitActive" : "act.produitDesactive", produit?.nom);
 }
 
 /** Enregistre le mode et la référence de paiement d'une commande (à la livraison). */
@@ -514,6 +526,7 @@ export async function sauverLivreur(params: {
   }
   await cacheEcrire("livreur", id, livreur);
   await fileAjouter("livreur", id, "upsert:livreur", params);
+  void notifierActiviteAdmin("act.livreurCree", livreur.nom);
   return livreur;
 }
 
@@ -552,6 +565,7 @@ export async function payerLivreur(commandeId: string, montant: number): Promise
     if (!error) return;
   }
   await fileAjouter("commande", commandeId, "rpc:payer_livreur", { montant });
+  void notifierActiviteAdmin("act.livreurPaye", `${montant} F`);
 }
 
 /** L'admin compose un pack par plat (ingrédients + prix unique). */
@@ -603,6 +617,7 @@ export async function sauverPack(params: {
   await cacheEcrire("produit", final.id, final);
   await cacheEcrire("vitrine", final.id, final);
   await fileAjouter("produit", final.id, "rpc:creer_pack", params);
+  void notifierActiviteAdmin("act.packCree", final.nom);
   return final;
 }
 
@@ -766,6 +781,7 @@ export async function validerAchat(achatId: string, prixMarchand?: number): Prom
     produit.quantite += achat.quantite;
     await cacheEcrire("produit", produit.id, produit);
     await cacheEcrire("vitrine", produit.id, produit);
+    void notifierActiviteAdmin("act.achatValide", `${achat.nom} ×${achat.quantite}`);
   }
 }
 
@@ -785,6 +801,7 @@ export async function refuserAchat(achatId: string): Promise<void> {
   const achat = await cacheLire<Achat>("achat", achatId);
   if (achat) {
     await cacheEcrire("achat", achatId, { ...achat, statut: "annule" as never });
+    void notifierActiviteAdmin("act.achatRefuse", achat.nom);
   }
 }
 
@@ -804,6 +821,7 @@ export async function payerAchat(achatId: string): Promise<void> {
   const achat = await cacheLire<Achat>("achat", achatId);
   if (achat) {
     await cacheEcrire("achat", achatId, { ...achat, statut: "paye" as never, payeLe: new Date().toISOString() });
+    void notifierActiviteAdmin("act.achatPaye", `${achat.nom} — ${achatMontant(achat)} F`);
   }
 }
 
@@ -933,4 +951,57 @@ export async function chargerFournisseurs(): Promise<Fournisseur[]> {
 
 export async function compterFile(): Promise<number> {
   return fileCompte();
+}
+
+// ============================================================
+// Activité admin — fil d'infos entre les comptes admin
+// ============================================================
+
+export interface ActiviteAdmin {
+  id: string;
+  quand: string;
+  auteur: string;
+  /** Clé i18n de l'action (ex. "act.achatValide"). */
+  action: string;
+  detail?: string;
+}
+
+const CLE_ACTIVITE_ADMIN = "admin_activite";
+
+/**
+ * Journalise une action admin et notifie les autres admins :
+ * - fil d'activité lu sur la page d'accueil admin
+ * - notification système du navigateur si la permission est accordée
+ * L'auteur est déduit de la session courante. Ne bloque jamais l'action métier.
+ */
+export async function notifierActiviteAdmin(action: string, detail?: string): Promise<void> {
+  try {
+    const { useSession } = await import("../etat/store");
+    const auteur = useSession.getState().profil?.nom ?? "Admin";
+    const evt: ActiviteAdmin = {
+      id: uuidV4(),
+      quand: new Date().toISOString(),
+      auteur,
+      action,
+      detail,
+    };
+    const liste = (await etatLire<ActiviteAdmin[]>(CLE_ACTIVITE_ADMIN)) ?? [];
+    liste.unshift(evt);
+    await etatEcrire(CLE_ACTIVITE_ADMIN, liste.slice(0, 50));
+    if (
+      typeof Notification !== "undefined" &&
+      Notification.permission === "granted" &&
+      typeof document !== "undefined" &&
+      document.hidden
+    ) {
+      new Notification("MBOA Admin", { body: `${auteur} — ${detail ?? action}` });
+    }
+  } catch {
+    // La notification ne doit jamais faire échouer l'action métier.
+  }
+}
+
+/** Lit le fil d'activité admin (réservé aux admins). */
+export async function activitesAdmin(): Promise<ActiviteAdmin[]> {
+  return (await etatLire<ActiviteAdmin[]>(CLE_ACTIVITE_ADMIN)) ?? [];
 }

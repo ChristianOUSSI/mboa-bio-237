@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/core/etat/store";
-import { fileAttenteAchats, toutesCommandes, chargerStock, chargerLivreurs, chargerFournisseurs } from "@/core/data/depots";
+import { fileAttenteAchats, toutesCommandes, chargerStock, chargerLivreurs, chargerFournisseurs, activitesAdmin, ActiviteAdmin } from "@/core/data/depots";
 import { CarteMboa, BoutonMboa, EnTetePage, FondMboa, PastilleCompteur, SkeletonMboa } from "@/core/design_system/composants";
 import { Achat } from "@/core/types/achat";
 import { Commande, commandeMontantAPayer } from "@/core/types/commande_full";
@@ -27,6 +27,8 @@ export default function TableauAdmin() {
   const [livreurs, setLivreurs] = useState<Livreur[]>([]);
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [comptes, setComptes] = useState<CompteAuth[]>([]);
+  const [activites, setActivites] = useState<ActiviteAdmin[]>([]);
+  const [notifOk, setNotifOk] = useState(false);
 
   useEffect(() => {
     async function charger() {
@@ -44,9 +46,17 @@ export default function TableauAdmin() {
       setLivreurs(l);
       setFournisseurs(f);
       setComptes(cp);
+      setActivites(await activitesAdmin());
+      if (typeof Notification !== "undefined") setNotifOk(Notification.permission === "granted");
     }
     charger();
   }, []);
+
+  async function demanderNotif() {
+    if (typeof Notification === "undefined") return;
+    const perm = await Notification.requestPermission();
+    setNotifOk(perm === "granted");
+  }
 
   const devisNouveaux = commandes.filter((c) => c.statut === StatutCommande.nouvelle).length;
   const aPointer = commandes.filter((c) => c.statut === StatutCommande.livree).length;
@@ -196,6 +206,41 @@ export default function TableauAdmin() {
           )}
         </div>
       )}
+
+      {/* Activité des autres admins + notifications */}
+      <div className="px-4 pb-2">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-titre">{t("adm.act.titre")}</h2>
+          {!notifOk && typeof Notification !== "undefined" && Notification.permission !== "denied" && (
+            <button
+              onClick={demanderNotif}
+              className="text-aide text-[var(--mboa-primary)] font-bold"
+            >
+              {t("adm.act.activerNotif")}
+            </button>
+          )}
+          {notifOk && <span className="text-aide text-[var(--mboa-text-doux)]">{t("adm.act.notifOk")}</span>}
+        </div>
+        {activites.length === 0 ? (
+          <CarteMboa>
+            <p className="text-corps text-[var(--mboa-text-doux)] text-center">{t("adm.act.vide")}</p>
+          </CarteMboa>
+        ) : (
+          <CarteMboa className="space-y-1">
+            {activites.slice(0, 6).map((a) => (
+              <div key={a.id} className="flex justify-between text-corps">
+                <span>
+                  <strong>{a.auteur}</strong> {t(a.action)}
+                  {a.detail ? ` · ${a.detail}` : ""}
+                </span>
+                <span className="text-aide text-[var(--mboa-text-doux)] whitespace-nowrap ml-2">
+                  {new Date(a.quand).toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </CarteMboa>
+        )}
+      </div>
 
       {/* Raccourcis */}
       <div className="px-4 space-y-2">

@@ -6,6 +6,7 @@ import { CarteMboa, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa } from "@/cor
 import {
   assurerCompteAdmin,
   changerMotDePasse,
+  creerCompte,
   effacerTousComptes,
   reinitialiserAdmin,
   tousComptes,
@@ -28,12 +29,56 @@ export default function AdminComptePage() {
   const [enCours, setEnCours] = useState(false);
   const [confirmPurge, setConfirmPurge] = useState(false);
   const [nbComptes, setNbComptes] = useState(0);
+  const [admins, setAdmins] = useState<CompteAuth[]>([]);
+  const [adminNom, setAdminNom] = useState("");
+  const [adminMail, setAdminMail] = useState("");
+  const [adminMdp, setAdminMdp] = useState("");
+  const [modeNouvelAdmin, setModeNouvelAdmin] = useState(false);
 
   async function charger() {
     const admin = await assurerCompteAdmin();
     setCompte(admin);
     const comptes = await tousComptes();
     setNbComptes(comptes.filter((c) => c.actif).length);
+    setAdmins(comptes.filter((c) => c.role === "admin" && c.actif));
+  }
+
+  /** Crée un compte admin supplémentaire (mêmes droits, identifiants propres). */
+  async function creerAdmin() {
+    setErreur(null);
+    setSucces(null);
+    const mail = adminMail.trim().toLowerCase();
+    if (!adminNom.trim() || !mail.includes("@")) {
+      setErreur(t("adm.cpt.adminErreurMail"));
+      return;
+    }
+    const err = validerMotDePasse(adminMdp);
+    if (!err.ok) {
+      setErreur(t("adm.cpt.adminErreurMdp"));
+      return;
+    }
+    setEnCours(true);
+    try {
+      await creerCompte({
+        role: "admin",
+        nom: adminNom.trim(),
+        telephone: null,
+        email: mail,
+        village: "Douala",
+        motDePasse: adminMdp,
+      });
+      setAdminNom("");
+      setAdminMail("");
+      setAdminMdp("");
+      setModeNouvelAdmin(false);
+      setSucces(t("adm.cpt.adminCree"));
+      await charger();
+    } catch (e) {
+      console.error(e);
+      setErreur(t("adm.cpt.erreur"));
+    } finally {
+      setEnCours(false);
+    }
   }
 
   useEffect(() => {
@@ -144,6 +189,59 @@ export default function AdminComptePage() {
             </p>
           </CarteMboa>
         )}
+
+        {/* Comptes administrateurs — plusieurs admins, mêmes droits */}
+        <CarteMboa>
+          <h2 className="text-titre mb-2">{t("adm.cpt.admins")}</h2>
+          <div className="space-y-1 mb-3">
+            {admins.map((a) => (
+              <div key={a.id} className="flex justify-between text-corps">
+                <span>{a.nom} <span className="text-aide text-[var(--mboa-text-doux)]">({a.email ?? a.telephone ?? "—"})</span></span>
+                <span className="text-aide text-[var(--mboa-text-doux)]">
+                  {t("adm.cpt.adminActif")}{a.motDePasseParDefaut ? ` · ${t("adm.cpt.adminMdpDefaut")}` : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+          <BoutonMboa
+            variant={modeNouvelAdmin ? "surface" : "primary"}
+            onClick={() => setModeNouvelAdmin(!modeNouvelAdmin)}
+            className="w-full"
+          >
+            {modeNouvelAdmin ? t("adm.cpt.annuler") : `＋ ${t("adm.cpt.nouvelAdmin")}`}
+          </BoutonMboa>
+          {modeNouvelAdmin && (
+            <div className="mt-3 space-y-2">
+              <input
+                type="text"
+                placeholder={t("adm.cpt.adminNom")}
+                value={adminNom}
+                onChange={(e) => setAdminNom(e.target.value)}
+                className="champ-mboa"
+                style={{ fontSize: 18 }}
+              />
+              <input
+                type="email"
+                placeholder={t("adm.cpt.adminMail")}
+                value={adminMail}
+                onChange={(e) => setAdminMail(e.target.value)}
+                className="champ-mboa"
+                style={{ fontSize: 18 }}
+              />
+              <input
+                type="password"
+                placeholder={`${t("adm.cpt.adminMdp")} — ${t("adm.cpt.nouveauHint")}`}
+                value={adminMdp}
+                onChange={(e) => setAdminMdp(e.target.value)}
+                className="champ-mboa"
+                style={{ fontSize: 18 }}
+              />
+              <BoutonMboa onClick={creerAdmin} disabled={enCours} className="w-full">
+                {enCours ? t("adm.cpt.sauvegarde") : t("adm.cpt.nouvelAdmin")}
+              </BoutonMboa>
+            </div>
+          )}
+        </CarteMboa>
 
         {/* Changement de mot de passe */}
         <CarteMboa>
