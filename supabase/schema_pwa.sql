@@ -88,16 +88,7 @@ create table if not exists public.commandes (
 drop view if exists public.commandes_clientes;
 create view public.commandes_clientes as select * from public.commandes;
 
--- Vue « courses livreur » : commandes + identité client en colonnes.
-drop view if exists public.vitrine_livreurs;
-create view public.vitrine_livreurs as
-  select
-    c.*,
-    coalesce(c.client_nom, p.nom) as cliente_nom,
-    coalesce(c.client_village, p.village) as cliente_village,
-    coalesce(c.client_tel, p.telephone_237) as cliente_tel
-  from public.commandes c
-  left join public.profiles p on p.id::text = c.consommateur_id;
+-- (vitrine_livreurs est créée à la fin du script, après `profiles`.)
 
 -- ---------- Profils utilisateurs ----------
 create table if not exists public.profiles (
@@ -237,6 +228,18 @@ begin
       'create policy authenticated_all on public.%I for all to authenticated using (true) with check (true)', t);
   end loop;
 end $$;
+
+-- Vue « courses livreur » : commandes + identité client en colonnes.
+-- Créée ici : `profiles` doit exister avant.
+drop view if exists public.vitrine_livreurs;
+create view public.vitrine_livreurs as
+  select
+    c.*,
+    coalesce(c.client_nom, p.nom) as cliente_nom,
+    coalesce(c.client_village, p.village) as cliente_village,
+    coalesce(c.client_tel, p.telephone_237) as cliente_tel
+  from public.commandes c
+  left join public.profiles p on p.id::text = c.consommateur_id;
 
 -- ============================================================
 -- Seed minimal du catalogue (prix de tendance) — optionnel.
