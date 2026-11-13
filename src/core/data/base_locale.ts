@@ -7,6 +7,8 @@
 
 const DB_NAME = "mboa_bio";
 const DB_VERSION = 1;
+/** Garde-fou : si IndexedDB ne répond pas (onglet bloquant, stockage capricieux), on abandonne au lieu de geler l'app. */
+const DB_TIMEOUT_MS = 8000;
 
 let _db: IDBDatabase | null = null;
 
@@ -17,11 +19,42 @@ function ouvrirDb(): Promise<IDBDatabase> {
       reject(new Error("IndexedDB not available"));
       return;
     }
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onerror = () => reject(req.error);
+    let req: IDBOpenDBRequest;
+    try {
+      req = indexedDB.open(DB_NAME, DB_VERSION);
+    } catch (e) {
+      reject(e);
+      return;
+    }
+    const minuteur = setTimeout(() => {
+      try {
+        req.onblocked = null;
+        req.onerror = null;
+        req.onsuccess = null;
+        req.onupgradeneeded = null;
+      } catch {
+        // ignore
+      }
+      reject(new Error("IndexedDB open timeout"));
+    }, DB_TIMEOUT_MS);
+    const finir = (fn: () => void) => {
+      clearTimeout(minuteur);
+      fn();
+    };
+    req.onerror = () => finir(() => reject(req.error));
+    req.onblocked = () => {
+      // Un autre onglet garde la base ouverte pendant une montée de version :
+      // on attend la fin normale, le timeout ci-dessus borne l'attente.
+    };
     req.onsuccess = () => {
-      _db = req.result;
-      resolve(_db);
+      const db = req.result;
+      _db = db;
+      // Si la base est fermée par un autre onglet, on repart de zéro.
+      db.onversionchange = () => {
+        db.close();
+        if (_db === db) _db = null;
+      };
+      finir(() => resolve(db));
     };
     req.onupgradeneeded = () => {
       const db = req.result;

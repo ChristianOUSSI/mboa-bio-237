@@ -52,7 +52,15 @@ export function empreinteAppareil(): string {
 export async function hacherMotDePasse(mdp: string, sel: string): Promise<string> {
   const brut = `${sel}:${mdp}`;
   if (typeof crypto !== "undefined" && crypto.subtle) {
-    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(brut));
+    // Garde-fou : sur certains WebViews, digest() peut rester pendant.
+    // On abandonne après 5 s pour ne jamais geler le bouton de connexion.
+    const digest = crypto.subtle.digest("SHA-256", new TextEncoder().encode(brut));
+    const buf = await Promise.race([
+      digest,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("hash timeout")), 5000),
+      ),
+    ]);
     return Array.from(new Uint8Array(buf))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
