@@ -41,9 +41,18 @@ export async function compteParIdentifiant(identifiant: string): Promise<CompteA
       // Identifiants sans TLD classique (ex. mboa-admin@237) : comparaison brute.
       (c.email != null && c.email.toLowerCase() === cible),
   );
-  // Les entrées d'index (mail:/tel:) peuvent être des copies périmées :
-  // en cas de doublon on préfère le compte actif.
-  return trouves.find((c) => c.actif) ?? trouves[0] ?? null;
+  if (trouves.length === 0) return null;
+  // Les entrées d'index (mail:/tel:) peuvent être des copies périmées et des
+  // doublons peuvent exister (bootstrap sur plusieurs appareils + synchro).
+  // On choisit de façon déterministe : actif d'abord, mot de passe personnalisé
+  // ensuite, compte le plus récent en dernier recours.
+  return [...trouves].sort((a, b) => {
+    const score = (c: CompteAuth) =>
+      (c.actif ? 4 : 0) + (c.motDePasseParDefaut ? 0 : 2) + (c.createdLe ? 1 : 0);
+    const d = score(b) - score(a);
+    if (d !== 0) return d;
+    return (b.createdLe ?? "").localeCompare(a.createdLe ?? "");
+  })[0];
 }
 
 /** Vérifie qu'un identifiant est déjà pris. */
@@ -153,6 +162,11 @@ export function estNouvelAppareil(compte: CompteAuth): boolean {
  */
 export async function assurerCompteAdmin(): Promise<CompteAuth | null> {
   const comptes = await tousComptes();
+  // Déduplication : si un compte porte déjà l'identifiant bootstrap
+  // (créé sur un autre appareil puis synchronisé), on le réutilise
+  // au lieu d'en créer un second — sinon la connexion devient instable.
+  const parId = await compteParIdentifiant(EMAIL_ADMIN_INITIAL);
+  if (parId) return parId;
   const existant = comptes.find((c) => c.role === "admin");
   if (existant) return existant;
   return creerCompte({
@@ -184,6 +198,8 @@ export async function amorcerSiAucunCompte(): Promise<CompteAuth | null> {
  */
 export async function assurerCompteSuperAdmin(): Promise<CompteAuth | null> {
   const comptes = await tousComptes();
+  const parId = await compteParIdentifiant(EMAIL_SUPERADMIN);
+  if (parId) return parId;
   const existant = comptes.find((c) => c.role === "superadmin");
   if (existant) return existant;
   return creerCompte({

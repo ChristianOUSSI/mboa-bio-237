@@ -72,5 +72,36 @@ export async function synchroniserComptesAdmin(): Promise<number> {
     if (distant.email) await cacheEcrire("compte", `mail:${distant.email}`, distant);
     fusionnes++;
   }
+
+  // Déduplication : le bootstrap peut avoir créé le même compte admin sur
+  // plusieurs appareils → même email, ids différents → connexion instable
+  // (mot de passe par défaut qui revient sans cesse). On ne garde actif que
+  // le meilleur exemplaire par email ; les autres sont désactivés.
+  const { cacheTout } = await import("../data/base_locale");
+  const tous = (await cacheTout<CompteAuth | null>("compte")).filter(
+    (c): c is CompteAuth => c != null && estCompteAdmin(c) && !!c.id,
+  );
+  const parEmail = new Map<string, CompteAuth[]>();
+  for (const c of tous) {
+    const cle = (c.email ?? c.telephone ?? c.id).toLowerCase();
+    parEmail.set(cle, [...(parEmail.get(cle) ?? []), c]);
+  }
+  for (const groupe of parEmail.values()) {
+    if (groupe.length < 2) continue;
+    const meilleur = [...groupe].sort((a, b) => {
+      const score = (c: CompteAuth) =>
+        (c.actif ? 4 : 0) + (c.motDePasseParDefaut ? 0 : 2);
+      const d = score(b) - score(a);
+      return d !== 0 ? d : (b.createdLe ?? "").localeCompare(a.createdLe ?? "");
+    })[0];
+    for (const c of groupe) {
+      if (c.id === meilleur.id || !c.actif) continue;
+      const inactif = { ...c, actif: false };
+      await cacheEcrire("compte", c.id, inactif);
+      if (c.telephone) await cacheEcrire("compte", `tel:${c.telephone}`, inactif);
+      if (c.email) await cacheEcrire("compte", `mail:${c.email}`, inactif);
+      publierCompteAdmin(inactif);
+    }
+  }
   return fusionnes;
 }
