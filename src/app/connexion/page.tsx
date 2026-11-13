@@ -131,10 +131,15 @@ export default function PageConnexion() {
   // Bootstrap : sur une première installation (base vide), crée le compte admin
   // et le compte super admin caché.
   useEffect(() => {
-    amorcerSiAucunCompte().catch((e) => console.error(e));
-    assurerCompteSuperAdmin().catch((e) => console.error(e));
-    // Récupère les comptes admin créés depuis d'autres appareils (PC/téléphone).
-    synchroniserComptesAdmin().catch((e) => console.warn("[synchro]", e));
+    // D'abord tirer les comptes des autres appareils, ENSUITE créer/
+    // migrer les comptes bootstrap — sinon la synchro écraserait les
+    // identifiants fraîchement migrés (admin@mboa237, CADC → CADC1).
+    synchroniserComptesAdmin()
+      .catch((e) => console.warn("[synchro]", e))
+      .finally(() => {
+        amorcerSiAucunCompte().catch((e) => console.error(e));
+        assurerCompteSuperAdmin().catch((e) => console.error(e));
+      });
   }, []);
 
   /** Opens the local session from an authenticated account. */
