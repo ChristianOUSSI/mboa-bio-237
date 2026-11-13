@@ -19,7 +19,11 @@ interface ProduitDraft {
   quantite: number;
   prix: string;
   photoUrl: string;
+  emoji?: string;
 }
+
+/** Emojis rapides pour illustrer chaque produit (mangue, macabo, igname…). */
+const EMOJIS_PRODUIT = ["🥭", "🍌", "🍍", "🥑", "🍅", "🌶️", "🥬", "🍆", "🍠", "🥔", "🌽", "🥜", "🐟", "🍗", "🥚", "🫘", "🍚", "🫒", "🍵", "🥛", "❓"];
 
 const VILLAGES_CAMEROUN = [
   "Douala", "Yaoundé", "Bafoussam", "Mbouda", "Bamenda",
@@ -141,6 +145,7 @@ export default function RejoindrePage() {
           quantite: p.quantite,
           prixDemande: prixNum,
           photoUrl: p.photoUrl,
+          emoji: p.emoji ?? null,
         });
       }
       setSucces(true);
@@ -275,6 +280,23 @@ export default function RejoindrePage() {
                 >
                   <PictoCategorie categorie={c} size={18} />
                   <span className="text-aide mt-0.5 text-center" style={{ fontSize: 9 }}>{CATEGORIE_INFO[c].libelle}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Emoji représentatif du produit */}
+            <div className="flex flex-wrap gap-1 mb-2">
+              {EMOJIS_PRODUIT.map((e) => (
+                <button
+                  key={e}
+                  onClick={() => majProduit(i, { emoji: p.emoji === e ? undefined : e })}
+                  className="w-9 h-9 rounded-lg text-xl flex items-center justify-center"
+                  style={{
+                    background: p.emoji === e ? "var(--mboa-secondary-doux)" : "var(--mboa-background)",
+                    border: `2px solid ${p.emoji === e ? "var(--mboa-primary)" : "transparent"}`,
+                  }}
+                >
+                  {e}
                 </button>
               ))}
             </div>

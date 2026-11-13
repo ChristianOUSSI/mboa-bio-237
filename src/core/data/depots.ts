@@ -552,7 +552,7 @@ export async function majPositionLivreur(commandeId: string, latitude: number, l
     });
     if (!error) return;
   }
-  // Pas de file pour les positions temps réel — données éphémères
+  // Pas de file pour les positions temps réel - données éphémères
 }
 
 /** Le livreur est payé après réception confirmée par la cliente. */
@@ -702,6 +702,7 @@ export async function proposerAchat(params: {
   quantite: number;
   prixDemande: number;
   photoUrl: string;
+  emoji?: string | null;
   audioUrl?: string | null;
 }): Promise<Achat | null> {
   const slug = slugDe(params.nom);
@@ -715,6 +716,7 @@ export async function proposerAchat(params: {
     quantite: params.quantite,
     prixDemande: params.prixDemande,
     photoUrl: params.photoUrl,
+    emoji: params.emoji ?? null,
     audioUrl: params.audioUrl ?? null,
     statut: "propose" as never,
     proposeLe: new Date().toISOString(),
@@ -768,6 +770,7 @@ export async function validerAchat(achatId: string, prixMarchand?: number): Prom
       categorie: achat.categorie,
       photoReelle: achat.photoUrl,
       photoFiligranee: null,
+      emoji: achat.emoji ?? null,
       quantite: 0,
       prix: prixMarchand ?? achat.prixDemande,
       prixAchat: prixMarchand ?? achat.prixDemande,
@@ -821,7 +824,7 @@ export async function payerAchat(achatId: string): Promise<void> {
   const achat = await cacheLire<Achat>("achat", achatId);
   if (achat) {
     await cacheEcrire("achat", achatId, { ...achat, statut: "paye" as never, payeLe: new Date().toISOString() });
-    void notifierActiviteAdmin("act.achatPaye", `${achat.nom} — ${achatMontant(achat)} F`);
+    void notifierActiviteAdmin("act.achatPaye", `${achat.nom} - ${achatMontant(achat)} F`);
   }
 }
 
@@ -858,7 +861,7 @@ export async function validerCode(telephone: string, codeSaisi: string, role?: s
       return profil;
     }
   }
-  // Mode voix local — le profil vient du compte réel, jamais d'une démo.
+  // Mode voix local - le profil vient du compte réel, jamais d'une démo.
   const stocke = await etatLire<{ telephone: string; code: string }>("otp_en_cours");
   if (stocke && stocke.code === codeSaisi) {
     const compte = await compteParIdentifiant(telephone);
@@ -954,7 +957,7 @@ export async function compterFile(): Promise<number> {
 }
 
 // ============================================================
-// Activité admin — fil d'infos entre les comptes admin
+// Activité admin - fil d'infos entre les comptes admin
 // ============================================================
 
 export interface ActiviteAdmin {
@@ -988,20 +991,43 @@ export async function notifierActiviteAdmin(action: string, detail?: string): Pr
     const liste = (await etatLire<ActiviteAdmin[]>(CLE_ACTIVITE_ADMIN)) ?? [];
     liste.unshift(evt);
     await etatEcrire(CLE_ACTIVITE_ADMIN, liste.slice(0, 50));
+    // Synchro multi-appareils : tous les admins voient l'action, quel que soit leur PC/téléphone.
+    const client = mboaReseau();
+    if (client) {
+      void client
+        .from("admin_activite")
+        .upsert({ id: evt.id, auteur: evt.auteur, action: evt.action, detail: evt.detail ?? null, quand: evt.quand })
+        .then(({ error }) => {
+          if (error) console.warn("[synchro] activité admin:", error.message);
+        });
+    }
     if (
       typeof Notification !== "undefined" &&
       Notification.permission === "granted" &&
       typeof document !== "undefined" &&
       document.hidden
     ) {
-      new Notification("MBOA Admin", { body: `${auteur} — ${detail ?? action}` });
+      new Notification("MBOA Admin", { body: `${auteur} - ${detail ?? action}` });
     }
   } catch {
     // La notification ne doit jamais faire échouer l'action métier.
   }
 }
 
-/** Lit le fil d'activité admin (réservé aux admins). */
+/** Lit le fil d'activité admin (réservé aux admins) - fusionne local + Supabase. */
 export async function activitesAdmin(): Promise<ActiviteAdmin[]> {
-  return (await etatLire<ActiviteAdmin[]>(CLE_ACTIVITE_ADMIN)) ?? [];
+  const locales = (await etatLire<ActiviteAdmin[]>(CLE_ACTIVITE_ADMIN)) ?? [];
+  const client = mboaReseau();
+  if (!client) return locales;
+  const { data } = await client
+    .from("admin_activite")
+    .select("id, auteur, action, detail, quand")
+    .order("quand", { ascending: false })
+    .limit(50);
+  if (!data || data.length === 0) return locales;
+  const distantes = data as ActiviteAdmin[];
+  const ids = new Set(locales.map((a) => a.id));
+  return [...locales, ...distantes.filter((d) => !ids.has(d.id))]
+    .sort((a, b) => (a.quand < b.quand ? 1 : -1))
+    .slice(0, 50);
 }

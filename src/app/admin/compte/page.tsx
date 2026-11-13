@@ -13,6 +13,7 @@ import {
   verifierMotDePasse,
 } from "@/core/auth/auth_service";
 import { CompteAuth, estMotDePasseInitial, validerMotDePasse } from "@/core/auth/auth_local";
+import { synchroniserComptesAdmin } from "@/core/auth/synchro_admin";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
 
@@ -36,6 +37,7 @@ export default function AdminComptePage() {
   const [modeNouvelAdmin, setModeNouvelAdmin] = useState(false);
 
   async function charger() {
+    await synchroniserComptesAdmin().catch(() => 0);
     const admin = await assurerCompteAdmin();
     setCompte(admin);
     const comptes = await tousComptes();
@@ -190,13 +192,13 @@ export default function AdminComptePage() {
           </CarteMboa>
         )}
 
-        {/* Comptes administrateurs — plusieurs admins, mêmes droits */}
+        {/* Comptes administrateurs - plusieurs admins, mêmes droits */}
         <CarteMboa>
           <h2 className="text-titre mb-2">{t("adm.cpt.admins")}</h2>
           <div className="space-y-1 mb-3">
             {admins.map((a) => (
               <div key={a.id} className="flex justify-between text-corps">
-                <span>{a.nom} <span className="text-aide text-[var(--mboa-text-doux)]">({a.email ?? a.telephone ?? "—"})</span></span>
+                <span>{a.nom} <span className="text-aide text-[var(--mboa-text-doux)]">({a.email ?? a.telephone ?? "-"})</span></span>
                 <span className="text-aide text-[var(--mboa-text-doux)]">
                   {t("adm.cpt.adminActif")}{a.motDePasseParDefaut ? ` · ${t("adm.cpt.adminMdpDefaut")}` : ""}
                 </span>
@@ -230,7 +232,7 @@ export default function AdminComptePage() {
               />
               <input
                 type="password"
-                placeholder={`${t("adm.cpt.adminMdp")} — ${t("adm.cpt.nouveauHint")}`}
+                placeholder={`${t("adm.cpt.adminMdp")} - ${t("adm.cpt.nouveauHint")}`}
                 value={adminMdp}
                 onChange={(e) => setAdminMdp(e.target.value)}
                 className="champ-mboa"

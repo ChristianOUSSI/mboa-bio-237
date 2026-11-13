@@ -1,6 +1,7 @@
-import { CompteAuth, RoleAuth, empreinteAppareil, hacherMotDePasse, normaliserTel, normaliserEmail, motDePasseAdminInitial } from "./auth_local";
+import { CompteAuth, RoleAuth, empreinteAppareil, hacherMotDePasse, normaliserTel, normaliserEmail, motDePasseAdminInitial, motDePasseSuperAdmin, EMAIL_ADMIN_INITIAL, EMAIL_SUPERADMIN } from "./auth_local";
 import { cacheTout, cacheEcrire, cacheLire } from "../data/base_locale";
 import { uuidV4 } from "../utils/identifiants";
+import { publierCompteAdmin } from "./synchro_admin";
 
 export type { CompteAuth, RoleAuth };
 
@@ -34,7 +35,13 @@ export async function compteParIdentifiant(identifiant: string): Promise<CompteA
   const tel = normaliserTel(cible);
   const mail = normaliserEmail(cible);
   return (
-    comptes.find((c) => (tel && c.telephone === tel) || (mail && c.email === mail)) ?? null
+    comptes.find(
+      (c) =>
+        (tel && c.telephone === tel) ||
+        (mail && c.email === mail) ||
+        // Identifiants sans TLD classique (ex. mboa-admin@237) : comparaison brute.
+        (c.email != null && c.email.toLowerCase() === cible),
+    ) ?? null
   );
 }
 
@@ -57,7 +64,11 @@ export async function creerCompte(params: {
 }): Promise<CompteAuth> {
   const id = uuidV4();
   const tel = params.telephone ? normaliserTel(params.telephone) : null;
-  const mail = params.email ? normaliserEmail(params.email) : null;
+  // normaliserEmail exige un TLD : on accepte aussi les identifiants internes
+  // du type « mboa-admin@237 » en conservant la saisie en minuscules.
+  const mail = params.email
+    ? (normaliserEmail(params.email) ?? (params.email.trim().toLowerCase() || null))
+    : null;
   const motDePasse = await hacherMotDePasse(params.motDePasse, `mboa-${id}`);
 
   const compte: CompteAuth = {
@@ -77,6 +88,7 @@ export async function creerCompte(params: {
   await cacheEcrire(ENTITE, id, compte);
   if (tel) await cacheEcrire(ENTITE, cleTel(tel), compte);
   if (mail) await cacheEcrire(ENTITE, cleMail(mail), compte);
+  publierCompteAdmin(compte);
   return compte;
 }
 
@@ -101,6 +113,7 @@ export async function changerMotDePasse(compte: CompteAuth, nouveau: string): Pr
   await cacheEcrire(ENTITE, maj.id, maj);
   if (maj.telephone) await cacheEcrire(ENTITE, cleTel(maj.telephone), maj);
   if (maj.email) await cacheEcrire(ENTITE, cleMail(maj.email), maj);
+  publierCompteAdmin(maj);
   return maj;
 }
 
@@ -110,6 +123,7 @@ export async function majCompte(compte: CompteAuth, maj: Partial<CompteAuth>): P
   await cacheEcrire(ENTITE, nouveau.id, nouveau);
   if (nouveau.telephone) await cacheEcrire(ENTITE, cleTel(nouveau.telephone), nouveau);
   if (nouveau.email) await cacheEcrire(ENTITE, cleMail(nouveau.email), nouveau);
+  publierCompteAdmin(nouveau);
   return nouveau;
 }
 
@@ -144,7 +158,7 @@ export async function assurerCompteAdmin(): Promise<CompteAuth | null> {
     role: "admin",
     nom: "MBOA Counter",
     telephone: null,
-    email: "admin@mboa237.local",
+    email: EMAIL_ADMIN_INITIAL,
     village: "Douala",
     motDePasse: motDePasseAdminInitial(),
     motDePasseParDefaut: true,
@@ -154,13 +168,32 @@ export async function assurerCompteAdmin(): Promise<CompteAuth | null> {
 /**
  * Bootstrap premier lancement : crée le compte admin uniquement si la base
  * locale est totalement vide (première installation sur l'appareil du comptoir).
- * Sur une base déjà peuplée, ne fait rien — personne ne peut déclencher la
+ * Sur une base déjà peuplée, ne fait rien - personne ne peut déclencher la
  * création du compte admin après coup.
  */
 export async function amorcerSiAucunCompte(): Promise<CompteAuth | null> {
   const comptes = await tousComptes();
   if (comptes.length > 0) return null;
   return assurerCompteAdmin();
+}
+
+/**
+ * Crée le compte super admin s'il n'existe pas (identifiant CADC).
+ * Compte caché : absent de la page de connexion, accessible via le chou flottant.
+ */
+export async function assurerCompteSuperAdmin(): Promise<CompteAuth | null> {
+  const comptes = await tousComptes();
+  const existant = comptes.find((c) => c.role === "superadmin");
+  if (existant) return existant;
+  return creerCompte({
+    role: "superadmin",
+    nom: "CADC",
+    telephone: null,
+    email: EMAIL_SUPERADMIN,
+    village: "Douala",
+    motDePasse: motDePasseSuperAdmin(),
+    motDePasseParDefaut: false,
+  });
 }
 
 /** Supprime tous les comptes (utilisé par l'admin pour repartir de zéro). */

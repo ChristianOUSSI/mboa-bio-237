@@ -11,7 +11,7 @@
  * Tout est stocké dans le cache local (IndexedDB), jamais en clair côté serveur.
  */
 
-export type RoleAuth = "consommateur" | "fournisseur" | "livreur" | "admin";
+export type RoleAuth = "consommateur" | "fournisseur" | "livreur" | "admin" | "superadmin";
 
 export interface CompteAuth {
   id: string;
@@ -22,7 +22,7 @@ export interface CompteAuth {
   /** Adresse mail en minuscules, ou null si inscription par téléphone. */
   email: string | null;
   village: string;
-  /** Empreinte du mot de passe — jamais le mot de passe en clair. */
+  /** Empreinte du mot de passe - jamais le mot de passe en clair. */
   motDePasse: string;
   /** Empreinte de l'appareil ayant créé le compte. */
   appareil: string;
@@ -32,7 +32,7 @@ export interface CompteAuth {
   createdLe: string;
 }
 
-/** Empreinte de l'appareil — identifie une installation de PWA. */
+/** Empreinte de l'appareil - identifie une installation de PWA. */
 export function empreinteAppareil(): string {
   if (typeof window === "undefined") return "inconnu";
   try {
@@ -48,7 +48,7 @@ export function empreinteAppareil(): string {
   }
 }
 
-/** Empreinte du mot de passe — SHA-256 + sel. */
+/** Empreinte du mot de passe - SHA-256 + sel. */
 export async function hacherMotDePasse(mdp: string, sel: string): Promise<string> {
   const brut = `${sel}:${mdp}`;
   if (typeof crypto !== "undefined" && crypto.subtle) {
@@ -70,7 +70,7 @@ function selDe(id: string): string {
   return `mboa-${id}`;
 }
 
-/** Mot de passe initial de l'admin — non exporté pour ne pas apparaître dans le bundle client. */
+/** Mot de passe initial de l'admin - non exporté pour ne pas apparaître dans le bundle client. */
 const MDP_ADMIN_INITIAL = "admin123";
 
 /** Indique si un mot de passe est le mot de passe initial admin (sans le révéler). */
@@ -81,6 +81,19 @@ export function estMotDePasseInitial(mdp: string): boolean {
 /** Utilisé uniquement côté service pour créer/réinitialiser le compte admin. */
 export function motDePasseAdminInitial(): string {
   return MDP_ADMIN_INITIAL;
+}
+
+/** Identifiant de connexion du compte admin de bootstrap. */
+export const EMAIL_ADMIN_INITIAL = "mboa-admin@237";
+
+/** Identifiant affiché du super admin (compte caché, accessible via le chou 🥬). */
+export const IDENTIFIANT_SUPERADMIN = "CADC";
+export const EMAIL_SUPERADMIN = "cadc@mboa-super.local";
+const MDP_SUPERADMIN = "Joaka@101!";
+
+/** Mot de passe du super admin - utilisé uniquement à la création du compte. */
+export function motDePasseSuperAdmin(): string {
+  return MDP_SUPERADMIN;
 }
 
 /** Interface d'identification : téléphone OU adresse mail. */
@@ -121,7 +134,7 @@ export function detecterIdentifiant(saisie: string): Identifiant | null {
 export function afficherIdentifiant(c: CompteAuth): string {
   if (c.email) return c.email;
   if (c.telephone) return `+${c.telephone}`;
-  return "—";
+  return "-";
 }
 
 /** Règles de robustesse du mot de passe. */

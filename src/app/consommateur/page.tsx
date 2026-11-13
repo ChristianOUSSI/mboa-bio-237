@@ -204,7 +204,7 @@ export default function MarchePage() {
               <CarteMboa key={p.id}>
                 <div className="flex justify-between items-start mb-1">
                   <div className="flex items-center gap-1">
-                    <PictoCategorie categorie={p.categorie} size={24} />
+                    {p.emoji ?? <PictoCategorie categorie={p.categorie} size={24} />}
                     <h3 className="text-corps font-bold">{p.nom}</h3>
                   </div>
                   <BoutonVoix texte={produitAnnonceVocale(p)} />
@@ -212,7 +212,9 @@ export default function MarchePage() {
 
                 {/* Photo or pictogram */}
                 <div className="w-full h-32 bg-[var(--mboa-background)] rounded-xl flex items-center justify-center mb-2">
-                  {p.photoReelle ? (
+                  {p.emoji ? (
+                    <span style={{ fontSize: 64 }} aria-hidden>{p.emoji}</span>
+                  ) : p.photoReelle ? (
                     <img src={p.photoReelle} alt={p.nom} className="w-full h-full object-cover rounded-xl" />
                   ) : (
                     <PictoCategorie categorie={p.categorie} size={64} />

@@ -71,7 +71,7 @@ export default function TableauAdmin() {
   const stockBas = stock.filter((p) => p.actif && p.quantite > 0 && p.quantite <= 5);
   const ruptures = stock.filter((p) => p.actif && p.quantite <= 0);
 
-  // Comptes — alerte mot de passe admin par défaut
+  // Comptes - alerte mot de passe admin par défaut
   const mdpParDefaut = comptes.find((c) => c.role === "admin" && c.motDePasseParDefaut);
 
   if (!pret) {

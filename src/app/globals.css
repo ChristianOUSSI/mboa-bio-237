@@ -6,15 +6,15 @@
  * Tous les ratios sont mesurés (WCAG 2.2) sur leur fond réel.
  */
 :root {
-  /* Vert foncé — Primaire : surfaces sombres, texte sur fond clair. 9.2:1 sur blanc (AAA) */
+  /* Vert foncé - Primaire : surfaces sombres, texte sur fond clair. 9.2:1 sur blanc (AAA) */
   --mboa-primary: #1E5128;
-  /* Vert moyen — Dégradés, icônes pleines */
+  /* Vert moyen - Dégradés, icônes pleines */
   --mboa-primary-vif: #2E7D32;
-  /* Vert clair — Décoration, jauge, points de carte. INTERDIT comme texte (1.9:1 sur beige) */
+  /* Vert clair - Décoration, jauge, points de carte. INTERDIT comme texte (1.9:1 sur beige) */
   --mboa-secondary: #8BC34A;
-  /* Vert très clair — Halos et dégradés de fond */
+  /* Vert très clair - Halos et dégradés de fond */
   --mboa-secondary-vif: #AED581;
-  /* Fond général — Beige très clair, jamais blanc éblouissant. 14.8:1 (AAA) */
+  /* Fond général - Beige très clair, jamais blanc éblouissant. 14.8:1 (AAA) */
   --mboa-background: #F8F9E9;
   /* Surface des cartes et des boutons */
   --mboa-surface: #FFFFFF;
@@ -31,7 +31,7 @@
   --mboa-ombre: #14212121;
   --mboa-trait: #33212121;
 
-  /* Accents warms — Pour le contraste visuel des catégories */
+  /* Accents warms - Pour le contraste visuel des catégories */
   --mboa-terre: #8D6E3A;
   --mboa-terre-doux: #148D6E3A;
   --mboa-soleil: #F9A825;
@@ -40,10 +40,10 @@
   --mboa-jaune-momo: #FFCC00;
   --mboa-orange-money: #FF7900;
 
-  /* Typographie — Nunito variable */
+  /* Typographie - Nunito variable */
   --font-nunito: "Nunito", sans-serif;
 
-  /* Tailles minimales — Non négociables */
+  /* Tailles minimales - Non négociables */
   --cible-minimale: 72px;
   --espacement-cible: 16px;
 
@@ -73,16 +73,20 @@
   --font-sans: var(--font-nunito);
 }
 
+html {
+  overflow-x: clip;
+}
+
 body {
   background: var(--mboa-background);
   color: var(--mboa-text);
   font-family: var(--font-nunito), Arial, Helvetica, sans-serif;
   -webkit-tap-highlight-color: transparent;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* ============================================================
-   Fond vivant — dégradés doux + halos qui respirent
+   Fond vivant - dégradés doux + halos qui respirent
    ============================================================ */
 
 .fond-mboa {
@@ -111,7 +115,7 @@ body {
 }
 
 /* ============================================================
-   Filigrane logo — texture discrète derrière le contenu
+   Filigrane logo - texture discrète derrière le contenu
    ============================================================ */
 
 .filigrane-mboa {
@@ -122,7 +126,7 @@ body {
   background-image: url("/logo-mboa.jpeg");
   background-repeat: no-repeat;
   background-position: center 42%;
-  background-size: min(115vw, 620px);
+  background-size: min(100vw, 620px);
   opacity: 0.055;
   filter: grayscale(0.35) contrast(1.05);
 }
@@ -167,7 +171,7 @@ body {
 }
 
 /* ============================================================
-   Boutons — cible tactile 72px, rebond, éclat
+   Boutons - cible tactile 72px, rebond, éclat
    ============================================================ */
 
 .btn-mboa {
@@ -239,7 +243,7 @@ body {
   color: #FFFFFF;
 }
 
-/* Bouton fantôme — action tertiaire */
+/* Bouton fantôme - action tertiaire */
 .btn-fantome {
   background: transparent;
   color: var(--mboa-primary);
@@ -247,7 +251,7 @@ body {
 }
 
 /* ============================================================
-   Cartes — surface blanche, ombre douce, coins arrondis
+   Cartes - surface blanche, ombre douce, coins arrondis
    ============================================================ */
 
 .card-mboa {
@@ -267,7 +271,7 @@ body {
   transform: scale(0.985);
 }
 
-/* Carte à liseré coloré — pour les catégories et actions fortes */
+/* Carte à liseré coloré - pour les catégories et actions fortes */
 .card-accent {
   position: relative;
   overflow: hidden;
@@ -275,7 +279,7 @@ body {
 }
 
 /* ============================================================
-   En-tête — dégradé animé
+   En-tête - dégradé animé
    ============================================================ */
 
 .entete-mboa {
@@ -318,7 +322,7 @@ body {
 }
 
 /* ============================================================
-   Textes — Aucun texte sous 18px
+   Textes - Aucun texte sous 18px
    ============================================================ */
 
 .text-ecran { font-size: 28px; font-weight: 900; letter-spacing: -0.02em; }
@@ -359,7 +363,7 @@ body {
   animation: apparition-zoom 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-/* Décalage pour les listes — chaque carte arrive en cascade */
+/* Décalage pour les listes - chaque carte arrive en cascade */
 .anim-retard-1 { animation-delay: 0.05s; }
 .anim-retard-2 { animation-delay: 0.1s; }
 .anim-retard-3 { animation-delay: 0.15s; }
@@ -377,7 +381,7 @@ body {
   animation: pulsation 1.8s ease-in-out infinite;
 }
 
-/* Secousse — pour les erreurs et alertes */
+/* Secousse - pour les erreurs et alertes */
 @keyframes secousse {
   0%, 100% { transform: translateX(0); }
   20% { transform: translateX(-7px); }
@@ -481,7 +485,7 @@ body {
 }
 
 /* ============================================================
-   Champs de saisie —触感 et lisibilité
+   Champs de saisie -触感 et lisibilité
    ============================================================ */
 
 .champ-mboa {
@@ -501,7 +505,7 @@ body {
 }
 
 /* ============================================================
-   Impression — export PDF / devis
+   Impression - export PDF / devis
    ============================================================ */
 
 @media print {
@@ -535,7 +539,7 @@ body {
   }
 }
 
-/* PWA — Pas de zoom sur focus sur iOS */
+/* PWA - Pas de zoom sur focus sur iOS */
 input, select, textarea, button {
   font-size: 18px;
 }
@@ -579,12 +583,13 @@ input, select, textarea, button {
 }
 
 /* ============================================================
-   Page connexion — aliments flottants, cartes de rôles, i18n
+   Page connexion - aliments flottants, cartes de rôles, i18n
    ============================================================ */
 
 /* Emojis aliments qui flottent doucement en arrière-plan */
 .aliment-flottant {
   position: absolute;
+  max-width: 12vw;
   pointer-events: none;
   user-select: none;
   animation: flottement 7s ease-in-out infinite;
@@ -678,6 +683,17 @@ input, select, textarea, button {
 .selecteur-langue button.actif {
   background: #FFFFFF;
   color: var(--mboa-primary);
+}
+
+/* Splash d'espace - écran de présentation propre à chaque rôle */
+.splash-role {
+  position: relative;
+  overflow: hidden;
+  border-radius: 26px;
+  padding: 44px 24px 30px;
+  text-align: center;
+  color: #FFFFFF;
+  box-shadow: 0 14px 34px rgba(20, 33, 33, 0.20);
 }
 
 /* Dégradé décoratif en bas de l'écran de connexion */

@@ -223,7 +223,7 @@ export default function StockAdminPage() {
                 <div className="grid grid-cols-3 gap-2 text-center mb-2">
                   <div>
                     <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.stk.cout")}</p>
-                    <p className="text-corps font-bold">{p.prixAchat != null ? formaterFcfa(p.prixAchat) : "—"}</p>
+                    <p className="text-corps font-bold">{p.prixAchat != null ? formaterFcfa(p.prixAchat) : "-"}</p>
                   </div>
                   <div>
                     <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.stk.prixVente")}</p>
@@ -244,7 +244,7 @@ export default function StockAdminPage() {
                   <div>
                     <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.stk.marge")}</p>
                     <p className="text-corps font-bold text-[var(--mboa-primary)]">
-                      {margeU != null ? `${formaterFcfa(margeU)} (${margePct}%)` : "—"}
+                      {margeU != null ? `${formaterFcfa(margeU)} (${margePct}%)` : "-"}
                     </p>
                   </div>
                 </div>

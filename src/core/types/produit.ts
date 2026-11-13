@@ -10,6 +10,8 @@ export interface Produit {
   categorie: Categorie;
   photoReelle: string;
   photoFiligranee?: string | null;
+  /** Emoji représentatif du produit (mangue 🥭, macabo 🍆…) - prioritaire sur le picto de catégorie. */
+  emoji?: string | null;
   quantite: number;
   prix: number;
   prixAchat?: number | null;
@@ -90,6 +92,7 @@ export function produitFromMap(map: Record<string, unknown>): Produit {
     categorie: categorieResolve(map.categorie as string),
     photoReelle: (map.photo_reelle as string) ?? (map.photo as string) ?? "",
     photoFiligranee: (map.photo_filigranee as string) ?? null,
+    emoji: (map.emoji as string) ?? null,
     quantite: Number(map.quantite ?? 0),
     prix: Math.round(Number(map.prix ?? 0)),
     unite: brutUnite ? uniteResolve(brutUnite) : null,

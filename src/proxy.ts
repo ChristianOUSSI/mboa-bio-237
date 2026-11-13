@@ -15,6 +15,7 @@ const ROUTES_PROTEGEES: Record<string, string> = {
   "/livreur": "livreur",
   "/fournisseur": "fournisseur",
   "/consommateur": "consommateur",
+  "/superadmin": "superadmin",
 };
 
 export function proxy(request: NextRequest) {
@@ -46,5 +47,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/livreur/:path*", "/fournisseur/:path*", "/consommateur/:path*"],
+  matcher: ["/admin/:path*", "/livreur/:path*", "/fournisseur/:path*", "/consommateur/:path*", "/superadmin/:path*"],
 };

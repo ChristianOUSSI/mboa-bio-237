@@ -140,14 +140,14 @@ export function EnTetePage({
 /** Pictogramme de catégorie — icône SVG au trait. */
 export function PictoCategorie({ categorie, size = 48 }: { categorie: string; size?: number }) {
   const emojis: Record<string, string> = {
-    fruit: "🍎",
-    tubercule: "🥔",
+    fruit: "🥭",
+    tubercule: "🍠",
     legume: "🥬",
-    cereale: "🌾",
-    viande: "🍖",
+    cereale: "🌽",
+    viande: "🍗",
     poisson: "🐟",
-    huile: "🫗",
-    boisson: "🥤",
+    huile: "🫒",
+    boisson: "🧃",
   };
   return (
     <span style={{ fontSize: size }} aria-hidden>

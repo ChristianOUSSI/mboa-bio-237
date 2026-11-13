@@ -54,6 +54,8 @@ export interface Achat {
   prixDemande: number;
   prixMarchand?: number | null;
   photoUrl: string;
+  /** Emoji représentatif proposé par le fournisseur. */
+  emoji?: string | null;
   audioUrl?: string | null;
   produitId?: string | null;
   statut: StatutAchat;
@@ -90,6 +92,7 @@ export function achatFromMap(map: Record<string, unknown>): Achat {
     prixDemande: Math.round(Number(map.prix_demande ?? 0)),
     prixMarchand: map.prix_achat != null ? Math.round(Number(map.prix_achat)) : null,
     photoUrl: (map.photo_url as string) ?? "",
+    emoji: (map.emoji as string) ?? null,
     audioUrl: (map.audio_url as string) ?? null,
     produitId: (map.produit_id as string) ?? null,
     statut: statutAchatResolve(map.statut as string),

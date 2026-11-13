@@ -42,6 +42,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "role.admin.nom": "MBOA ADMIN",
     "role.admin.desc": "Le comptoir : gestion des stocks, validation des commandes et contrôle qualité.",
     "choix.rejoindre": "Vous vendez ? Devenez fournisseur",
+    "choix.continuer": "Continuer",
 
     // Connexion
     "connex.titre": "Connexion",
@@ -64,7 +65,7 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     // Inscription
     "insc.titre": "Créer mon compte",
-    "insc.sousTitre": "Client MBOA BIO — inscription rapide",
+    "insc.sousTitre": "Client MBOA BIO - inscription rapide",
     "insc.parTel": "Téléphone",
     "insc.parMail": "Email",
     "insc.idLabel": "Votre téléphone ou email",
@@ -240,7 +241,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "liv.livre": "Livré",
     "liv.attenteClient": "En attente de la confirmation du client…",
 
-    // Espace admin — accueil
+    // Espace admin - accueil
     "adm.sousTitre": "Le comptoir",
     "adm.devis": "Devis",
     "adm.recoltes": "Récoltes",
@@ -273,7 +274,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.cpt.nom": "Nom",
     "adm.cpt.mdpInitial": "Mot de passe initial : à changer",
     "adm.cpt.toujoursDefaut": "Toujours par défaut",
-    "adm.cpt.oui": "OUI — changez-le maintenant",
+    "adm.cpt.oui": "OUI - changez-le maintenant",
     "adm.cpt.non": "non",
     "adm.cpt.comptesActifs": "Comptes actifs",
     "adm.cpt.alerte": "⚠ Mot de passe initial jamais changé",
@@ -300,7 +301,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.cpt.purge": "{n} compte(s) supprimé(s). Le compte admin a été réinitialisé.",
     "chargement": "Chargement…",
 
-    // Admin — fournisseurs / livraisons / devis
+    // Admin - fournisseurs / livraisons / devis
     "adm.fourn.titre": "Fournisseurs",
     "adm.fourn.compteLie": "Compte lié",
     "adm.fourn.sansCompte": "Pas de compte",
@@ -334,7 +335,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.ach.paiement": "Paiement…",
     "adm.ach.payer": "Payer le fournisseur",
 
-    // Admin — livreurs
+    // Admin - livreurs
     "adm.livr.titre": "Livreurs",
     "adm.livr.sousTitre": "Le comptoir crée les comptes livreurs",
     "adm.livr.identifiants": "Identifiants pour",
@@ -367,7 +368,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.livr.plaque2": "Plaque",
     "adm.livr.tarif2": "Tarif",
 
-    // Admin — packs
+    // Admin - packs
     "adm.pack.titre": "Plats prêts",
     "adm.pack.sousTitre": "Un plat, ses ingrédients, un prix",
     "adm.pack.composer": "Composer un plat",
@@ -382,12 +383,12 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.pack.liste": "Plats au comptoir",
     "adm.pack.de": "de",
 
-    // Admin — stock
+    // Admin - stock
     "adm.stk.sousTitre": "Gestion complète du comptoir",
     "adm.stk.ajouter": "+ Ajouter un produit",
     "adm.stk.recherche": "🔍 Rechercher un produit…",
     "adm.stk.tout": "Tout",
-    "adm.stk.vide1": "Stock vide — achetez aux fournisseurs ou ajoutez un produit",
+    "adm.stk.vide1": "Stock vide - achetez aux fournisseurs ou ajoutez un produit",
     "adm.stk.vide2": "Aucun produit ne correspond à votre recherche",
     "adm.stk.pack": "Pack",
     "adm.stk.inactif": "Inactif",
@@ -447,6 +448,38 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.cpt.adminErreurMail": "Email invalide",
     "adm.cpt.adminErreurMdp": "Mot de passe : 6 caractères minimum, avec un chiffre",
 
+    // Création de compte admin après login par défaut
+    "adminCreate.titre": "Créez votre compte admin",
+    "adminCreate.sousTitre": "Le compte par défaut est partagé : choisissez vos identifiants personnels",
+    "adminCreate.btn": "Créer mon compte admin",
+
+    // Super admin caché
+    "super.titre": "Accès super admin",
+    "super.sousTitre": "Gestion racine du comptoir",
+    "super.idLabel": "Identifiant",
+    "super.btn": "Entrer",
+    "super.erreur": "Accès refusé",
+    "super.titrePage": "Super admin",
+    "super.sousTitrePage": "Gestion des comptes et des admins",
+    "super.comptes": "Comptes",
+    "super.role": "Rôle",
+    "super.nom": "Nom",
+    "super.identifiant": "Identifiant",
+    "super.actif": "Actif",
+    "super.inactif": "Révoqué",
+    "super.revoquer": "Révoquer",
+    "super.reactiver": "Réactiver",
+    "super.renommer": "Renommer",
+    "super.nouveauNom": "Nouveau nom",
+    "super.nouveauMdp": "Nouveau mot de passe",
+    "super.appliquer": "Appliquer",
+    "super.vide": "Aucun compte",
+    "super.erreurMdp": "Mot de passe : 6 caractères minimum, avec un chiffre",
+    "super.confirme": "Fait",
+    "super.roleAdmin": "Admin",
+    "super.roleAutre": "Autre",
+    "super.roleSuper": "Super admin",
+
     // Petits plus
     "plus.horsLigne": "Fonctionne sans internet",
     "plus.livraison": "Livraison à domicile",
@@ -472,6 +505,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "role.admin.nom": "MBOA ADMIN",
     "role.admin.desc": "The counter: stock management, order validation and quality control.",
     "choix.rejoindre": "Selling? Become a supplier",
+    "choix.continuer": "Continue",
 
     // Connexion
     "connex.titre": "Sign in",
@@ -494,7 +528,7 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     // Inscription
     "insc.titre": "Create my account",
-    "insc.sousTitre": "MBOA BIO customer — quick sign-up",
+    "insc.sousTitre": "MBOA BIO customer - quick sign-up",
     "insc.parTel": "Phone",
     "insc.parMail": "Email",
     "insc.idLabel": "Your phone or email",
@@ -670,7 +704,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "liv.livre": "Delivered",
     "liv.attenteClient": "Waiting for the customer's confirmation…",
 
-    // Espace admin — accueil
+    // Espace admin - accueil
     "adm.sousTitre": "The counter",
     "adm.devis": "Quotes",
     "adm.recoltes": "Harvests",
@@ -703,7 +737,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.cpt.nom": "Name",
     "adm.cpt.mdpInitial": "Initial password: to be changed",
     "adm.cpt.toujoursDefaut": "Still default",
-    "adm.cpt.oui": "YES — change it now",
+    "adm.cpt.oui": "YES - change it now",
     "adm.cpt.non": "no",
     "adm.cpt.comptesActifs": "Active accounts",
     "adm.cpt.alerte": "⚠ Initial password never changed",
@@ -730,7 +764,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.cpt.purge": "{n} account(s) deleted. The admin account was reset.",
     "chargement": "Loading…",
 
-    // Admin — fournisseurs / livraisons / devis
+    // Admin - fournisseurs / livraisons / devis
     "adm.fourn.titre": "Suppliers",
     "adm.fourn.compteLie": "Linked account",
     "adm.fourn.sansCompte": "No account",
@@ -764,7 +798,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.ach.paiement": "Paying…",
     "adm.ach.payer": "Pay the supplier",
 
-    // Admin — livreurs
+    // Admin - livreurs
     "adm.livr.titre": "Drivers",
     "adm.livr.sousTitre": "The counter creates driver accounts",
     "adm.livr.identifiants": "Credentials for",
@@ -797,7 +831,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.livr.plaque2": "Plate",
     "adm.livr.tarif2": "Fee",
 
-    // Admin — packs
+    // Admin - packs
     "adm.pack.titre": "Dish packs",
     "adm.pack.sousTitre": "One dish, its ingredients, one price",
     "adm.pack.composer": "Compose a dish",
@@ -812,12 +846,12 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.pack.liste": "Packs at the counter",
     "adm.pack.de": "of",
 
-    // Admin — stock
+    // Admin - stock
     "adm.stk.sousTitre": "Full counter management",
     "adm.stk.ajouter": "+ Add a product",
     "adm.stk.recherche": "🔍 Search for a product…",
     "adm.stk.tout": "All",
-    "adm.stk.vide1": "Empty stock — buy from suppliers or add a product",
+    "adm.stk.vide1": "Empty stock - buy from suppliers or add a product",
     "adm.stk.vide2": "No product matches your search",
     "adm.stk.pack": "Pack",
     "adm.stk.inactif": "Inactive",
@@ -876,6 +910,38 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.cpt.adminMdpDefaut": "default password",
     "adm.cpt.adminErreurMail": "Invalid email",
     "adm.cpt.adminErreurMdp": "Password: 6 characters minimum, with a digit",
+
+    // Création de compte admin après login par défaut
+    "adminCreate.titre": "Create your admin account",
+    "adminCreate.sousTitre": "The default account is shared: choose your personal credentials",
+    "adminCreate.btn": "Create my admin account",
+
+    // Super admin caché
+    "super.titre": "Super admin access",
+    "super.sousTitre": "Root management of the counter",
+    "super.idLabel": "Identifier",
+    "super.btn": "Enter",
+    "super.erreur": "Access denied",
+    "super.titrePage": "Super admin",
+    "super.sousTitrePage": "Account and admin management",
+    "super.comptes": "Accounts",
+    "super.role": "Role",
+    "super.nom": "Name",
+    "super.identifiant": "Identifier",
+    "super.actif": "Active",
+    "super.inactif": "Revoked",
+    "super.revoquer": "Revoke",
+    "super.reactiver": "Reactivate",
+    "super.renommer": "Rename",
+    "super.nouveauNom": "New name",
+    "super.nouveauMdp": "New password",
+    "super.appliquer": "Apply",
+    "super.vide": "No accounts",
+    "super.erreurMdp": "Password: 6 characters minimum, with a digit",
+    "super.confirme": "Done",
+    "super.roleAdmin": "Admin",
+    "super.roleAutre": "Other",
+    "super.roleSuper": "Super admin",
 
     // Petits plus
     "plus.horsLigne": "Works offline",

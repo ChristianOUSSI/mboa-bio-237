@@ -14,16 +14,20 @@ import {
   changerMotDePasse,
   doitChangerMotDePasse,
   amorcerSiAucunCompte,
+  assurerCompteSuperAdmin,
 } from "@/core/auth/auth_service";
+import { synchroniserComptesAdmin } from "@/core/auth/synchro_admin";
 import {
   normaliserTel,
   normaliserEmail,
   validerMotDePasse,
+  IDENTIFIANT_SUPERADMIN,
+  EMAIL_SUPERADMIN,
 } from "@/core/auth/auth_local";
 import { Profil } from "@/core/types/profil";
 import { ouvrirSessionLocale } from "@/core/data/depots";
 
-type Etape = "choix" | "identifiant" | "inscription" | "nouveauMdp";
+type Etape = "choix" | "splash" | "identifiant" | "inscription" | "nouveauMdp" | "compteAdmin" | "superadmin";
 
 /** Ordre d'affichage des espaces : le client d'abord. */
 const ROLES_ORDRE: AppRole[] = ["consommateur", "fournisseur", "livreur", "admin"];
@@ -35,7 +39,7 @@ const ALIMENTS_FLOTTANTS = [
   { emoji: "🐟", top: "38%", left: "3%", taille: 42, delai: "-3s" },
   { emoji: "🌽", top: "55%", right: "4%", taille: 40, delai: "-2s" },
   { emoji: "🥭", top: "72%", left: "8%", taille: 36, delai: "-4.5s" },
-  { emoji: "🥬", top: "82%", right: "10%", taille: 38, delai: "-1s" },
+  { emoji: "🥬", top: "82%", right: "10%", taille: 38, delai: "-1s", cliquable: true },
 ];
 
 /** Emoji illustrant chaque espace. */
@@ -44,6 +48,65 @@ const ROLE_EMOJI: Record<AppRole, string> = {
   fournisseur: "🌾",
   livreur: "🛵",
   admin: "🏪",
+  superadmin: "🫑",
+};
+
+/** Thème visuel du splash de chaque espace. */
+const ROLE_THEME: Record<AppRole, { fond: string; halo: string }> = {
+  consommateur: {
+    fond: "linear-gradient(150deg, #4E9B47 0%, #2E7D32 55%, #1E5128 100%)",
+    halo: "rgba(174, 213, 129, 0.5)",
+  },
+  fournisseur: {
+    fond: "linear-gradient(150deg, #B8860B 0%, #8D6E1F 55%, #5C430F 100%)",
+    halo: "rgba(255, 214, 130, 0.5)",
+  },
+  livreur: {
+    fond: "linear-gradient(150deg, #1565C0 0%, #0D47A1 55%, #082F66 100%)",
+    halo: "rgba(120, 180, 255, 0.5)",
+  },
+  admin: {
+    fond: "linear-gradient(150deg, #5D4037 0%, #3E2723 55%, #241612 100%)",
+    halo: "rgba(200, 160, 120, 0.45)",
+  },
+  superadmin: {
+    fond: "linear-gradient(150deg, #4A148C 0%, #311B52 55%, #1B0B33 100%)",
+    halo: "rgba(206, 147, 216, 0.4)",
+  },
+};
+
+/** Emojis décoratifs qui flottent sur le splash de chaque espace. */
+const ROLE_DECOR: Record<AppRole, { emoji: string; top: string; left?: string; right?: string; taille: number; delai: string }[]> = {
+  consommateur: [
+    { emoji: "🍌", top: "8%", left: "8%", taille: 34, delai: "0s" },
+    { emoji: "🍅", top: "14%", right: "10%", taille: 30, delai: "-1.2s" },
+    { emoji: "🥬", top: "70%", left: "12%", taille: 30, delai: "-2.4s" },
+    { emoji: "🥭", top: "76%", right: "14%", taille: 28, delai: "-0.8s" },
+  ],
+  fournisseur: [
+    { emoji: "🌾", top: "8%", left: "10%", taille: 36, delai: "0s" },
+    { emoji: "🍅", top: "16%", right: "8%", taille: 30, delai: "-1.5s" },
+    { emoji: "🐟", top: "68%", left: "14%", taille: 32, delai: "-2.8s" },
+    { emoji: "🌽", top: "74%", right: "12%", taille: 30, delai: "-1s" },
+  ],
+  livreur: [
+    { emoji: "🛵", top: "8%", left: "9%", taille: 36, delai: "0s" },
+    { emoji: "📦", top: "15%", right: "9%", taille: 32, delai: "-1.3s" },
+    { emoji: "🛣️", top: "70%", left: "12%", taille: 30, delai: "-2.2s" },
+    { emoji: "⏱️", top: "76%", right: "13%", taille: 28, delai: "-0.6s" },
+  ],
+  admin: [
+    { emoji: "🏪", top: "8%", left: "10%", taille: 34, delai: "0s" },
+    { emoji: "📋", top: "15%", right: "9%", taille: 30, delai: "-1.4s" },
+    { emoji: "✅", top: "70%", left: "13%", taille: 30, delai: "-2.5s" },
+    { emoji: "🥬", top: "75%", right: "12%", taille: 28, delai: "-1s" },
+  ],
+  superadmin: [
+    { emoji: "🫑", top: "8%", left: "10%", taille: 34, delai: "0s" },
+    { emoji: "🔐", top: "16%", right: "9%", taille: 30, delai: "-1.3s" },
+    { emoji: "👑", top: "70%", left: "13%", taille: 32, delai: "-2.4s" },
+    { emoji: "🛡️", top: "76%", right: "12%", taille: 28, delai: "-0.9s" },
+  ],
 };
 
 export default function PageConnexion() {
@@ -64,9 +127,13 @@ export default function PageConnexion() {
   const [modeInscription, setModeInscription] = useState<"telephone" | "email">("telephone");
   const [mdpParDefaut, setMdpParDefaut] = useState(false);
 
-  // Bootstrap : sur une première installation (base vide), crée le compte admin.
+  // Bootstrap : sur une première installation (base vide), crée le compte admin
+  // et le compte super admin caché.
   useEffect(() => {
     amorcerSiAucunCompte().catch((e) => console.error(e));
+    assurerCompteSuperAdmin().catch((e) => console.error(e));
+    // Récupère les comptes admin créés depuis d'autres appareils (PC/téléphone).
+    synchroniserComptesAdmin().catch((e) => console.warn("[synchro]", e));
   }, []);
 
   /** Opens the local session from an authenticated account. */
@@ -114,14 +181,15 @@ export default function PageConnexion() {
         setErreur(t("connex.erreurMdpFaux"));
         return;
       }
-      // Default password unchanged → forced change.
-      // L'admin doit changer même sur l'appareil du comptoir (sinon admin123
-      // resterait valide indéfiniment sur l'appareil principal).
-      const forcerChangement =
-        doitChangerMotDePasse(compte) ||
-        (compte.role === "admin" && compte.motDePasseParDefaut);
-      if (forcerChangement) {
+      // Le compte admin de bootstrap (mdp par défaut) ne connecte jamais
+      // directement : on force la création d'un compte admin personnel.
+      if (compte.role === "admin" && compte.motDePasseParDefaut) {
         setMdpParDefaut(true);
+        setEtape("compteAdmin");
+        return;
+      }
+      // Nouveau mot de passe sur un autre appareil.
+      if (doitChangerMotDePasse(compte)) {
         setEtape("nouveauMdp");
         return;
       }
@@ -202,6 +270,75 @@ export default function PageConnexion() {
     }
   }
 
+  /** Login avec le compte admin par défaut → crée un compte admin personnel. */
+  async function creerCompteAdmin() {
+    const mail = normaliserEmail(identifiant) ?? identifiant.trim().toLowerCase();
+    if (nom.trim().length === 0 || !mail.includes("@")) {
+      setErreur(t("adm.cpt.adminErreurMail"));
+      return;
+    }
+    const err = validerMotDePasse(nouveauMdp);
+    if (!err.ok) {
+      setErreur(t("adm.cpt.adminErreurMdp"));
+      return;
+    }
+    if (nouveauMdp !== confirmationMdp) {
+      setErreur(t("connex.erreurMdpPaire"));
+      return;
+    }
+    setEnCours(true);
+    setErreur(null);
+    try {
+      const compte = await creerCompte({
+        role: "admin",
+        nom: nom.trim(),
+        telephone: null,
+        email: mail,
+        village: village.trim() || "Douala",
+        motDePasse: nouveauMdp,
+      });
+      ouvrirSession(compte);
+    } catch (e) {
+      console.error(e);
+      setErreur(t("insc.erreurCreation"));
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  /** Login super admin caché (chou 🥬 sur la page de connexion). */
+  async function seConnecterSuper() {
+    if (identifiant.trim().toUpperCase() !== IDENTIFIANT_SUPERADMIN) {
+      setErreur(t("super.erreur"));
+      return;
+    }
+    const err = validerMotDePasse(motDePasse);
+    if (!err.ok) {
+      setErreur(t("super.erreur"));
+      return;
+    }
+    setEnCours(true);
+    setErreur(null);
+    try {
+      const compte = await compteParIdentifiant(EMAIL_SUPERADMIN);
+      if (!compte || compte.role !== "superadmin") {
+        setErreur(t("super.erreur"));
+        return;
+      }
+      const bon = await verifierMotDePasse(compte, motDePasse);
+      if (!bon) {
+        setErreur(t("super.erreur"));
+        return;
+      }
+      ouvrirSession(compte);
+    } catch (e) {
+      console.error(e);
+      setErreur(t("connex.erreurGenerique"));
+    } finally {
+      setEnCours(false);
+    }
+  }
+
   function allerConnexion() {
     setEtape("identifiant");
     setErreur(null);
@@ -236,8 +373,21 @@ export default function PageConnexion() {
             right: "right" in a ? a.right : undefined,
             fontSize: a.taille,
             animationDelay: a.delai,
+            ...("cliquable" in a && a.cliquable
+              ? { pointerEvents: "auto", cursor: "pointer" }
+              : {}),
           }}
           aria-hidden
+          onClick={
+            "cliquable" in a && a.cliquable
+              ? () => {
+                  setIdentifiant(IDENTIFIANT_SUPERADMIN);
+                  setMotDePasse("");
+                  setErreur(null);
+                  setEtape("superadmin");
+                }
+              : undefined
+          }
         >
           {a.emoji}
         </span>
@@ -297,16 +447,14 @@ export default function PageConnexion() {
                   key={r}
                   onClick={() => {
                     setRoleChoisi(r);
-                    setEtape("identifiant");
+                    setErreur(null);
+                    setEtape("splash");
                   }}
-                  className={`carte-role ${roleChoisi === r ? "selectionne" : ""}`}
+                  className="carte-role"
                 >
                   <div className="role-emojis-cercle">{ROLE_EMOJI[r]}</div>
                   <span className="block text-corps font-black text-[var(--mboa-primary)] leading-tight">
                     {t(`role.${r}.nom`)}
-                  </span>
-                  <span className="block text-aide text-[var(--mboa-text-doux)] italic mt-1 leading-snug">
-                    {t(`role.${r}.desc`)}
                   </span>
                 </button>
               ))}
@@ -329,6 +477,64 @@ export default function PageConnexion() {
             <p className="text-aide text-center text-[var(--mboa-text-doux)] italic">
               {t("choix.note")}
             </p>
+          </div>
+        )}
+
+        {etape === "splash" && (
+          <div
+            className="splash-role anim-apparition-zoom w-full max-w-md"
+            style={{ background: ROLE_THEME[roleChoisi].fond }}
+          >
+            <div
+              className="halo-mboa"
+              style={{
+                width: 220,
+                height: 220,
+                top: -70,
+                right: -70,
+                background: ROLE_THEME[roleChoisi].halo,
+              }}
+              aria-hidden
+            />
+            {ROLE_DECOR[roleChoisi].map((d, i) => (
+              <span
+                key={i}
+                className="aliment-flottant"
+                style={{
+                  top: d.top,
+                  left: d.left,
+                  right: d.right,
+                  fontSize: d.taille,
+                  animationDelay: d.delai,
+                }}
+                aria-hidden
+              >
+                {d.emoji}
+              </span>
+            ))}
+
+            <div className="relative z-10 flex flex-col items-center">
+              <div
+                className="w-24 h-24 rounded-full flex items-center justify-center text-6xl mb-4"
+                style={{ background: "rgba(255,255,255,0.18)", border: "2px solid rgba(255,255,255,0.45)" }}
+              >
+                {ROLE_EMOJI[roleChoisi]}
+              </div>
+              <h2 className="text-titre text-white">{t(`role.${roleChoisi}.nom`)}</h2>
+              <p className="text-aide text-white/90 italic mt-2 leading-relaxed">
+                {t(`role.${roleChoisi}.desc`)}
+              </p>
+
+              <BoutonMboa variant="surface" onClick={allerConnexion} className="w-full mt-6">
+                {t("choix.continuer")} →
+              </BoutonMboa>
+              <button
+                onClick={() => setEtape("choix")}
+                className="text-aide text-white/80 underline text-center w-full mt-3"
+              >
+                ← {t("connex.switch")}
+              </button>
+            </div>
           </div>
         )}
 
@@ -531,6 +737,119 @@ export default function PageConnexion() {
             <BoutonMboa onClick={appliquerNouveauMdp} disabled={enCours} className="w-full">
               {enCours ? t("mdp.btnCours") : `🔒 ${t("mdp.btn")}`}
             </BoutonMboa>
+          </CarteMboa>
+        )}
+
+        {etape === "compteAdmin" && (
+          <CarteMboa className="w-full max-w-md anim-apparition">
+            <div className="text-center mb-4">
+              <div className="text-5xl mb-2">🏪</div>
+              <h2 className="text-titre">{t("adminCreate.titre")}</h2>
+              <p className="text-aide text-[var(--mboa-text-doux)] italic">
+                {t("adminCreate.sousTitre")}
+              </p>
+            </div>
+
+            <label className="text-aide block mb-1 font-bold">{t("insc.nomLabel")}</label>
+            <input
+              type="text"
+              autoComplete="name"
+              placeholder={t("insc.nomPlaceholder")}
+              value={nom}
+              onChange={(e) => setNom(e.target.value)}
+              className="champ-mboa mb-3"
+              style={{ fontSize: 20 }}
+            />
+
+            <label className="text-aide block mb-1 font-bold">{t("connex.idLabel")}</label>
+            <input
+              type="text"
+              inputMode="email"
+              autoComplete="username"
+              placeholder="votre@email.com"
+              value={identifiant}
+              onChange={(e) => setIdentifiant(e.target.value)}
+              className="champ-mboa mb-3"
+              style={{ fontSize: 20 }}
+            />
+
+            <label className="text-aide block mb-1 font-bold">{t("insc.mdpLabel")}</label>
+            <input
+              type="password"
+              autoComplete="new-password"
+              placeholder={t("insc.mdpPlaceholder")}
+              value={nouveauMdp}
+              onChange={(e) => setNouveauMdp(e.target.value)}
+              className="champ-mboa mb-3"
+              style={{ fontSize: 20 }}
+            />
+
+            <label className="text-aide block mb-1 font-bold">{t("insc.mdpConfirmLabel")}</label>
+            <input
+              type="password"
+              autoComplete="new-password"
+              placeholder={t("insc.mdpConfirmPlaceholder")}
+              value={confirmationMdp}
+              onChange={(e) => setConfirmationMdp(e.target.value)}
+              className="champ-mboa mb-3"
+              style={{ fontSize: 20 }}
+            />
+
+            {erreur && (
+              <p className="text-[var(--mboa-error)] text-aide mb-2 text-center anim-secousse font-bold">{erreur}</p>
+            )}
+
+            <BoutonMboa onClick={creerCompteAdmin} disabled={enCours} className="w-full">
+              {enCours ? t("insc.btnCours") : `✓ ${t("adminCreate.btn")}`}
+            </BoutonMboa>
+          </CarteMboa>
+        )}
+
+        {etape === "superadmin" && (
+          <CarteMboa className="w-full max-w-md anim-apparition">
+            <div className="text-center mb-4">
+              <div className="text-5xl mb-2">🫑</div>
+              <h2 className="text-titre">{t("super.titre")}</h2>
+              <p className="text-aide text-[var(--mboa-text-doux)] italic">
+                {t("super.sousTitre")}
+              </p>
+            </div>
+
+            <label className="text-aide block mb-1 font-bold">{t("super.idLabel")}</label>
+            <input
+              type="text"
+              autoComplete="username"
+              value={identifiant}
+              onChange={(e) => setIdentifiant(e.target.value.toUpperCase())}
+              className="champ-mboa mb-3"
+              style={{ fontSize: 22, textTransform: "uppercase" }}
+            />
+
+            <label className="text-aide block mb-1 font-bold">{t("connex.mdpLabel")}</label>
+            <input
+              type="password"
+              autoComplete="current-password"
+              placeholder={t("connex.mdpPlaceholder")}
+              value={motDePasse}
+              onChange={(e) => setMotDePasse(e.target.value)}
+              className="champ-mboa mb-3"
+              style={{ fontSize: 22 }}
+            />
+
+            {erreur && (
+              <p className="text-[var(--mboa-error)] text-aide mb-2 text-center anim-secousse font-bold">{erreur}</p>
+            )}
+
+            <BoutonMboa onClick={seConnecterSuper} disabled={enCours} className="w-full">
+              {enCours ? t("connex.btnCours") : `→ ${t("super.btn")}`}
+            </BoutonMboa>
+
+            <button
+              onClick={() => setEtape("choix")}
+              className="text-aide text-[var(--mboa-text-doux)] underline text-center w-full mt-2"
+            >
+              ← {t("connex.switch")}
+            </button>
           </CarteMboa>
         )}
       </div>

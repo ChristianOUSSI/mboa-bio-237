@@ -103,7 +103,7 @@ export default function DevisAdminPage() {
                   >
                     {livreurs.map((l) => (
                       <option key={l.id} value={l.id}>
-                        🏍️ {l.nom} — {l.zone} ({l.tarifCourse} F)
+                        🏍️ {l.nom} - {l.zone} ({l.tarifCourse} F)
                       </option>
                     ))}
                   </select>
