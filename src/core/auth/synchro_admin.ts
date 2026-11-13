@@ -7,7 +7,6 @@ import {
   motDePasseSuperAdmin,
   EMAIL_ADMIN_INITIAL,
   EMAIL_ADMIN_INITIAL_ANTERIEUR,
-  MDP_SUPERADMIN_ANTERIEUR,
   type CompteAuth,
 } from "./auth_local";
 
@@ -100,14 +99,16 @@ export async function synchroniserComptesAdmin(): Promise<number> {
     const cle = (c.email ?? c.telephone ?? c.id).toLowerCase();
     parEmail.set(cle, [...(parEmail.get(cle) ?? []), c]);
   }
+  const gagnants: CompteAuth[] = [];
   for (const groupe of parEmail.values()) {
-    if (groupe.length < 2) continue;
     const meilleur = [...groupe].sort((a, b) => {
       const score = (c: CompteAuth) =>
         (c.actif ? 4 : 0) + (c.motDePasseParDefaut ? 0 : 2);
       const d = score(b) - score(a);
       return d !== 0 ? d : (b.createdLe ?? "").localeCompare(a.createdLe ?? "");
     })[0];
+    gagnants.push(meilleur);
+    if (groupe.length < 2) continue;
     for (const c of groupe) {
       if (c.id === meilleur.id || !c.actif) continue;
       const inactif = { ...c, actif: false };
@@ -138,12 +139,14 @@ export async function synchroniserComptesAdmin(): Promise<number> {
     publierCompteAdmin(inactif);
   }
 
-  const superadmin = tous.find((c) => c.role === "superadmin");
+  // Le super admin est un compte à identifiants fixes : on force le hash
+  // du mot de passe actuel (CADC1) sur le gagnant de la déduplication,
+  // quel que soit l'appareil qui a créé le doublon local.
+  const superadmin = gagnants.find((c) => c.role === "superadmin");
   if (superadmin) {
-    const hashAncien = await hacherMotDePasse(MDP_SUPERADMIN_ANTERIEUR, `mboa-${superadmin.id}`);
-    if (superadmin.motDePasse === hashAncien) {
-      const hashNouveau = await hacherMotDePasse(motDePasseSuperAdmin(), `mboa-${superadmin.id}`);
-      const maj: CompteAuth = { ...superadmin, motDePasse: hashNouveau };
+    const hashCible = await hacherMotDePasse(motDePasseSuperAdmin(), `mboa-${superadmin.id}`);
+    if (superadmin.motDePasse !== hashCible) {
+      const maj: CompteAuth = { ...superadmin, motDePasse: hashCible, actif: true };
       await cacheEcrire("compte", maj.id, maj);
       if (maj.telephone) await cacheEcrire("compte", `tel:${maj.telephone}`, maj);
       if (maj.email) await cacheEcrire("compte", `mail:${maj.email}`, maj);
