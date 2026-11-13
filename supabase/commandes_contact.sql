@@ -1,3 +1,4 @@
+-- ⚠️ REMPLACÉ par schema_pwa.sql — n exécute plus ce fichier.
 -- MBOA BIO — contact client pour la livraison (« se faire appeler »)
 -- À exécuter une fois dans Supabase : SQL Editor → New query → Run.
 --

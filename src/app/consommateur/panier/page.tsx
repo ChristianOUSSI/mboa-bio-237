@@ -54,6 +54,9 @@ export default function PanierPage() {
       await commander(lignes, profil.id, {
         appelSouhaite,
         numeroContact: appelSouhaite ? numeroContact.trim() || profil.telephone || null : null,
+        clientNom: profil.nom,
+        clientVillage: profil.village,
+        clientTel: profil.telephone || null,
       });
       panier.vider();
       router.push("/consommateur/suivi");

@@ -1,3 +1,4 @@
+-- ⚠️ REMPLACÉ par schema_pwa.sql — n exécute plus ce fichier.
 -- MBOA BIO — tables de synchronisation multi-appareils (admins)
 -- À exécuter une fois dans Supabase : SQL Editor → New query → Run.
 --
@@ -40,7 +41,7 @@ create policy "admin_activite_anon" on public.admin_activite
   with check (true);
 
 -- Catégories de produits créées par l'admin (en plus des 8 intégrées).
-create table if not exists public.categories (
+create table if not exists public.categories_perso (
   id text primary key,
   slug text not null unique,
   nom text not null,
@@ -48,10 +49,10 @@ create table if not exists public.categories (
   created_le timestamptz not null default now()
 );
 
-alter table public.categories enable row level security;
+alter table public.categories_perso enable row level security;
 
-drop policy if exists "categories_anon" on public.categories;
-create policy "categories_anon" on public.categories
+drop policy if exists "categories_anon" on public.categories_perso;
+create policy "categories_anon" on public.categories_perso
   for all to anon
   using (true)
   with check (true);

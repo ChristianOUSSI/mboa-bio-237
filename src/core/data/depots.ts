@@ -108,7 +108,7 @@ export async function toutesCommandes(): Promise<Commande[]> {
   return cacheTout<Commande>("commande");
 }
 
-export async function commander(lignes: { produitId: string; slug: string; nom: string; categorie: string; quantite: number; prix: number; unite: string; photo: string; composants?: { slug: string; nom?: string | null; quantite: number; unite: string }[] }[], consommateurId: string, contact?: { appelSouhaite?: boolean; numeroContact?: string | null }): Promise<Commande | null> {
+export async function commander(lignes: { produitId: string; slug: string; nom: string; categorie: string; quantite: number; prix: number; unite: string; photo: string; composants?: { slug: string; nom?: string | null; quantite: number; unite: string }[] }[], consommateurId: string, contact?: { appelSouhaite?: boolean; numeroContact?: string | null; clientNom?: string | null; clientVillage?: string | null; clientTel?: string | null }): Promise<Commande | null> {
   const produitsJson = lignes.map((l) => ({
     produit_id: l.produitId,
     slug: l.slug,
@@ -154,6 +154,31 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
       }
       return commande;
     }
+    // RPC absente/incompatible : insertion directe pour que le devis soit
+    // visible par l'admin sur n'importe quel appareil.
+    const { data: ins, error: errIns } = await mboaReseau()!
+      .from("commandes")
+      .insert({
+        consommateur_id: consommateurId,
+        produits: produitsJson,
+        statut_enum: "nouvelle",
+        montant_total: montantTotal,
+        cout_achat: 0,
+        livraison_moto: true,
+        appel_souhaite: contact?.appelSouhaite ?? false,
+        numero_contact: contact?.numeroContact ?? null,
+        client_nom: contact?.clientNom ?? null,
+        client_village: contact?.clientVillage ?? null,
+        client_tel: contact?.clientTel ?? null,
+      })
+      .select("*")
+      .maybeSingle();
+    if (!errIns && ins) {
+      const commande = commandeFromMap(ins as unknown as Record<string, unknown>);
+      await cacheEcrire("commande", commande.id, commande);
+      return commande;
+    }
+    if (errIns) console.warn("[devis] insert direct:", errIns.message);
   }
   // Offline : création locale
   const commande: Commande = {
@@ -474,7 +499,7 @@ export async function sauverFournisseur(params: {
       .upsert({
         id,
         nom: params.nom,
-        telephone: params.telephone,
+        telephone_237: params.telephone,
         village: params.village,
         photo: params.photo ?? null,
         production_categorie: params.productionCategorie ?? null,
@@ -525,7 +550,7 @@ export async function sauverLivreur(params: {
       .upsert({
         id,
         nom: params.nom,
-        telephone: params.telephone,
+        telephone_237: params.telephone,
         zone: params.zone,
         moto: params.moto ?? null,
         plaque: params.plaque ?? null,
@@ -827,6 +852,33 @@ export async function proposerAchat(params: {
     if (!error && data) {
       return achatFromMap(data as unknown as Record<string, unknown>);
     }
+    // RPC absente : insertion directe pour que le comptoir voie la
+    // proposition sur tous ses appareils.
+    const { data: ins, error: errIns } = await mboaReseau()!
+      .from("achats")
+      .insert({
+        id: achat.id,
+        fournisseur_id: params.fournisseurId,
+        slug,
+        nom: params.nom,
+        categorie: params.categorie,
+        unite: params.unite,
+        quantite: params.quantite,
+        prix_demande: params.prixDemande,
+        photo_url: params.photoUrl,
+        emoji: params.emoji ?? null,
+        audio_url: params.audioUrl ?? null,
+        statut: "propose",
+        propose_le: achat.proposeLe,
+      })
+      .select("*")
+      .maybeSingle();
+    if (!errIns && ins) {
+      const a = achatFromMap(ins as unknown as Record<string, unknown>);
+      await cacheEcrire("achat", a.id, a);
+      return a;
+    }
+    if (errIns) console.warn("[achat] insert direct:", errIns.message);
   }
   await cacheEcrire("achat", achat.id, achat);
   await fileAjouter("achat", achat.id, "rpc:proposer_achat", params);

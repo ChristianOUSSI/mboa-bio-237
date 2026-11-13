@@ -1,3 +1,4 @@
+-- ⚠️ REMPLACÉ par schema_pwa.sql — n exécute plus ce fichier.
 -- MBOA BIO — unités « boite »/« verre » et composition des plats (packs)
 -- À exécuter une fois dans Supabase : SQL Editor → New query → Run.
 --
@@ -15,9 +16,9 @@ alter type public.unite_enum add value if not exists 'verre';
 --    sinon on l'ajoute explicitement.
 alter table public.vitrine add column if not exists pack_composants jsonb;
 
--- 3) Catégories de plats créées automatiquement par l'admin (table `categories`).
+-- 3) Catégories de plats créées automatiquement par l'admin (table `categories_perso`).
 --    Si elle n'existe pas encore :
-create table if not exists public.categories (
+create table if not exists public.categories_perso (
   id uuid primary key default gen_random_uuid(),
   slug text unique not null,
   nom text not null,
@@ -25,10 +26,10 @@ create table if not exists public.categories (
   created_le timestamptz not null default now()
 );
 
-alter table public.categories enable row level security;
+alter table public.categories_perso enable row level security;
 
-drop policy if exists "categories_anon" on public.categories;
-create policy "categories_anon" on public.categories
+drop policy if exists "categories_anon" on public.categories_perso;
+create policy "categories_anon" on public.categories_perso
   for all to anon
   using (true)
   with check (true);

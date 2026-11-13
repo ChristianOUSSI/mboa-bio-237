@@ -21,7 +21,7 @@ export interface CategoriePerso {
 }
 
 const ENTITE = "categorie";
-const TABLE = "categories";
+const TABLE = "categories_perso";
 
 const SLUGS_INTEGRES = new Set<string>(Object.values(Categorie));
 
