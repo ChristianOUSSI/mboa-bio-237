@@ -1,8 +1,15 @@
 "use client";
 
 import { mboaReseau } from "../data/mboa_reseau";
-import { cacheEcrire, cacheLire } from "../data/base_locale";
-import type { CompteAuth } from "./auth_local";
+import { cacheEcrire, cacheLire, cacheTout } from "../data/base_locale";
+import {
+  hacherMotDePasse,
+  motDePasseSuperAdmin,
+  EMAIL_ADMIN_INITIAL,
+  EMAIL_ADMIN_INITIAL_ANTERIEUR,
+  MDP_SUPERADMIN_ANTERIEUR,
+  type CompteAuth,
+} from "./auth_local";
 
 /**
  * Synchro multi-appareils des comptes admin / super admin.
@@ -110,5 +117,39 @@ export async function synchroniserComptesAdmin(): Promise<number> {
       publierCompteAdmin(inactif);
     }
   }
+
+  // --- Migrations des identifiants bootstrap ---
+  // Idempotent : appliqué à chaque synchro, sur chaque appareil.
+  // Garantit que admin@mboa237 et CADC/CADC1 restent à jour même si la
+  // synchro aboutit APRÈS la création locale des comptes.
+  const adminNouveau = tous.find((c) => c.email === EMAIL_ADMIN_INITIAL);
+  const adminAncien = tous.find((c) => c.email === EMAIL_ADMIN_INITIAL_ANTERIEUR);
+  if (!adminNouveau && adminAncien) {
+    const migre: CompteAuth = { ...adminAncien, email: EMAIL_ADMIN_INITIAL };
+    await cacheEcrire("compte", migre.id, migre);
+    await cacheEcrire("compte", `mail:${EMAIL_ADMIN_INITIAL}`, migre);
+    await cacheEcrire("compte", `mail:${EMAIL_ADMIN_INITIAL_ANTERIEUR}`, null);
+    publierCompteAdmin(migre);
+  } else if (adminNouveau && adminAncien && adminAncien.id !== adminNouveau.id && adminAncien.actif) {
+    // Les deux identifiants existent (ids différents) : l'ancien est révoqué.
+    const inactif: CompteAuth = { ...adminAncien, actif: false };
+    await cacheEcrire("compte", inactif.id, inactif);
+    await cacheEcrire("compte", `mail:${EMAIL_ADMIN_INITIAL_ANTERIEUR}`, inactif);
+    publierCompteAdmin(inactif);
+  }
+
+  const superadmin = tous.find((c) => c.role === "superadmin");
+  if (superadmin) {
+    const hashAncien = await hacherMotDePasse(MDP_SUPERADMIN_ANTERIEUR, `mboa-${superadmin.id}`);
+    if (superadmin.motDePasse === hashAncien) {
+      const hashNouveau = await hacherMotDePasse(motDePasseSuperAdmin(), `mboa-${superadmin.id}`);
+      const maj: CompteAuth = { ...superadmin, motDePasse: hashNouveau };
+      await cacheEcrire("compte", maj.id, maj);
+      if (maj.telephone) await cacheEcrire("compte", `tel:${maj.telephone}`, maj);
+      if (maj.email) await cacheEcrire("compte", `mail:${maj.email}`, maj);
+      publierCompteAdmin(maj);
+    }
+  }
+
   return fusionnes;
 }

@@ -134,8 +134,9 @@ export default function PageConnexion() {
     // D'abord tirer les comptes des autres appareils, ENSUITE créer/
     // migrer les comptes bootstrap — sinon la synchro écraserait les
     // identifiants fraîchement migrés (admin@mboa237, CADC → CADC1).
-    synchroniserComptesAdmin()
-      .catch((e) => console.warn("[synchro]", e))
+    // Timeout 8 s : si Supabase ne répond pas, on ne reste pas bloqué.
+    const delai = new Promise<number>((r) => setTimeout(() => r(-1), 8000));
+    Promise.race([synchroniserComptesAdmin().catch(() => -1), delai])
       .finally(() => {
         amorcerSiAucunCompte().catch((e) => console.error(e));
         assurerCompteSuperAdmin().catch((e) => console.error(e));
