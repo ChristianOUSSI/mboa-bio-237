@@ -9,10 +9,12 @@ import { Achat, achatMontant, achatResume, achatEstPrise } from "@/core/types/ac
 import { STATUT_ACHAT_INFO } from "@/core/types/achat";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useTr } from "@/core/i18n";
 
 export default function AchatsAdminPage() {
   const router = useRouter();
   const { pret, profil } = useGuardRole("admin");
+  const t = useTr();
   const [achats, setAchats] = useState<Achat[]>([]);
   const [profils, setProfils] = useState<Map<string, Profil>>(new Map());
   const [prixConvenance, setPrixConvenance] = useState<Record<string, string>>({});
@@ -91,13 +93,13 @@ export default function AchatsAdminPage() {
   }
   return (
     <FondMboa>
-      <EnTetePage titre="Supplier purchases" sousTitre="Mboa buys to resell" onRetour={() => router.back()} />
+      <EnTetePage titre={t("adm.ach.titre")} sousTitre={t("adm.ach.sousTitre")} onRetour={() => router.back()} />
       <div className="flex-1 p-4 space-y-4">
         {/* Propositions en attente */}
-        <h2 className="text-titre">Pending ({enAttente.length})</h2>
+        <h2 className="text-titre">{t("adm.ach.enAttente")} ({enAttente.length})</h2>
         {enAttente.length === 0 && (
           <CarteMboa>
-            <p className="text-corps text-[var(--mboa-text-doux)] text-center">No pending offers</p>
+            <p className="text-corps text-[var(--mboa-text-doux)] text-center">{t("adm.ach.vide")}</p>
           </CarteMboa>
         )}
         {enAttente.map((a) => (
@@ -114,14 +116,14 @@ export default function AchatsAdminPage() {
             </div>
             <BadgeStatut statut={a.statut} libelle={STATUT_ACHAT_INFO[a.statut].libelle} />
             <p className="text-aide text-[var(--mboa-text-doux)] mt-1">
-              Seller: {nomFournisseur(a)}
+              {t("adm.ach.vendeur")} : {nomFournisseur(a)}
             </p>
             {a.photoUrl && (
               <img src={a.photoUrl} alt={a.nom} className="w-full h-32 object-cover rounded-xl my-2" />
             )}
             {/* Prix d'achat négocié : Mboa achète à prix réduit en quantité */}
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-aide text-[var(--mboa-text-doux)] whitespace-nowrap">Agreed price:</span>
+              <span className="text-aide text-[var(--mboa-text-doux)] whitespace-nowrap">{t("adm.ach.prixConvenance")}</span>
               <input
                 type="number"
                 inputMode="numeric"
@@ -140,7 +142,7 @@ export default function AchatsAdminPage() {
                 disabled={enCours === a.id}
                 onClick={() => signer(a)}
               >
-                Buy
+                {t("adm.ach.acheter")}
               </BoutonMboa>
               <BoutonMboa
                 variant="error"
@@ -148,7 +150,7 @@ export default function AchatsAdminPage() {
                 disabled={enCours === a.id}
                 onClick={() => refuser(a)}
               >
-                Reject
+                {t("adm.ach.refuser")}
               </BoutonMboa>
             </div>
           </CarteMboa>
@@ -157,7 +159,7 @@ export default function AchatsAdminPage() {
         {/* Marchandise achetée, à payer au fournisseur */}
         {aPayer.length > 0 && (
           <>
-            <h2 className="text-titre">To pay suppliers ({aPayer.length})</h2>
+            <h2 className="text-titre">{t("adm.ach.aPayer")} ({aPayer.length})</h2>
             {aPayer.map((a) => (
               <CarteMboa key={a.id}>
                 <div className="flex justify-between items-center mb-2">
@@ -175,7 +177,7 @@ export default function AchatsAdminPage() {
                   disabled={enCours === a.id}
                   onClick={() => payer(a)}
                 >
-                  {enCours === a.id ? "Paying..." : "Pay the supplier"}
+                  {enCours === a.id ? t("adm.ach.paiement") : t("adm.ach.payer")}
                 </BoutonMboa>
               </CarteMboa>
             ))}
