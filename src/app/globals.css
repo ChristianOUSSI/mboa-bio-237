@@ -1,0 +1,579 @@
+@import "tailwindcss";
+
+/*
+ * Charte MBOA BIO 237
+ * Six couleurs de base, dérivées pour les dégradés et les effets.
+ * Tous les ratios sont mesurés (WCAG 2.2) sur leur fond réel.
+ */
+:root {
+  /* Vert foncé — Primaire : surfaces sombres, texte sur fond clair. 9.2:1 sur blanc (AAA) */
+  --mboa-primary: #1E5128;
+  /* Vert moyen — Dégradés, icônes pleines */
+  --mboa-primary-vif: #2E7D32;
+  /* Vert clair — Décoration, jauge, points de carte. INTERDIT comme texte (1.9:1 sur beige) */
+  --mboa-secondary: #8BC34A;
+  /* Vert très clair — Halos et dégradés de fond */
+  --mboa-secondary-vif: #AED581;
+  /* Fond général — Beige très clair, jamais blanc éblouissant. 14.8:1 (AAA) */
+  --mboa-background: #F8F9E9;
+  /* Surface des cartes et des boutons */
+  --mboa-surface: #FFFFFF;
+  /* Erreur et litige. 6.0:1 sur le beige (AAA) */
+  --mboa-error: #D32F2F;
+  /* Texte */
+  --mboa-text: #212121;
+
+  /* Décalques des six couleurs, pas de nouvelle teinte */
+  --mboa-text-doux: #99212121;
+  --mboa-primary-doux: #1F1E5128;
+  --mboa-secondary-doux: #388BC34A;
+  --mboa-error-doux: #1AD32F2F;
+  --mboa-ombre: #14212121;
+  --mboa-trait: #33212121;
+
+  /* Accents warms — Pour le contraste visuel des catégories */
+  --mboa-terre: #8D6E3A;
+  --mboa-terre-doux: #148D6E3A;
+  --mboa-soleil: #F9A825;
+
+  /* Hors palette : marques de paiement */
+  --mboa-jaune-momo: #FFCC00;
+  --mboa-orange-money: #FF7900;
+
+  /* Typographie — Nunito variable */
+  --font-nunito: "Nunito", sans-serif;
+
+  /* Tailles minimales — Non négociables */
+  --cible-minimale: 72px;
+  --espacement-cible: 16px;
+
+  /* Rayons et élévations */
+  --rayon-mboa: 24px;
+  --rayon-petit: 16px;
+  --elevation-carte: 0 4px 20px -4px rgba(30, 81, 40, 0.12);
+  --elevation-flottante: 0 12px 32px -8px rgba(30, 81, 40, 0.22);
+}
+
+@theme inline {
+  --color-primary: var(--mboa-primary);
+  --color-secondary: var(--mboa-secondary);
+  --color-background: var(--mboa-background);
+  --color-surface: var(--mboa-surface);
+  --color-error: var(--mboa-error);
+  --color-text: var(--mboa-text);
+  --color-text-doux: var(--mboa-text-doux);
+  --color-primary-doux: var(--mboa-primary-doux);
+  --color-secondary-doux: var(--mboa-secondary-doux);
+  --color-error-doux: var(--mboa-error-doux);
+  --color-ombre: var(--mboa-ombre);
+  --color-trait: var(--mboa-trait);
+  --color-terre: var(--mboa-terre);
+  --color-terre-doux: var(--mboa-terre-doux);
+  --color-soleil: var(--mboa-soleil);
+  --font-sans: var(--font-nunito);
+}
+
+body {
+  background: var(--mboa-background);
+  color: var(--mboa-text);
+  font-family: var(--font-nunito), Arial, Helvetica, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   Fond vivant — dégradés doux + halos qui respirent
+   ============================================================ */
+
+.fond-mboa {
+  position: relative;
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(139, 195, 74, 0.18) 0%, transparent 55%),
+    radial-gradient(100% 70% at 0% 100%, rgba(30, 81, 40, 0.10) 0%, transparent 60%),
+    linear-gradient(180deg, #FBFCF2 0%, var(--mboa-background) 45%, #F2F6DC 100%);
+  background-attachment: fixed;
+}
+
+/* Halo animé décoratif, purement visuel */
+.halo-mboa {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(48px);
+  opacity: 0.5;
+  pointer-events: none;
+  animation: derive 14s ease-in-out infinite alternate;
+}
+
+@keyframes derive {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(18px, -26px, 0) scale(1.12); }
+  100% { transform: translate3d(-14px, 18px, 0) scale(0.95); }
+}
+
+/* ============================================================
+   Filigrane logo — texture discrète derrière le contenu
+   ============================================================ */
+
+.filigrane-mboa {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("/logo-mboa.jpeg");
+  background-repeat: no-repeat;
+  background-position: center 42%;
+  background-size: min(115vw, 620px);
+  opacity: 0.055;
+  filter: grayscale(0.35) contrast(1.05);
+}
+
+@media (min-width: 768px) {
+  .filigrane-mboa {
+    background-size: 620px;
+    opacity: 0.05;
+  }
+  /* Grilles desktop : les listes de cartes passent en multi-colonnes */
+  .max-w-md {
+    max-width: 28rem;
+  }
+}
+
+/* Breakpoint desktop : contenu centré avec largeur max */
+@media (min-width: 1024px) {
+  .fond-mboa > .above-filigrane {
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .entete-mboa {
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+/* Safe area pour les notchs / Dynamic Island */
+.entete-mboa {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+.fond-mboa {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Contenu au-dessus du filigrane */
+.above-filigrane {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   Boutons — cible tactile 72px, rebond, éclat
+   ============================================================ */
+
+.btn-mboa {
+  min-height: var(--cible-minimale);
+  min-width: var(--cible-minimale);
+  border-radius: 20px;
+  font-family: var(--font-nunito);
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, opacity 0.15s;
+  box-shadow: 0 4px 14px -4px rgba(30, 81, 40, 0.28);
+}
+
+/* Onde lumineuse au survol/appui */
+.btn-mboa::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, 0.34) 50%, transparent 80%);
+  transform: translateX(-120%);
+  transition: transform 0.55s ease;
+}
+
+.btn-mboa:hover::after {
+  transform: translateX(120%);
+}
+
+.btn-mboa:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -6px rgba(30, 81, 40, 0.34);
+}
+
+.btn-mboa:active:not(:disabled) {
+  transform: scale(0.96);
+  box-shadow: 0 2px 8px -3px rgba(30, 81, 40, 0.3);
+}
+
+.btn-mboa:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--mboa-primary-vif) 0%, var(--mboa-primary) 100%);
+  color: #FFFFFF;
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, var(--mboa-secondary-vif) 0%, var(--mboa-secondary) 100%);
+  color: var(--mboa-primary);
+}
+
+.btn-surface {
+  background: var(--mboa-surface);
+  color: var(--mboa-primary);
+  border: 2px solid var(--mboa-primary);
+}
+
+.btn-error {
+  background: linear-gradient(135deg, #E53935 0%, var(--mboa-error) 100%);
+  color: #FFFFFF;
+}
+
+/* Bouton fantôme — action tertiaire */
+.btn-fantome {
+  background: transparent;
+  color: var(--mboa-primary);
+  border: 2px solid var(--mboa-trait);
+}
+
+/* ============================================================
+   Cartes — surface blanche, ombre douce, coins arrondis
+   ============================================================ */
+
+.card-mboa {
+  background: var(--mboa-surface);
+  border-radius: var(--rayon-mboa);
+  box-shadow: var(--elevation-carte);
+  padding: 16px;
+  border: 1px solid rgba(30, 81, 40, 0.07);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.card-mboa:hover {
+  box-shadow: var(--elevation-flottante);
+}
+
+.card-mboa:active {
+  transform: scale(0.985);
+}
+
+/* Carte à liseré coloré — pour les catégories et actions fortes */
+.card-accent {
+  position: relative;
+  overflow: hidden;
+  border-left: 6px solid var(--mboa-secondary);
+}
+
+/* ============================================================
+   En-tête — dégradé animé
+   ============================================================ */
+
+.entete-mboa {
+  background: linear-gradient(120deg, var(--mboa-primary) 0%, var(--mboa-primary-vif) 55%, #3E8E41 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 6px 22px -8px rgba(30, 81, 40, 0.5);
+}
+
+.entete-mboa::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  right: -12%;
+  width: 240px;
+  height: 240px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(174, 213, 129, 0.42) 0%, transparent 70%);
+  animation: derive 11s ease-in-out infinite alternate;
+}
+
+/* ============================================================
+   Jauge de stock
+   ============================================================ */
+
+.jauge-mboa {
+  height: 10px;
+  border-radius: 6px;
+  background: rgba(51, 33, 33, 0.12);
+  overflow: hidden;
+}
+
+.jauge-mboa-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--mboa-secondary) 0%, var(--mboa-primary-vif) 100%);
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 0 10px rgba(139, 195, 74, 0.55);
+}
+
+/* ============================================================
+   Textes — Aucun texte sous 18px
+   ============================================================ */
+
+.text-ecran { font-size: 28px; font-weight: 900; letter-spacing: -0.02em; }
+.text-titre { font-size: 24px; font-weight: 900; letter-spacing: -0.01em; }
+.text-corps { font-size: 20px; font-weight: 400; }
+.text-aide { font-size: 18px; font-weight: 400; }
+.text-chiffre { font-size: 32px; font-weight: 900; letter-spacing: -0.02em; }
+.text-chiffre-geant { font-size: 44px; font-weight: 900; letter-spacing: -0.03em; }
+
+/* ============================================================
+   Animations d'entrée
+   ============================================================ */
+
+@keyframes apparition-bas {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes apparition-gauche {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes apparition-zoom {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.anim-apparition {
+  animation: apparition-bas 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.anim-apparition-gauche {
+  animation: apparition-gauche 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.anim-apparition-zoom {
+  animation: apparition-zoom 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Décalage pour les listes — chaque carte arrive en cascade */
+.anim-retard-1 { animation-delay: 0.05s; }
+.anim-retard-2 { animation-delay: 0.1s; }
+.anim-retard-3 { animation-delay: 0.15s; }
+.anim-retard-4 { animation-delay: 0.2s; }
+.anim-retard-5 { animation-delay: 0.25s; }
+.anim-retard-6 { animation-delay: 0.3s; }
+
+/* Pulsation douce pour les éléments vivants (point GPS, badge actif) */
+@keyframes pulsation {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.82); }
+}
+
+.anim-pulsation {
+  animation: pulsation 1.8s ease-in-out infinite;
+}
+
+/* Secousse — pour les erreurs et alertes */
+@keyframes secousse {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.anim-secousse {
+  animation: secousse 0.45s ease;
+}
+
+/* ============================================================
+   Splash screen
+   ============================================================ */
+
+.splash-mboa {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  background: linear-gradient(160deg, var(--mboa-primary) 0%, #2A6B33 45%, #3E8E41 100%);
+  overflow: hidden;
+}
+
+.splash-logo {
+  width: min(58vw, 280px);
+  height: auto;
+  border-radius: 24px;
+  animation: splash-entree 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.35));
+}
+
+@keyframes splash-entree {
+  0% { opacity: 0; transform: scale(0.6) translateY(28px); }
+  60% { opacity: 1; transform: scale(1.04) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.splash-titre {
+  animation: apparition-bas 0.7s 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.splash-barre {
+  width: min(56vw, 220px);
+  height: 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+  animation: apparition-bas 0.7s 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.splash-barre-remplissage {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--mboa-secondary-vif), var(--mboa-secondary));
+  animation: splash-charge 1.5s ease-in-out forwards;
+}
+
+@keyframes splash-charge {
+  0% { width: 5%; }
+  55% { width: 78%; }
+  100% { width: 100%; }
+}
+
+/* ============================================================
+   Chips, badges, pastilles
+   ============================================================ */
+
+.chip-mboa {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.chip-mboa:active {
+  transform: scale(0.94);
+}
+
+.pastille-mboa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 9999px;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+/* ============================================================
+   Champs de saisie —触感 et lisibilité
+   ============================================================ */
+
+.champ-mboa {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--rayon-petit);
+  border: 2px solid rgba(30, 81, 40, 0.25);
+  background: var(--mboa-surface);
+  color: var(--mboa-text);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.champ-mboa:focus {
+  outline: none;
+  border-color: var(--mboa-primary);
+  box-shadow: 0 0 0 4px rgba(139, 195, 74, 0.25);
+}
+
+/* ============================================================
+   Impression — export PDF / devis
+   ============================================================ */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #FFFFFF !important;
+  }
+
+  .filigrane-mboa,
+  .halo-mboa {
+    display: none !important;
+  }
+
+  .card-mboa {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    break-inside: avoid;
+  }
+
+  .entete-mboa {
+    background: var(--mboa-primary) !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  @page {
+    margin: 14mm;
+  }
+}
+
+/* PWA — Pas de zoom sur focus sur iOS */
+input, select, textarea, button {
+  font-size: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --mboa-background: #F8F9E9;
+    --mboa-foreground: var(--mboa-text);
+  }
+}
+
+/* ============================================================
+   Skeleton de chargement
+   ============================================================ */
+
+.skeleton-mboa {
+  background: linear-gradient(
+    90deg,
+    var(--mboa-surface) 0%,
+    var(--mboa-secondary-doux) 50%,
+    var(--mboa-surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 16px;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

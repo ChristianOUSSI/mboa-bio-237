@@ -1,0 +1,21 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>MBOA BIO 237 - Hors ligne</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #4CAF50, #1E5128); font-family: system-ui, -apple-system, sans-serif; color: white; text-align: center; padding: 2rem; }
+    .logo { width: 96px; height: 96px; border-radius: 1rem; background: white; padding: 6px; margin-bottom: 1rem; object-fit: contain; }
+    h1 { font-size: 1.5rem; margin: 0 0 0.5rem; }
+    p { font-size: 1rem; opacity: 0.9; max-width: 400px; line-height: 1.5; }
+    .btn { margin-top: 1.5rem; padding: 0.75rem 2rem; border-radius: 0.75rem; background: rgba(255,255,255,0.2); border: 2px solid white; color: white; font-size: 1rem; font-weight: 700; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <img src="/logo-mboa.jpeg" alt="MBOA BIO 237" class="logo" />
+  <h1>Vous etes hors ligne</h1>
+  <p>Le comptoir MBOA BIO 237 fonctionne aussi sans connexion. Vos donnees sont sauvegardees sur votre appareil. Reconnectez-vous pour synchroniser.</p>
+  <button class="btn" onclick="location.reload()">Reessayer</button>
+</body>
+</html>
