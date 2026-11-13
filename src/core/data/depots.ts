@@ -882,6 +882,16 @@ export async function profilActuel(): Promise<Profil | null> {
   return profilParId(id);
 }
 
+/**
+ * Écrit la session locale (IndexedDB) après une connexion par mot de passe :
+ * profil en cache + `session_id`, comme le fait `validerCode` pour l'OTP.
+ * Sans ça, `/` renverrait vers /connexion après un rafraîchissement.
+ */
+export async function ouvrirSessionLocale(profil: Profil): Promise<void> {
+  await cacheEcrire("profil", profil.id, profil);
+  await etatEcrire("session_id", profil.id);
+}
+
 export async function deconnexionAuth(): Promise<void> {
   if (mboaReseau()) {
     await mboaReseau()!.auth.signOut();

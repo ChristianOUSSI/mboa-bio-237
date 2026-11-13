@@ -145,7 +145,7 @@ export async function assurerCompteAdmin(): Promise<CompteAuth | null> {
     nom: "MBOA Counter",
     telephone: null,
     email: "admin@mboa237.local",
-    village: "Bafoussam",
+    village: "Douala",
     motDePasse: motDePasseAdminInitial(),
     motDePasseParDefaut: true,
   });

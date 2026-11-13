@@ -22,7 +22,7 @@ interface ProduitDraft {
 }
 
 const VILLAGES_CAMEROUN = [
-  "Mbouda", "Bafoussam", "Bamenda", "Douala", "Yaoundé",
+  "Douala", "Yaoundé", "Bafoussam", "Mbouda", "Bamenda",
   "Bafang", "Dschang", "Kumba", "Limbé", "Buéa",
   "Nkongsamba", "Edea", "Ngaoundéré", "Garoua", "Maroua",
   "Bertoua", "Kribi", "Sangmélima", "Mbalmayo", "Other",

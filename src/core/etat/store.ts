@@ -7,10 +7,21 @@ import { AppRole } from "../config/app_env";
 import { LigneCommande, resumerQuantites } from "../types/commande";
 import { EntreeCatalogue } from "../types/catalogue";
 import { Produit } from "../types/produit";
+import { etatEcrire } from "../data/base_locale";
 
 // ============================================================
 // Session
 // ============================================================
+
+/** Cookie miroir lu par src/proxy.ts pour la protection des routes. */
+function poserCookieSession(role: AppRole | null): void {
+  if (typeof document === "undefined") return;
+  if (role) {
+    document.cookie = `mboa-session-role=${role}; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax`;
+  } else {
+    document.cookie = "mboa-session-role=; path=/; max-age=0";
+  }
+}
 
 interface SessionState {
   profil: Profil | null;
@@ -27,14 +38,7 @@ export const useSession = create<SessionState>()(
       role: "consommateur",
       setSession: (profil, role) => {
         const r = role ?? (profil?.role as AppRole) ?? "consommateur";
-        // Cookie miroir pour le middleware Next.js (protection des routes)
-        if (typeof document !== "undefined") {
-          if (profil) {
-            document.cookie = `mboa-session-role=${r}; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax`;
-          } else {
-            document.cookie = "mboa-session-role=; path=/; max-age=0";
-          }
-        }
+        poserCookieSession(profil ? r : null);
         set(() => ({ profil, role: r }));
       },
       majProfil: (maj) =>
@@ -42,13 +46,21 @@ export const useSession = create<SessionState>()(
           profil: state.profil ? { ...state.profil, ...maj } : null,
         })),
       deconnexion: () => {
-        if (typeof document !== "undefined") {
-          document.cookie = "mboa-session-role=; path=/; max-age=0";
-        }
+        poserCookieSession(null);
+        // Session IndexedDB aussi, sinon "/" re-connecterait silencieusement.
+        etatEcrire("session_id", null).catch(() => {});
         set(() => ({ profil: null, role: "consommateur" }));
       },
     }),
-    { name: "mboa-session" },
+    {
+      name: "mboa-session",
+      // Au rechargement, re-persiste le cookie miroir depuis la session
+      // localStorage : sinon les sessions créées avant le cookie, ou un
+      // cookie effacé, feraient échouer le proxy et déconnecteraient.
+      onRehydrateStorage: () => (state) => {
+        if (state?.profil) poserCookieSession(state.role);
+      },
+    },
   ),
 );
 

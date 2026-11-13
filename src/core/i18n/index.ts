@@ -27,7 +27,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     // Commun
     "app.nom": "MBOA BIO 237",
     "app.slogan": "La terre nous nourrit, la qualité nous distingue",
-    "app.village": "Bafoussam, Cameroun",
+    "app.village": "Douala, Cameroun",
 
     // Choix de l'espace
     "choix.titre": "Quel espace ?",
@@ -71,7 +71,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "insc.nomLabel": "Votre nom",
     "insc.nomPlaceholder": "Ex : Maman Elise",
     "insc.villageLabel": "Votre village (facultatif)",
-    "insc.villagePlaceholder": "Ex : Mbouda",
+    "insc.villagePlaceholder": "Ex : Douala",
     "insc.mdpLabel": "Mot de passe",
     "insc.mdpPlaceholder": "6 caractères minimum, avec un chiffre",
     "insc.mdpConfirmLabel": "Confirmer le mot de passe",
@@ -344,7 +344,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     // Commun
     "app.nom": "MBOA BIO 237",
     "app.slogan": "The earth feeds us, quality sets us apart",
-    "app.village": "Bafoussam, Cameroon",
+    "app.village": "Douala, Cameroon",
 
     // Choix de l'espace
     "choix.titre": "Which space?",
@@ -388,7 +388,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "insc.nomLabel": "Your name",
     "insc.nomPlaceholder": "E.g.: Mama Elise",
     "insc.villageLabel": "Your village (optional)",
-    "insc.villagePlaceholder": "E.g.: Mbouda",
+    "insc.villagePlaceholder": "E.g.: Douala",
     "insc.mdpLabel": "Password",
     "insc.mdpPlaceholder": "6 characters minimum, with a digit",
     "insc.mdpConfirmLabel": "Confirm password",

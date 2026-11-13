@@ -21,6 +21,7 @@ import {
   validerMotDePasse,
 } from "@/core/auth/auth_local";
 import { Profil } from "@/core/types/profil";
+import { ouvrirSessionLocale } from "@/core/data/depots";
 
 type Etape = "choix" | "identifiant" | "inscription" | "nouveauMdp";
 
@@ -80,11 +81,12 @@ export default function PageConnexion() {
       id: compte.id,
       role: compte.role,
       nom: compte.nom,
-      village: compte.village || "Mbouda",
+      village: compte.village || "Douala",
       telephone: compte.telephone ?? "",
       langue: langue as never,
       actif: true,
     };
+    ouvrirSessionLocale(profil).catch((e) => console.error(e));
     setSession(profil, compte.role as AppRole);
     router.push(`/${compte.role}`);
   }

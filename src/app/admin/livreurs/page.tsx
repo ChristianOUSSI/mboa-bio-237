@@ -182,7 +182,7 @@ export default function LivreursAdminPage() {
             <label className="text-aide block mb-1">Coverage area</label>
             <input
               type="text"
-              placeholder="E.g.: Mbouda and surroundings"
+              placeholder="Ex : Douala et environs"
               value={form.zone}
               onChange={(e) => setForm({ ...form, zone: e.target.value })}
               className="champ-mboa mb-3"
