@@ -115,7 +115,16 @@ export async function synchroniserComptesAdmin(): Promise<number> {
   }
   const gagnants: CompteAuth[] = [];
   for (const groupe of parEmail.values()) {
+    const estBootstrap = [...groupe].some((c) => c.email === EMAIL_ADMIN_INITIAL);
     const meilleur = [...groupe].sort((a, b) => {
+      // Comptes bootstrap : le plus récent gagne. Le bootstrap est un
+      // singleton par conception ; les doublons viennent d'appareils
+      // divergents et le plus frais porte les identifiants voulus.
+      // Sinon : actif d'abord, puis mot de passe personnalisé.
+      if (estBootstrap) {
+        const d = (b.actif ? 1 : 0) - (a.actif ? 1 : 0);
+        return d !== 0 ? d : (b.createdLe ?? "").localeCompare(a.createdLe ?? "");
+      }
       const score = (c: CompteAuth) =>
         (c.actif ? 4 : 0) + (c.motDePasseParDefaut ? 0 : 2);
       const d = score(b) - score(a);
