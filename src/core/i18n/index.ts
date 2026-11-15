@@ -509,6 +509,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "super.idLabel": "Identifiant",
     "super.btn": "Entrer",
     "super.erreur": "Accès refusé",
+    "super.erreurCompte": "Compte introuvable — restez quelques secondes sur cet écran puis réessayez",
     "super.accesCache": "Accès super admin",
     "super.titrePage": "Super admin",
 
@@ -1052,6 +1053,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "super.idLabel": "Identifier",
     "super.btn": "Enter",
     "super.erreur": "Access denied",
+    "super.erreurCompte": "Account not found — wait a few seconds on this screen and try again",
     "super.accesCache": "Super admin access",
     "super.titrePage": "Super admin",
 

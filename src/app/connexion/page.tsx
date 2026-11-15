@@ -454,12 +454,13 @@ export default function PageConnexion() {
         compte = await assurerCompteSuperAdmin();
       }
       if (!compte || compte.role !== "superadmin" || !compte.actif) {
-        setErreur(t("super.erreur"));
+        // Compte introuvable : pas encore synchronisé ou base inaccessible.
+        setErreur(t("super.erreurCompte"));
         return;
       }
       // Compte à identifiants fixes : comparaison directe (le validateur
       // « 6 caractères + chiffre » ne s'applique pas à une clé maître).
-      const bon = motDePasse === motDePasseSuperAdmin();
+      const bon = motDePasse.trim() === motDePasseSuperAdmin();
       if (!bon) {
         setErreur(t("super.erreur"));
         return;
