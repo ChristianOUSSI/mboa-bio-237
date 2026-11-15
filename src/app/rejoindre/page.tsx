@@ -127,6 +127,8 @@ export default function RejoindrePage() {
         village: village.trim(),
         productionLibre: produits.map((p) => p.nom).join(", "),
         unite: produits[0]?.unite ?? "kg",
+        // Candidature : la fiche reste inactive tant que l'admin ne l'a pas validée.
+        actif: false,
       });
       // Propose each product as a purchase
       for (const p of produits) {

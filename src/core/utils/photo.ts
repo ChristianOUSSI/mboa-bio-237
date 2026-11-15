@@ -39,9 +39,15 @@ export function choisirPhotoDepuisAppareil(): Promise<string | null> {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
-    input.capture = "environment";
+    // PAS d'attribut `capture` : il force l'appareil photo et bloque la
+    // galerie sur certains téléphones. Sans lui, le système propose
+    // « Appareil photo / Galerie / Fichiers ».
+    input.style.display = "none";
+    // iOS Safari exige que l'input soit dans le DOM pour ouvrir le sélecteur.
+    document.body.appendChild(input);
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
+      input.remove();
       if (!file) {
         resolve(null);
         return;
