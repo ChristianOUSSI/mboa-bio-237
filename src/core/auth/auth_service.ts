@@ -124,6 +124,11 @@ export async function changerMotDePasse(compte: CompteAuth, nouveau: string): Pr
   if (maj.telephone) await cacheEcrire(ENTITE, cleTel(maj.telephone), maj);
   if (maj.email) await cacheEcrire(ENTITE, cleMail(maj.email), maj);
   publierCompteAdmin(maj);
+  // Propage le nouveau mot de passe vers Supabase Auth (comptes email).
+  if (maj.email) {
+    const { authSupabaseDisponible, changerMotDePasseSupabase } = await import("./auth_supabase");
+    if (authSupabaseDisponible()) void changerMotDePasseSupabase(nouveau);
+  }
   return maj;
 }
 

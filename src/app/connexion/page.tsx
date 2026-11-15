@@ -16,6 +16,7 @@ import {
   assurerCompteSuperAdmin,
 } from "@/core/auth/auth_service";
 import { synchroniserComptesAdmin } from "@/core/auth/synchro_admin";
+import { authSupabaseDisponible, verifierMotDePasseSupabase, inscrireSupabase } from "@/core/auth/auth_supabase";
 import {
   normaliserTel,
   normaliserEmail,
@@ -293,7 +294,15 @@ export default function PageConnexion() {
         setErreur(t("connex.erreurDesactive"));
         return;
       }
-      const bon = await verifierMotDePasse(compte, motDePasse);
+      // Supabase Auth fait foi en ligne pour les comptes à email ;
+      // le hash local reste le repli (comptes bootstrap, hors-ligne).
+      let bon = false;
+      if (compte.email && authSupabaseDisponible()) {
+        bon = (await verifierMotDePasseSupabase(compte.email, motDePasse)) === true;
+      }
+      if (!bon) {
+        bon = await verifierMotDePasse(compte, motDePasse);
+      }
       if (!bon) {
         setErreur(t("connex.erreurMdpFaux"));
         return;
@@ -345,6 +354,10 @@ export default function PageConnexion() {
         village: village.trim(),
         motDePasse,
       });
+      // Provisionne aussi le compte côté Supabase Auth s'il a un email.
+      if (compte.email && authSupabaseDisponible()) {
+        void inscrireSupabase(compte.email, motDePasse);
+      }
       ouvrirSession(compte);
     } catch (e) {
       console.error(e);

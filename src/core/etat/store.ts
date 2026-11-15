@@ -49,6 +49,8 @@ export const useSession = create<SessionState>()(
         poserCookieSession(null);
         // Session IndexedDB aussi, sinon "/" re-connecterait silencieusement.
         etatEcrire("session_id", null).catch(() => {});
+        // Referme aussi la session Supabase Auth éventuelle.
+        import("../auth/auth_supabase").then((m) => m.deconnecterSupabase()).catch(() => {});
         set(() => ({ profil: null, role: "consommateur" }));
       },
     }),
