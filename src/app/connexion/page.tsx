@@ -300,8 +300,19 @@ export default function PageConnexion() {
       // Supabase Auth fait foi en ligne pour les comptes à email ;
       // le hash local reste le repli (comptes bootstrap, hors-ligne).
       let bon = false;
-      if (compte.email && authSupabaseDisponible()) {
-        bon = (await verifierMotDePasseSupabase(compte.email, motDePasse)) === true;
+      // Supabase Auth n'est consulté que pour les comptes migrés
+      // (flag authSupabase) : sinon on aurait un 400 « user not found »
+      // pour chaque compte purement local.
+      if (compte.email && compte.authSupabase && authSupabaseDisponible()) {
+        const res = await verifierMotDePasseSupabase(compte.email, motDePasse);
+        if (res === true) {
+          bon = true;
+        } else if (res === false) {
+          // Compte migré : Supabase fait foi, pas de repli local.
+          setErreur(t("connex.erreurMdpFaux"));
+          return;
+        }
+        // res === null : Supabase injoignable → repli local ci-dessous.
       }
       if (!bon) {
         bon = await verifierMotDePasse(compte, motDePasse);
@@ -358,8 +369,15 @@ export default function PageConnexion() {
         motDePasse,
       });
       // Provisionne aussi le compte côté Supabase Auth s'il a un email.
+      // Si Supabase l'accepte, on marque le compte : ses prochaines
+      // connexions seront vérifiées côté serveur.
       if (compte.email && authSupabaseDisponible()) {
-        void inscrireSupabase(compte.email, motDePasse);
+        const okAuth = await inscrireSupabase(compte.email, motDePasse);
+        if (okAuth) {
+          const marque = await majCompte(compte, { authSupabase: true });
+          ouvrirSession(marque);
+          return;
+        }
       }
       ouvrirSession(compte);
     } catch (e) {

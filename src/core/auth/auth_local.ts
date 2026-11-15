@@ -29,6 +29,10 @@ export interface CompteAuth {
   /** Vrai si le mot de passe est encore celui par défaut. */
   motDePasseParDefaut: boolean;
   actif: boolean;
+  /** Vrai si le compte existe aussi dans Supabase Auth (mot de passe
+   *  vérifié côté serveur). Les comptes sans ce flag restent sur le
+   *  hash local - on n'appelle jamais Supabase pour eux. */
+  authSupabase?: boolean;
   createdLe: string;
 }
 
