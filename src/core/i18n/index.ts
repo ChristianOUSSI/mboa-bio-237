@@ -552,6 +552,8 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     // Accessibilité
     "a11y.retour": "Retour",
+    "a11y.themeSombre": "Passer en mode sombre",
+    "a11y.themeClair": "Passer en mode clair",
     "a11y.deconnexion": "Déconnexion",
     "a11y.ecouter": "Écouter",
     "a11y.langue": "Langue",
@@ -1093,6 +1095,8 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     // Accessibilité
     "a11y.retour": "Back",
+    "a11y.themeSombre": "Switch to dark mode",
+    "a11y.themeClair": "Switch to light mode",
     "a11y.deconnexion": "Sign out",
     "a11y.ecouter": "Listen",
     "a11y.langue": "Language",

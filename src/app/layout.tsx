@@ -36,6 +36,12 @@ export default function RootLayout({
   return (
     <html lang="fr" className="h-full antialiased">
       <head>
+        {/* Applique le thème avant le premier rendu pour éviter le flash. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem("mboa-theme");if(t==="sombre"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.theme="sombre";}catch(e){}`,
+          }}
+        />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />

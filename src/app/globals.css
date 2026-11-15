@@ -86,6 +86,34 @@ body {
 }
 
 /* ============================================================
+   Thème sombre - surcharge des variables MBOA
+   ============================================================ */
+
+[data-theme="sombre"] {
+  --mboa-primary: #7BC47F;
+  --mboa-primary-vif: #4E9B47;
+  --mboa-secondary: #AED581;
+  --mboa-secondary-vif: #C5E1A5;
+  --mboa-background: #0E1510;
+  --mboa-surface: #182219;
+  --mboa-text: #E6F0E3;
+  --mboa-text-doux: #B4C4AE;
+  --mboa-primary-doux: #2E7D3233;
+  --mboa-secondary-doux: #8BC34A2E;
+  --mboa-error-doux: #D32F2F33;
+  --mboa-ombre: #00000088;
+  --mboa-trait: #FFFFFF1F;
+  --mboa-terre-doux: #8D6E3A33;
+}
+
+[data-theme="sombre"] .fond-mboa {
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(139, 195, 74, 0.10) 0%, transparent 55%),
+    radial-gradient(100% 70% at 0% 100%, rgba(30, 81, 40, 0.25) 0%, transparent 60%),
+    linear-gradient(180deg, #0B120D 0%, var(--mboa-background) 45%, #101B13 100%);
+}
+
+/* ============================================================
    Fond vivant - dégradés doux + halos qui respirent
    ============================================================ */
 

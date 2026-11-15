@@ -1,7 +1,8 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useTr } from "../i18n";
+import { basculerTheme, themeActuel, Theme } from "../utils/theme";
 
 /** Bouton MBOA - cible tactile minimale 72px, coins arrondis 20px. */
 export function BoutonMboa({
@@ -109,6 +110,11 @@ export function EnTetePage({
   onDeconnexion?: () => void;
 }) {
   const t = useTr();
+  const [theme, setTheme] = useState<Theme>("clair");
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTheme(themeActuel());
+  }, []);
   return (
     <div className="entete-mboa flex items-center gap-3 p-4">
       {onRetour && (
@@ -124,6 +130,14 @@ export function EnTetePage({
         <h1 className="text-ecran text-white">{titre}</h1>
         {sousTitre && <p className="text-aide opacity-85">{sousTitre}</p>}
       </div>
+      <button
+        onClick={() => setTheme(basculerTheme())}
+        className="btn-mboa btn-surface relative z-10 !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl !border-white/40 !bg-white/15 !text-white"
+        aria-label={theme === "sombre" ? t("a11y.themeClair") : t("a11y.themeSombre")}
+        title={theme === "sombre" ? t("a11y.themeClair") : t("a11y.themeSombre")}
+      >
+        {theme === "sombre" ? "☀️" : "🌙"}
+      </button>
       {action && <div className="relative z-10">{action}</div>}
       {onDeconnexion && (
         <button

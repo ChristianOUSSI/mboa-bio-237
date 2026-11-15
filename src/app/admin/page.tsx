@@ -268,7 +268,7 @@ export default function TableauAdmin() {
               <p className="text-aide text-[var(--mboa-error)] font-bold mb-1">{t("adm.rupture")} ({ruptures.length})</p>
               <div className="flex flex-wrap gap-1">
                 {ruptures.map((p) => (
-                  <span key={p.id} className="text-aide bg-white px-2 py-0.5 rounded-full">{p.nom}</span>
+                  <span key={p.id} className="text-aide px-2 py-0.5 rounded-full" style={{ background: "var(--mboa-surface)" }}>{p.nom}</span>
                 ))}
               </div>
             </CarteMboa>
@@ -278,7 +278,7 @@ export default function TableauAdmin() {
               <p className="text-aide text-yellow-800 font-bold mb-1">{t("adm.stockBas")} ({stockBas.length})</p>
               <div className="flex flex-wrap gap-1">
                 {stockBas.map((p) => (
-                  <span key={p.id} className="text-aide bg-white px-2 py-0.5 rounded-full">{p.nom} ({p.quantite})</span>
+                  <span key={p.id} className="text-aide px-2 py-0.5 rounded-full" style={{ background: "var(--mboa-surface)" }}>{p.nom} ({p.quantite})</span>
                 ))}
               </div>
             </CarteMboa>
