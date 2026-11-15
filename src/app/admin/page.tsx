@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/core/etat/store";
-import { fileAttenteAchats, toutesCommandes, chargerStock, chargerLivreurs, chargerFournisseurs, activitesAdmin, synchroniserFileAttente, ActiviteAdmin } from "@/core/data/depots";
+import { fileAttenteAchats, toutesCommandes, chargerStock, chargerLivreurs, chargerFournisseurs, activitesAdmin, synchroniserFileAttente, compterFile, ActiviteAdmin } from "@/core/data/depots";
 import { fileCompte } from "@/core/data/base_locale";
 import { CarteMboa, BoutonMboa, EnTetePage, FondMboa, PastilleCompteur, SkeletonMboa } from "@/core/design_system/composants";
 import { Achat } from "@/core/types/achat";
@@ -47,6 +47,7 @@ export default function TableauAdmin() {
   const [comptes, setComptes] = useState<CompteAuth[]>([]);
   const [activites, setActivites] = useState<ActiviteAdmin[]>([]);
   const [notifOk, setNotifOk] = useState(false);
+  const [opsFile, setOpsFile] = useState(0);
   const [opsAttente, setOpsAttente] = useState(0);
   const [syncEnCours, setSyncEnCours] = useState(false);
 
@@ -79,6 +80,7 @@ export default function TableauAdmin() {
       setComptes(cp);
       const acts = await activitesAdmin();
       setActivites(acts);
+      setOpsFile(await compterFile().catch(() => 0));
       const { verifierNouvellesActivitesAdmin } = await import("@/core/utils/son");
       verifierNouvellesActivitesAdmin(acts.map((a) => a.id));
       if (typeof Notification !== "undefined") setNotifOk(Notification.permission === "granted");
@@ -148,6 +150,14 @@ export default function TableauAdmin() {
         >
           {supabaseConfigure ? `☁️ ${t("adm.sync.actif")}` : `⚠️ ${t("adm.sync.local")}`}
         </span>
+        {opsFile > 0 && (
+          <span
+            className="text-aide px-3 py-1 rounded-full inline-block ml-2"
+            style={{ background: "var(--mboa-error-doux)", color: "var(--mboa-error)" }}
+          >
+            ⏳ {t("adm.sync.fileAttente").replace("{n}", String(opsFile))}
+          </span>
+        )}
       </div>
 
       {/* Opérations hors-ligne en attente de synchronisation */}

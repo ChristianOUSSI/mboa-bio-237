@@ -38,6 +38,7 @@ export default function StockAdminPage() {
   const [npPerissable, setNpPerissable] = useState(true);
   const [npEnCours, setNpEnCours] = useState(false);
   const [npSucces, setNpSucces] = useState(false);
+  const [npErreur, setNpErreur] = useState("");
 
   async function charger() {
     setStock(await chargerStock());
@@ -80,6 +81,12 @@ export default function StockAdminPage() {
     const prixNum = parseInt(npPrix) || 0;
     const qteNum = parseInt(npQuantite) || 0;
     if (!npNom.trim() || prixNum <= 0) return;
+    const nomNorm = npNom.trim().toLowerCase();
+    if (stock.some((p) => p.nom.toLowerCase() === nomNorm)) {
+      setNpErreur(t("adm.stock.doublon"));
+      return;
+    }
+    setNpErreur("");
     setNpEnCours(true);
     try {
       await creerProduit({
@@ -307,6 +314,11 @@ export default function StockAdminPage() {
           {npSucces && (
             <div className="bg-[var(--mboa-secondary-doux)] rounded-xl p-3 text-center">
               <p className="text-corps text-[var(--mboa-primary)] font-bold">{t("adm.stk.succes")}</p>
+            </div>
+          )}
+          {npErreur && (
+            <div className="bg-[var(--mboa-error-doux)] rounded-xl p-3 text-center">
+              <p className="text-corps text-[var(--mboa-error)] font-bold">{npErreur}</p>
             </div>
           )}
           <CarteMboa>

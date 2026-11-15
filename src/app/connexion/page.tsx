@@ -557,13 +557,6 @@ export default function PageConnexion() {
       <div className="flex-1 flex flex-col items-center p-4 pb-10 relative z-10">
         {etape === "choix" && (
           <div className="w-full max-w-md space-y-4 anim-apparition">
-            <div className="text-center">
-              <h2 className="text-titre">{t("choix.titre")}</h2>
-              <p className="text-aide text-[var(--mboa-text-doux)] italic mt-1">
-                {t("choix.sousTitre")}
-              </p>
-            </div>
-
             {/* Une seule entrée visible : le client. Les autres portails
                 (fournisseur, livreur, admin, super admin) sont cachés
                 derrière les petits fruits flottants. */}
@@ -581,10 +574,13 @@ export default function PageConnexion() {
               </span>
             </button>
 
-            <Link href="/rejoindre" className="block">
-              <BoutonMboa variant="secondary" className="w-full">
-                👨‍🌾 {t("choix.rejoindre")}
-              </BoutonMboa>
+            {/* Lien discret : la candidature fournisseur ne doit pas
+                concurrencer le bouton client principal. */}
+            <Link
+              href="/rejoindre"
+              className="block text-center text-aide text-[var(--mboa-text-doux)] underline underline-offset-4 pt-1"
+            >
+              👨‍🌾 {t("choix.rejoindre")}
             </Link>
 
             {/* Puces rassurance */}

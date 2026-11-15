@@ -45,9 +45,25 @@ export default function SuiviPage() {
   const [satisfactionChoisie, setSatisfactionChoisie] = useState<Satisfaction | null>(null);
   const [motifChoisi, setMotifChoisi] = useState<MotifReception | null>(null);
   const positionsPartagees = useRef<Set<string>>(new Set());
+  const statutsPrec = useRef<Map<string, StatutCommande>>(new Map());
+  const notifDemandee = useRef(false);
 
   async function recharger(profilId: string) {
     const cmds = await commandesCliente(profilId);
+    // Notification locale quand le statut change (ex. livreur arrivé).
+    for (const c of cmds) {
+      const avant = statutsPrec.current.get(c.id);
+      if (avant && avant !== c.statut && typeof Notification !== "undefined" && Notification.permission === "granted") {
+        const titre = c.statut === StatutCommande.livree ? "📦 MBOA BIO" : "🔔 MBOA BIO";
+        const texte = STATUT_COMMANDE_INFO[c.statut]?.annonce ?? c.statut;
+        try {
+          new Notification(titre, { body: texte, icon: "/logo-mboa.jpeg" });
+        } catch {
+          /* notification indisponible */
+        }
+      }
+      statutsPrec.current.set(c.id, c.statut);
+    }
     setCommandes(cmds);
     const sMap = new Map<string, SuiviColis>();
     for (const c of cmds) {
@@ -57,6 +73,12 @@ export default function SuiviPage() {
         c.statut === StatutCommande.valideeAdmin ||
         c.statut === StatutCommande.enLivraison ||
         c.statut === StatutCommande.livree;
+      // Demande la permission de notification une fois, uniquement
+      // pendant une livraison active (pas à l'ouverture de la page).
+      if (active && !notifDemandee.current && typeof Notification !== "undefined" && Notification.permission === "default") {
+        notifDemandee.current = true;
+        Notification.requestPermission().catch(() => {});
+      }
       if (active && !positionsPartagees.current.has(c.id)) {
         const pos = await demandePosition();
         if (pos) {
