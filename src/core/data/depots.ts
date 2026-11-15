@@ -778,6 +778,31 @@ export async function suiviCommande(commandeId: string): Promise<SuiviColis> {
   if (posLivreur) suivi.positionActuelle = posLivreur;
   const posClient = await cacheLire<PositionGps>("gps_client", commandeId);
   if (posClient) suivi.positionDestination = posClient;
+  // Positions publiées depuis un autre appareil (table `positions`).
+  const client = mboaReseau();
+  if (client) {
+    try {
+      const { data } = await client
+        .from("positions")
+        .select("type, latitude, longitude, horodatage, maj_le")
+        .eq("commande_id", commandeId);
+      for (const row of (data ?? []) as Record<string, unknown>[]) {
+        const pos: PositionGps = {
+          latitude: Number(row.latitude),
+          longitude: Number(row.longitude),
+          horodatage: String(row.horodatage ?? row.maj_le ?? ""),
+        };
+        if (row.type === "livreur" && (!suivi.positionActuelle || pos.horodatage > suivi.positionActuelle.horodatage)) {
+          suivi.positionActuelle = pos;
+        }
+        if (row.type === "client" && (!suivi.positionDestination || pos.horodatage > suivi.positionDestination.horodatage)) {
+          suivi.positionDestination = pos;
+        }
+      }
+    } catch {
+      /* positions indisponibles : on garde le local */
+    }
+  }
   suivi.positionDepart = DEPOT_MBOA;
   return suivi;
 }
@@ -1193,6 +1218,26 @@ export async function activitesAdmin(): Promise<ActiviteAdmin[]> {
   return [...locales, ...distantes.filter((d) => !ids.has(d.id))]
     .sort((a, b) => (a.quand < b.quand ? 1 : -1))
     .slice(0, 50);
+}
+
+/** Publie une position GPS (livreur ou client) pour le suivi cross-device. */
+export function partagerPositionGps(type: "livreur" | "client", commandeId: string, pos: PositionGps): void {
+  const client = mboaReseau();
+  if (!client) return;
+  void client
+    .from("positions")
+    .upsert({
+      cle: `${type}:${commandeId}`,
+      type,
+      commande_id: commandeId,
+      latitude: pos.latitude,
+      longitude: pos.longitude,
+      horodatage: pos.horodatage,
+      maj_le: new Date().toISOString(),
+    })
+    .then(({ error }) => {
+      if (error) console.warn("[synchro] position:", error.message);
+    });
 }
 
 // ============================================================

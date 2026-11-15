@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { commandesCliente, confirmerReception, suiviCommande } from "@/core/data/depots";
+import { commandesCliente, confirmerReception, suiviCommande, partagerPositionGps } from "@/core/data/depots";
 import { cacheEcrire } from "@/core/data/base_locale";
 import { CarteColis } from "@/core/design_system/carte_colis";
 import { CarteMboa, BoutonMboa, EnTetePage, BadgeStatut, BoutonVoix, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
@@ -61,6 +61,7 @@ export default function SuiviPage() {
         const pos = await demandePosition();
         if (pos) {
           await cacheEcrire("gps_client", c.id, pos);
+          partagerPositionGps("client", c.id, pos);
           s.positionDestination = pos;
           positionsPartagees.current.add(c.id);
         }
