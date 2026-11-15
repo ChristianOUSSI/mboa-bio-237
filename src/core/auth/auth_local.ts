@@ -98,11 +98,11 @@ export const EMAIL_ADMIN_INITIAL = "admin@mboa237";
 export const EMAIL_ADMIN_INITIAL_ANTERIEUR = "mboa-admin@237";
 
 /** Identifiant affiché du super admin (compte caché, accessible via le chou 🥬). */
-export const IDENTIFIANT_SUPERADMIN = "CADC";
+export const IDENTIFIANT_SUPERADMIN = "OJCJ";
 export const EMAIL_SUPERADMIN = "cadc@mboa-super.local";
-const MDP_SUPERADMIN = "CADC1";
+const MDP_SUPERADMIN = "CADC";
 /** Ancien mot de passe super admin — migré automatiquement vers le nouveau. */
-export const MDP_SUPERADMIN_ANTERIEUR = "Joaka@101!";
+export const MDP_SUPERADMIN_ANTERIEUR = "CADC1";
 
 /** Mot de passe du super admin - utilisé uniquement à la création du compte. */
 export function motDePasseSuperAdmin(): string {

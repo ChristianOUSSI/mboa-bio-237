@@ -477,6 +477,10 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     // Multi-admin
     "adm.cpt.admins": "Comptes administrateurs",
+    "adm.cpt.autresComptes": "Comptes clients, fournisseurs et livreurs",
+    "adm.cpt.aucunCompte": "Aucun compte",
+    "adm.cpt.bloquer": "Bloquer",
+    "adm.cpt.reactiver": "Réactiver",
     "adm.cpt.nouvelAdmin": "Créer un administrateur",
     "adm.cpt.adminNom": "Nom de l'administrateur",
     "adm.cpt.adminMail": "Email de connexion",
@@ -1007,6 +1011,10 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     // Multi-admin
     "adm.cpt.admins": "Admin accounts",
+    "adm.cpt.autresComptes": "Customer, supplier and driver accounts",
+    "adm.cpt.aucunCompte": "No account",
+    "adm.cpt.bloquer": "Block",
+    "adm.cpt.reactiver": "Reactivate",
     "adm.cpt.nouvelAdmin": "Create an admin",
     "adm.cpt.adminNom": "Admin name",
     "adm.cpt.adminMail": "Login email",

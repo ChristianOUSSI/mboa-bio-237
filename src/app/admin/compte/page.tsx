@@ -7,8 +7,8 @@ import {
   assurerCompteAdmin,
   changerMotDePasse,
   creerCompte,
-  effacerTousComptes,
-  reinitialiserAdmin,
+  desactiverCompte,
+  majCompte,
   tousComptes,
   verifierMotDePasse,
 } from "@/core/auth/auth_service";
@@ -28,9 +28,9 @@ export default function AdminComptePage() {
   const [erreur, setErreur] = useState<string | null>(null);
   const [succes, setSucces] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
-  const [confirmPurge, setConfirmPurge] = useState(false);
   const [nbComptes, setNbComptes] = useState(0);
   const [admins, setAdmins] = useState<CompteAuth[]>([]);
+  const [autres, setAutres] = useState<CompteAuth[]>([]);
   const [adminNom, setAdminNom] = useState("");
   const [adminMail, setAdminMail] = useState("");
   const [adminMdp, setAdminMdp] = useState("");
@@ -41,8 +41,31 @@ export default function AdminComptePage() {
     const admin = await assurerCompteAdmin();
     setCompte(admin);
     const comptes = await tousComptes();
-    setNbComptes(comptes.filter((c) => c.actif).length);
-    setAdmins(comptes.filter((c) => c.role === "admin" && c.actif));
+    // Les index mail:/tel: dupliquent les comptes : on déduplique par id.
+    const uniques = [...new Map(comptes.map((c) => [c.id, c])).values()];
+    setNbComptes(uniques.filter((c) => c.actif).length);
+    setAdmins(uniques.filter((c) => c.role === "admin" && c.actif));
+    setAutres(
+      uniques.filter(
+        (c) => (c.role === "consommateur" || c.role === "fournisseur" || c.role === "livreur") && c.actif !== undefined,
+      ),
+    );
+  }
+
+  /** L'admin bloque ou réactive un compte client/fournisseur/livreur.
+   *  Il ne peut ni supprimer ni toucher aux autres admins : réservé au super admin. */
+  async function basculerCompte(c: CompteAuth) {
+    setEnCours(true);
+    try {
+      if (c.actif) {
+        await desactiverCompte(c);
+      } else {
+        await majCompte(c, { actif: true });
+      }
+      await charger();
+    } finally {
+      setEnCours(false);
+    }
   }
 
   /** Crée un compte admin supplémentaire (mêmes droits, identifiants propres). */
@@ -125,22 +148,6 @@ export default function AdminComptePage() {
     } catch (e) {
       console.error(e);
       setErreur(t("adm.cpt.erreur"));
-    } finally {
-      setEnCours(false);
-    }
-  }
-
-  async function purger() {
-    setEnCours(true);
-    try {
-      const n = await effacerTousComptes();
-      const admin = await reinitialiserAdmin();
-      setCompte(admin);
-      setConfirmPurge(false);
-      setSucces(
-        t("adm.cpt.purge").replace("{n}", String(n))
-      );
-      await charger();
     } finally {
       setEnCours(false);
     }
@@ -293,34 +300,33 @@ export default function AdminComptePage() {
           </BoutonMboa>
         </CarteMboa>
 
-        {/* Zone sensible */}
-        <CarteMboa className="border-2 border-dashed border-[var(--mboa-error)]">
-          <h2 className="text-titre mb-1">{t("adm.cpt.zone")}</h2>
-          <p className="text-aide text-[var(--mboa-text-doux)] mb-3">
-            {t("adm.cpt.zoneTexte")}
-          </p>
-          {confirmPurge ? (
-            <div className="flex gap-2">
-              <BoutonMboa
-                variant="error"
-                onClick={purger}
-                disabled={enCours}
-                className="flex-1"
-              >
-                {enCours ? t("adm.cpt.suppression") : t("adm.cpt.confirmer")}
-              </BoutonMboa>
-              <BoutonMboa variant="surface" onClick={() => setConfirmPurge(false)} className="flex-1">
-                {t("adm.cpt.annuler")}
-              </BoutonMboa>
-            </div>
+        {/* Comptes clients / fournisseurs / livreurs : blocage uniquement.
+            La suppression et la révocation totale sont réservées au super admin. */}
+        <CarteMboa>
+          <h2 className="text-titre mb-2">{t("adm.cpt.autresComptes")}</h2>
+          {autres.length === 0 ? (
+            <p className="text-corps text-[var(--mboa-text-doux)] text-center">{t("adm.cpt.aucunCompte")}</p>
           ) : (
-            <BoutonMboa
-              variant="error"
-              onClick={() => setConfirmPurge(true)}
-              className="w-full"
-            >
-              {t("adm.cpt.toutEffacer")}
-            </BoutonMboa>
+            <div className="space-y-2">
+              {autres.map((c) => (
+                <div key={c.id} className="flex justify-between items-center gap-2">
+                  <div className="min-w-0">
+                    <span className="text-corps font-bold block truncate">{c.nom}</span>
+                    <span className="text-aide text-[var(--mboa-text-doux)]">
+                      {t(`role.${c.role}.nom`)} · {c.email ?? (c.telephone ? `+${c.telephone}` : "-")}
+                    </span>
+                  </div>
+                  <BoutonMboa
+                    variant={c.actif ? "error" : "primary"}
+                    className="shrink-0 !min-h-[44px]"
+                    disabled={enCours}
+                    onClick={() => basculerCompte(c)}
+                  >
+                    {c.actif ? `⛔ ${t("adm.cpt.bloquer")}` : `✓ ${t("adm.cpt.reactiver")}`}
+                  </BoutonMboa>
+                </div>
+              ))}
+            </div>
           )}
         </CarteMboa>
       </div>

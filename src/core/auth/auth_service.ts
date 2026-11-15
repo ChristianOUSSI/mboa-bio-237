@@ -1,4 +1,4 @@
-import { CompteAuth, RoleAuth, empreinteAppareil, hacherMotDePasse, normaliserTel, normaliserEmail, motDePasseAdminInitial, motDePasseSuperAdmin, EMAIL_ADMIN_INITIAL, EMAIL_ADMIN_INITIAL_ANTERIEUR, EMAIL_SUPERADMIN, MDP_SUPERADMIN_ANTERIEUR } from "./auth_local";
+import { CompteAuth, RoleAuth, empreinteAppareil, hacherMotDePasse, normaliserTel, normaliserEmail, motDePasseAdminInitial, motDePasseSuperAdmin, EMAIL_ADMIN_INITIAL, EMAIL_ADMIN_INITIAL_ANTERIEUR, EMAIL_SUPERADMIN } from "./auth_local";
 import { cacheTout, cacheEcrire, cacheLire } from "../data/base_locale";
 import { uuidV4 } from "../utils/identifiants";
 import { publierCompteAdmin } from "./synchro_admin";
@@ -219,10 +219,12 @@ export async function assurerCompteSuperAdmin(): Promise<CompteAuth | null> {
     if (existant) compte = existant;
   }
   if (compte) {
-    // Migration : si le compte utilise encore l'ancien mot de passe
-    // super admin, on le remplace par le nouveau (CADC → CADC1).
-    const hashAncien = await hacherMotDePasse(MDP_SUPERADMIN_ANTERIEUR, `mboa-${compte.id}`);
-    if (compte.motDePasse === hashAncien) {
+    // Identifiants fixes : on force le hash du mot de passe canonique,
+    // comme le fait la synchro distante — ainsi le nouveau mot de passe
+    // prend effet même sans Supabase et quelle que soit la version
+    // antérieure stockée sur l'appareil.
+    const hashActuel = await hacherMotDePasse(motDePasseSuperAdmin(), `mboa-${compte.id}`);
+    if (compte.motDePasse !== hashActuel) {
       return changerMotDePasse(compte, motDePasseSuperAdmin());
     }
     return compte;

@@ -83,7 +83,7 @@ function Flottant({
 
   const merged: React.CSSProperties = {
     ...style,
-    ...(pos ? { left: pos.x, top: pos.y, right: "auto" } : {}),
+    ...(pos ? { left: pos.x, top: pos.y, right: "auto", bottom: "auto" } : {}),
     pointerEvents: "auto",
     cursor: "grab",
     touchAction: "none",
@@ -118,17 +118,30 @@ function Flottant({
   );
 }
 
-/** Ordre d'affichage des espaces : le client d'abord. */
-const ROLES_ORDRE: AppRole[] = ["consommateur", "fournisseur", "livreur", "admin"];
-
-/** Aliments qui flottent en arrière-plan de l'écran de connexion. */
-const ALIMENTS_FLOTTANTS = [
+/** Aliments qui flottent en arrière-plan de l'écran de connexion.
+ *  Les entrées `role` sont des accès cachés aux portails pro : petits,
+ *  discrets et loin du bouton de connexion pour ne pas attirer le client. */
+const ALIMENTS_FLOTTANTS: {
+  emoji: string;
+  top?: string;
+  bottom?: string;
+  left?: string;
+  right?: string;
+  taille: number;
+  delai: string;
+  role?: AppRole;
+  super?: boolean;
+}[] = [
   { emoji: "🍌", top: "6%", left: "6%", taille: 44, delai: "0s" },
   { emoji: "🍅", top: "12%", right: "8%", taille: 38, delai: "-1.5s" },
   { emoji: "🐟", top: "38%", left: "3%", taille: 42, delai: "-3s" },
   { emoji: "🌽", top: "55%", right: "4%", taille: 40, delai: "-2s" },
   { emoji: "🥭", top: "72%", left: "8%", taille: 36, delai: "-4.5s" },
-  { emoji: "🥬", top: "82%", right: "10%", taille: 38, delai: "-1s", cliquable: true },
+  // Accès cachés : coins supérieurs, petits et estompés.
+  { emoji: "🍇", top: "2%", left: "2%", taille: 26, delai: "-0.7s", role: "fournisseur" },
+  { emoji: "🍑", top: "2%", right: "2%", taille: 26, delai: "-2.2s", role: "livreur" },
+  { emoji: "🍈", bottom: "2%", left: "2%", taille: 26, delai: "-3.1s", role: "admin" },
+  { emoji: "🥬", top: "82%", right: "10%", taille: 38, delai: "-1s", super: true },
 ];
 
 /** Emoji illustrant chaque espace. */
@@ -462,34 +475,46 @@ export default function PageConnexion() {
     <FondMboa>
       {/* Aliments flottants en arrière-plan */}
       {ALIMENTS_FLOTTANTS.map((a, i) => {
-        const cliquable = "cliquable" in a && a.cliquable;
+        const cache = a.role != null || a.super === true;
         const style = {
           top: a.top,
-          left: "left" in a ? a.left : undefined,
-          right: "right" in a ? a.right : undefined,
+          bottom: a.bottom,
+          left: a.left,
+          right: a.right,
           fontSize: a.taille,
           animationDelay: a.delai,
-          ...(cliquable ? { zIndex: 20 } : {}),
+          // Les fruits d'accès caché sont estompés : un client ne doit pas
+          // les remarquer ni les confondre avec un bouton.
+          ...(a.role ? { opacity: 0.45 } : {}),
+          ...(cache ? { zIndex: 20 } : {}),
         };
-        // Le chou cliquable est un vrai bouton : il doit rester au-dessus des cartes.
-        return (
-          <Flottant
-            key={i}
-            emoji={a.emoji}
-            style={style}
-            onClick={
-              cliquable
-                ? () => {
-                    setIdentifiant(IDENTIFIANT_SUPERADMIN);
-                    setMotDePasse("");
-                    setErreur(null);
-                    setEtape("superadmin");
-                  }
-                : undefined
-            }
-            ariaLabel={cliquable ? t("super.accesCache") : undefined}
-          />
-        );
+        const ouvrirRole = () => {
+          if (!a.role) return;
+          setRoleChoisi(a.role);
+          setIdentifiant("");
+          setMotDePasse("");
+          setErreur(null);
+          setEtape("splash");
+        };
+        const ouvrirSuper = () => {
+          setIdentifiant(IDENTIFIANT_SUPERADMIN);
+          setMotDePasse("");
+          setErreur(null);
+          setEtape("superadmin");
+        };
+        // Les fruits cliquables sont de vrais boutons : au-dessus des cartes.
+        if (cache) {
+          return (
+            <Flottant
+              key={i}
+              emoji={a.emoji}
+              style={style}
+              onClick={a.super ? ouvrirSuper : ouvrirRole}
+              ariaLabel={a.super ? t("super.accesCache") : undefined}
+            />
+          );
+        }
+        return <Flottant key={i} emoji={a.emoji} style={style} />;
       })}
 
       {/* Header avec logo + sélecteur de langue */}
@@ -539,25 +564,22 @@ export default function PageConnexion() {
               </p>
             </div>
 
-            {/* Grille des 4 espaces */}
-            <div className="grid grid-cols-2 gap-3">
-              {ROLES_ORDRE.map((r) => (
-                <button
-                  key={r}
-                  onClick={() => {
-                    setRoleChoisi(r);
-                    setErreur(null);
-                    setEtape("splash");
-                  }}
-                  className="carte-role"
-                >
-                  <div className="role-emojis-cercle">{ROLE_EMOJI[r]}</div>
-                  <span className="block text-corps font-black text-[var(--mboa-primary)] leading-tight">
-                    {t(`role.${r}.nom`)}
-                  </span>
-                </button>
-              ))}
-            </div>
+            {/* Une seule entrée visible : le client. Les autres portails
+                (fournisseur, livreur, admin, super admin) sont cachés
+                derrière les petits fruits flottants. */}
+            <button
+              onClick={() => {
+                setRoleChoisi("consommateur");
+                setErreur(null);
+                setEtape("splash");
+              }}
+              className="carte-role w-full"
+            >
+              <div className="role-emojis-cercle">{ROLE_EMOJI.consommateur}</div>
+              <span className="block text-corps font-black text-[var(--mboa-primary)] leading-tight">
+                {t("role.consommateur.nom")}
+              </span>
+            </button>
 
             <Link href="/rejoindre" className="block">
               <BoutonMboa variant="secondary" className="w-full">
