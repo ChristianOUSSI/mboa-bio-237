@@ -523,13 +523,15 @@ export async function sauverFournisseur(params: {
   return fournisseur;
 }
 
-/** L'admin valide (ou suspend) une fiche fournisseur — candidature. */
+/** L'admin valide ou suspend la candidature d'un fournisseur. */
 export async function basculerFournisseurActif(fournisseurId: string, actif: boolean): Promise<void> {
+  const f = await cacheLire<Fournisseur>("fournisseur", fournisseurId);
   if (mboaReseau()) {
     await mboaReseau()!.from("fournisseurs").update({ actif }).eq("id", fournisseurId);
   }
-  const f = await cacheLire<Fournisseur>("fournisseur", fournisseurId);
-  if (f) await cacheEcrire("fournisseur", fournisseurId, { ...f, actif });
+  if (f) {
+    await cacheEcrire("fournisseur", f.id, { ...f, actif });
+  }
   await fileAjouter("fournisseur", fournisseurId, "update:actif", { actif });
   void notifierActiviteAdmin(actif ? "act.fournisseurValide" : "act.fournisseurSuspendu", f?.nom);
 }
@@ -1105,19 +1107,6 @@ export async function chargerFournisseurs(): Promise<Fournisseur[]> {
     }
   }
   return cacheTout<Fournisseur>("fournisseur");
-}
-
-/** L'admin valide ou suspend la candidature d'un fournisseur. */
-export async function basculerFournisseurActif(fournisseurId: string, actif: boolean): Promise<void> {
-  const f = await cacheLire<Fournisseur>("fournisseur", fournisseurId);
-  if (mboaReseau()) {
-    await mboaReseau()!.from("fournisseurs").update({ actif }).eq("id", fournisseurId);
-  }
-  if (f) {
-    await cacheEcrire("fournisseur", f.id, { ...f, actif });
-  }
-  await fileAjouter("fournisseur", fournisseurId, "update:actif", { actif });
-  void notifierActiviteAdmin(actif ? "act.fournisseurValide" : "act.fournisseurSuspendu", f?.nom);
 }
 
 // ============================================================

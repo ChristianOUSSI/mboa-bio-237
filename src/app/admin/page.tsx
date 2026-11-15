@@ -16,6 +16,7 @@ import { tousComptes, CompteAuth } from "@/core/auth/auth_service";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
 import { sonNotificationActif, basculerSonNotification } from "@/core/utils/son";
+import { supabaseConfigure } from "@/core/config/app_env";
 
 function SonToggle() {
   const t = useTr();
@@ -120,6 +121,19 @@ export default function TableauAdmin() {
           router.push("/connexion");
         }}
       />
+
+      {/* Statut de la synchronisation cloud */}
+      <div className="px-4 pb-2 text-center">
+        <span
+          className="text-aide px-3 py-1 rounded-full inline-block"
+          style={{
+            background: supabaseConfigure ? "var(--mboa-secondary-doux)" : "var(--mboa-error-doux)",
+            color: supabaseConfigure ? "var(--mboa-primary)" : "var(--mboa-error)",
+          }}
+        >
+          {supabaseConfigure ? `☁️ ${t("adm.sync.actif")}` : `⚠️ ${t("adm.sync.local")}`}
+        </span>
+      </div>
 
       {/* Compteurs rapides */}
       <div className="p-4 grid grid-cols-3 gap-3">
