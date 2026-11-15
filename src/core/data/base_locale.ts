@@ -12,18 +12,35 @@ const DB_TIMEOUT_MS = 8000;
 
 let _db: IDBDatabase | null = null;
 
-function ouvrirDb(): Promise<IDBDatabase> {
+function ouvrirDb(dejaRepare = false): Promise<IDBDatabase> {
   if (_db) return Promise.resolve(_db);
   return new Promise((resolve, reject) => {
     if (typeof indexedDB === "undefined") {
       reject(new Error("IndexedDB not available"));
       return;
     }
+    // Base probablement corrompue ou squattée par un onglet zombie :
+    // on la supprime et on retente UNE fois avant d'abandonner.
+    const reparer = () => {
+      if (dejaRepare) {
+        reject(new Error("IndexedDB indisponible"));
+        return;
+      }
+      try {
+        const del = indexedDB.deleteDatabase(DB_NAME);
+        del.onsuccess = del.onerror = del.onblocked = () => {
+          _db = null;
+          ouvrirDb(true).then(resolve, reject);
+        };
+      } catch {
+        reject(new Error("IndexedDB indisponible"));
+      }
+    };
     let req: IDBOpenDBRequest;
     try {
       req = indexedDB.open(DB_NAME, DB_VERSION);
     } catch (e) {
-      reject(e);
+      reparer();
       return;
     }
     const minuteur = setTimeout(() => {
@@ -35,13 +52,16 @@ function ouvrirDb(): Promise<IDBDatabase> {
       } catch {
         // ignore
       }
-      reject(new Error("IndexedDB open timeout"));
+      reparer();
     }, DB_TIMEOUT_MS);
     const finir = (fn: () => void) => {
       clearTimeout(minuteur);
       fn();
     };
-    req.onerror = () => finir(() => reject(req.error));
+    req.onerror = () => {
+      clearTimeout(minuteur);
+      reparer();
+    };
     req.onblocked = () => {
       // Un autre onglet garde la base ouverte pendant une montée de version :
       // on attend la fin normale, le timeout ci-dessus borne l'attente.
