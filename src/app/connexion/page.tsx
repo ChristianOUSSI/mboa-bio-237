@@ -229,7 +229,15 @@ export default function PageConnexion() {
       .finally(() => {
         amorcerSiAucunCompte().catch((e) => console.error(e));
         assurerCompteSuperAdmin().catch((e) => console.error(e));
+        // Rejoue les opérations faites hors ligne (file d'attente).
+        import("@/core/data/depots").then((d) => d.synchroniserFileAttente()).catch(() => 0);
       });
+    // Rejoue aussi dès que le réseau revient.
+    const enLigne = () => {
+      import("@/core/data/depots").then((d) => d.synchroniserFileAttente()).catch(() => 0);
+    };
+    window.addEventListener("online", enLigne);
+    return () => window.removeEventListener("online", enLigne);
   }, []);
 
   /** Opens the local session from an authenticated account. */

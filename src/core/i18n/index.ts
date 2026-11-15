@@ -249,6 +249,8 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     // Espace admin - accueil
     "adm.sousTitre": "Le comptoir",
+    "adm.sync.actif": "Synchro cloud activée",
+    "adm.sync.local": "Synchro locale uniquement",
     "adm.devis": "Devis",
     "adm.recoltes": "Récoltes",
     "adm.aSigner": "À pointer",
@@ -777,6 +779,8 @@ const DICT: Record<Lang, Record<string, string>> = {
 
     // Espace admin - accueil
     "adm.sousTitre": "The counter",
+    "adm.sync.actif": "Cloud sync enabled",
+    "adm.sync.local": "Local sync only",
     "adm.devis": "Quotes",
     "adm.recoltes": "Harvests",
     "adm.aSigner": "To sign off",

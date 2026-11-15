@@ -1,8 +1,8 @@
 "use client";
 
 import { mboaReseau } from "./mboa_reseau";
-import { creerCategoriePerso } from "./categories";
-import { cacheTout, cacheEcrire, cacheLire, etatEcrire, etatLire, fileAjouter, fileCompte } from "./base_locale";
+import { creerCategoriePerso, type CategoriePerso } from "./categories";
+import { cacheTout, cacheEcrire, cacheLire, etatEcrire, etatLire, fileAjouter, fileCompte, fileTout, fileSupprimer } from "./base_locale";
 import { CATALOGUE_HORS_LIGNE } from "./catalogue_hors_ligne";
 import { supabaseConfigure } from "../config/app_env";
 import { compteParIdentifiant } from "../auth/auth_service";
@@ -1193,4 +1193,126 @@ export async function activitesAdmin(): Promise<ActiviteAdmin[]> {
   return [...locales, ...distantes.filter((d) => !ids.has(d.id))]
     .sort((a, b) => (a.quand < b.quand ? 1 : -1))
     .slice(0, 50);
+}
+
+// ============================================================
+// Rejeu de la file hors-ligne vers Supabase
+// ============================================================
+
+/**
+ * Pousse vers Supabase l'état complet des entités ayant des opérations
+ * en file (last-write-wins). Idempotent : upsert sur la clé primaire.
+ * Retourne le nombre d'opérations retirées de la file.
+ */
+export async function synchroniserFileAttente(): Promise<number> {
+  const client = mboaReseau();
+  if (!client) return 0;
+  const ops = await fileTout();
+  if (ops.length === 0) return 0;
+  let faites = 0;
+  for (const op of ops) {
+    try {
+      const ok = await rejouerOperation(client, op.entite, op.id);
+      if (ok && op.cle != null) {
+        await fileSupprimer(op.cle);
+        faites++;
+      }
+    } catch {
+      // On réessaiera à la prochaine synchro.
+    }
+  }
+  return faites;
+}
+
+async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau>>, entite: string, id: string): Promise<boolean> {
+  switch (entite) {
+    case "produit": {
+      const p = await cacheLire<Produit>("produit", id);
+      if (!p) return true;
+      const { error } = await client.from("produits").upsert({
+        id: p.id, slug: p.slug, nom: p.nom, categorie: p.categorie,
+        photo_reelle: p.photoReelle, photo_filigranee: p.photoFiligranee,
+        emoji: p.emoji, quantite: p.quantite, prix: p.prix, unite: p.unite,
+        prix_achat: p.prixAchat, audio_description_url: p.audioDescription,
+        perissable: p.perissable, actif: p.actif,
+        pack_composants: p.composants.length ? JSON.parse(JSON.stringify(p.composants)) : null,
+        created_at: p.createdLe,
+      });
+      return !error;
+    }
+    case "commande": {
+      const c = await cacheLire<Commande>("commande", id);
+      if (!c) return true;
+      const produitsJson = c.lignes.map((l) => ({
+        produit_id: l.produitId, slug: l.slug ?? "", nom: l.nom, categorie: l.categorie,
+        quantite: l.quantite, prix: l.prix, cout_achat: l.coutAchat, photo: l.photo,
+        unite: l.unite ?? null,
+        ...(l.composants?.length ? { composants: l.composants } : {}),
+      }));
+      const { error } = await client.from("commandes").upsert({
+        id: c.id, consommateur_id: c.consommateurId, produits: produitsJson,
+        statut_enum: c.statut, montant_total: c.montantTotal, cout_achat: c.coutAchat,
+        montant_livre: c.montantLivre ?? null, paiement: c.paiement ?? null,
+        paiement_ref: c.paiementRef ?? null, livraison_moto: c.livraisonMoto,
+        stock_sorti: c.stockSorti, photo_livraison_url: c.photoLivraison ?? null,
+        signature_url: c.signature ?? null, appel_vocal_fait: c.appelVocalFait,
+        created_at: c.createdLe, livree_le: c.livreeLe ?? null, recue_le: c.recueLe ?? null,
+        satisfaction: c.satisfaction ?? null, satisfaction_motif: c.satisfactionMotif ?? null,
+        satisfaction_audio: c.satisfactionAudio ?? null, clos: c.clos,
+        clos_par: c.closPar ?? null, annule_le: c.annuleLe ?? null,
+        motif_annulation: c.motifAnnulation ?? null, livreur_id: c.livreurId ?? null,
+        livreur: c.livreurNom ? { nom: c.livreurNom, photo: c.livreurPhoto, moto: c.livreurMoto, plaque: c.livreurPlaque, tarif_course: c.livreurTarif } : null,
+        nom_livreur: c.livreurNom ?? null, photo_livreur: c.livreurPhoto ?? null,
+        moto: c.livreurMoto ?? null, plaque: c.livreurPlaque ?? null,
+        telephone_livreur: c.livreurTelephone ?? null, tarif_livreur: c.livreurTarif ?? null,
+        tarif_course: c.livreurTarif ?? null, paye_le: null,
+        appel_souhaite: c.appelSouhaite, numero_contact: c.numeroContact ?? null,
+      });
+      return !error;
+    }
+    case "achat": {
+      const a = await cacheLire<Achat>("achat", id);
+      if (!a) return true;
+      const { error } = await client.from("achats").upsert({
+        id: a.id, fournisseur_id: a.fournisseurId, slug: a.slug, nom: a.nom,
+        categorie: a.categorie, unite: a.unite, quantite: a.quantite,
+        prix_demande: a.prixDemande, prix_achat: a.prixMarchand ?? null,
+        photo_url: a.photoUrl, emoji: a.emoji, audio_url: a.audioUrl,
+        produit_id: a.produitId ?? null, statut: a.statut, motif: a.motif ?? null,
+        motif_audio_url: a.motifAudioUrl ?? null, propose_le: a.proposeLe,
+        valide_le: a.valideLe ?? null, paye_le: a.payeLe ?? null,
+      });
+      return !error;
+    }
+    case "fournisseur": {
+      const f = await cacheLire<Fournisseur>("fournisseur", id);
+      if (!f) return true;
+      const { error } = await client.from("fournisseurs").upsert({
+        id: f.id, profil_id: f.profilId, nom: f.nom, telephone_237: f.telephone,
+        village: f.village, photo: f.photo, production_categorie: f.productionCategorie,
+        production_libre: f.productionLibre, unite: f.unite, actif: f.actif,
+      });
+      return !error;
+    }
+    case "livreur": {
+      const l = await cacheLire<Livreur>("livreur", id);
+      if (!l) return true;
+      const { error } = await client.from("livreurs").upsert({
+        id: l.id, nom: l.nom, telephone_237: l.telephone, zone: l.zone,
+        profil_id: l.profilId, photo: l.photo, moto: l.moto, plaque: l.plaque,
+        tarif_course: l.tarifCourse, actif: l.actif,
+      });
+      return !error;
+    }
+    case "categorie": {
+      const cat = await cacheLire<CategoriePerso>("categorie", id);
+      if (!cat) return true;
+      const { error } = await client.from("categories_perso").upsert({
+        id: cat.id, slug: cat.slug, nom: cat.nom, emoji: cat.emoji, created_le: cat.createdLe,
+      });
+      return !error;
+    }
+    default:
+      return true; // entité non synchronisable : on vide la file
+  }
 }
