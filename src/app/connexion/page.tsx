@@ -443,27 +443,53 @@ export default function PageConnexion() {
     setEnCours(true);
     setErreur(null);
     try {
-      // Recherche robuste : email canonique → n'importe quel superadmin
-      // actif en cache → recréation bootstrap si rien n'est synchronisé.
-      let compte = await compteParIdentifiant(EMAIL_SUPERADMIN);
-      if (!compte || compte.role !== "superadmin" || !compte.actif) {
-        compte =
-          (await tousComptes()).find((c) => c.role === "superadmin" && c.actif) ?? null;
-      }
-      if (!compte) {
-        compte = await assurerCompteSuperAdmin();
-      }
-      if (!compte || compte.role !== "superadmin" || !compte.actif) {
-        // Compte introuvable : pas encore synchronisé ou base inaccessible.
-        setErreur(t("super.erreurCompte"));
-        return;
-      }
-      // Compte à identifiants fixes : comparaison directe (le validateur
-      // « 6 caractères + chiffre » ne s'applique pas à une clé maître).
-      const bon = motDePasse.trim() === motDePasseSuperAdmin();
-      if (!bon) {
+      // Le mot de passe maître est vérifié en premier : c'est la clé
+      // d'accès, indépendante de l'état du stockage local.
+      if (motDePasse.trim() !== motDePasseSuperAdmin()) {
         setErreur(t("super.erreur"));
         return;
+      }
+      // Recherche robuste : email canonique → n'importe quel superadmin
+      // actif en cache → recréation bootstrap si rien n'est synchronisé.
+      // Chaque étape est isolée : un cache en échec ne doit jamais
+      // empêcher la connexion.
+      let compte: CompteAuth | null = null;
+      try {
+        compte = await compteParIdentifiant(EMAIL_SUPERADMIN);
+      } catch {
+        /* stockage indisponible */
+      }
+      if (!compte || compte.role !== "superadmin" || !compte.actif) {
+        try {
+          compte =
+            (await tousComptes()).find((c) => c.role === "superadmin" && c.actif) ?? null;
+        } catch {
+          /* stockage indisponible */
+        }
+      }
+      if (!compte) {
+        try {
+          compte = await assurerCompteSuperAdmin();
+        } catch {
+          /* stockage indisponible */
+        }
+      }
+      if (!compte || compte.role !== "superadmin") {
+        // Dernier recours : stockage totalement inaccessible — la clé
+        // maître suffit à ouvrir la session (compte synthétique).
+        compte = {
+          id: "superadmin-maitre",
+          role: "superadmin",
+          nom: "CADC",
+          telephone: null,
+          email: EMAIL_SUPERADMIN,
+          village: "Douala",
+          motDePasse: "",
+          appareil: "inconnu",
+          motDePasseParDefaut: false,
+          actif: true,
+          createdLe: new Date().toISOString(),
+        };
       }
       ouvrirSession(compte);
     } catch (e) {
