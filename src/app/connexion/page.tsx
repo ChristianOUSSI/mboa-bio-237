@@ -14,6 +14,7 @@ import {
   changerMotDePasse,
   amorcerSiAucunCompte,
   assurerCompteSuperAdmin,
+  tousComptes,
 } from "@/core/auth/auth_service";
 import { synchroniserComptesAdmin } from "@/core/auth/synchro_admin";
 import { authSupabaseDisponible, verifierMotDePasseSupabase, inscrireSupabase } from "@/core/auth/auth_supabase";
@@ -442,7 +443,16 @@ export default function PageConnexion() {
     setEnCours(true);
     setErreur(null);
     try {
-      const compte = await compteParIdentifiant(EMAIL_SUPERADMIN);
+      // Recherche robuste : email canonique → n'importe quel superadmin
+      // actif en cache → recréation bootstrap si rien n'est synchronisé.
+      let compte = await compteParIdentifiant(EMAIL_SUPERADMIN);
+      if (!compte || compte.role !== "superadmin" || !compte.actif) {
+        compte =
+          (await tousComptes()).find((c) => c.role === "superadmin" && c.actif) ?? null;
+      }
+      if (!compte) {
+        compte = await assurerCompteSuperAdmin();
+      }
       if (!compte || compte.role !== "superadmin" || !compte.actif) {
         setErreur(t("super.erreur"));
         return;
