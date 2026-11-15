@@ -5,6 +5,7 @@ import { cacheEcrire, cacheLire, cacheTout } from "../data/base_locale";
 import {
   hacherMotDePasse,
   motDePasseSuperAdmin,
+  motDePasseAdminInitial,
   EMAIL_ADMIN_INITIAL,
   EMAIL_ADMIN_INITIAL_ANTERIEUR,
   type CompteAuth,
@@ -139,7 +140,14 @@ export async function synchroniserComptesAdmin(): Promise<number> {
   const adminNouveau = tous.find((c) => c.email === EMAIL_ADMIN_INITIAL);
   const adminAncien = tous.find((c) => c.email === EMAIL_ADMIN_INITIAL_ANTERIEUR);
   if (!adminNouveau && adminAncien) {
-    const migre: CompteAuth = { ...adminAncien, email: EMAIL_ADMIN_INITIAL };
+    // La migration d'identifiant remet aussi le mot de passe par défaut :
+    // le nouvel identifiant doit être utilisable avec admin123.
+    const migre: CompteAuth = {
+      ...adminAncien,
+      email: EMAIL_ADMIN_INITIAL,
+      motDePasse: await hacherMotDePasse(motDePasseAdminInitial(), `mboa-${adminAncien.id}`),
+      motDePasseParDefaut: true,
+    };
     await cacheEcrire("compte", migre.id, migre);
     await cacheEcrire("compte", `mail:${EMAIL_ADMIN_INITIAL}`, migre);
     await cacheEcrire("compte", `mail:${EMAIL_ADMIN_INITIAL_ANTERIEUR}`, null);

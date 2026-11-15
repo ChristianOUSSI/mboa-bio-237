@@ -184,7 +184,13 @@ export async function assurerCompteAdmin(): Promise<CompteAuth | null> {
   // admin@mboa237 — même compte, même mot de passe par défaut.
   const ancien = await compteParIdentifiant(EMAIL_ADMIN_INITIAL_ANTERIEUR);
   if (ancien) {
-    const migre = await majCompte(ancien, { email: EMAIL_ADMIN_INITIAL });
+    // La migration d'identifiant remet aussi le mot de passe par défaut :
+    // le nouvel identifiant doit être utilisable avec admin123.
+    const migre = await majCompte(ancien, {
+      email: EMAIL_ADMIN_INITIAL,
+      motDePasse: await hacherMotDePasse(motDePasseAdminInitial(), `mboa-${ancien.id}`),
+      motDePasseParDefaut: true,
+    });
     // Supprime l'index de l'ancien email : sinon une copie périmée
     // permettrait encore de se connecter avec mboa-admin@237.
     await cacheEcrire(ENTITE, cleMail(EMAIL_ADMIN_INITIAL_ANTERIEUR), null);
