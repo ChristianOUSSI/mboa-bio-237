@@ -113,6 +113,27 @@ body {
     linear-gradient(180deg, #0B120D 0%, var(--mboa-background) 45%, #101B13 100%);
 }
 
+/* Classes pastel codées en dur dans quelques écrans : version sombre. */
+[data-theme="sombre"] .bg-white {
+  background-color: var(--mboa-surface);
+}
+[data-theme="sombre"] .bg-yellow-50 {
+  background-color: #33290F;
+}
+[data-theme="sombre"] .bg-amber-100 {
+  background-color: #3A2E10;
+}
+[data-theme="sombre"] .text-amber-800 {
+  color: #F0D68A;
+}
+[data-theme="sombre"] .bg-gray-200 {
+  background-color: #2A352B;
+}
+[data-theme="sombre"] .text-gray-600,
+[data-theme="sombre"] .text-gray-800 {
+  color: var(--mboa-text-doux);
+}
+
 /* ============================================================
    Fond vivant - dégradés doux + halos qui respirent
    ============================================================ */
@@ -580,13 +601,6 @@ input, select, textarea, button {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --mboa-background: #F8F9E9;
-    --mboa-foreground: var(--mboa-text);
   }
 }
 
