@@ -10,6 +10,7 @@ import type { AppRole } from "@/core/config/app_env";
 import {
   compteParIdentifiant,
   creerCompte,
+  majCompte,
   verifierMotDePasse,
   changerMotDePasse,
   amorcerSiAucunCompte,
@@ -223,6 +224,7 @@ export default function PageConnexion() {
   const [motDePasse, setMotDePasse] = useState("");
   const [nouveauMdp, setNouveauMdp] = useState("");
   const [confirmationMdp, setConfirmationMdp] = useState("");
+  const [nomNouveau, setNomNouveau] = useState("");
   const [nom, setNom] = useState("");
   const [village, setVillage] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
@@ -387,7 +389,12 @@ export default function PageConnexion() {
         return;
       }
       const maj = await changerMotDePasse(compte, nouveauMdp);
-      ouvrirSession(maj);
+      // Première connexion bootstrap : le titulaire choisit le nom de
+      // « son » compte admin en même temps que son mot de passe.
+      const nom = nomNouveau.trim();
+      const final = nom && nom !== maj.nom ? await majCompte(maj, { nom }) : maj;
+      setNomNouveau("");
+      ouvrirSession(final);
     } catch (e) {
       console.error(e);
       setErreur(t("insc.erreurMdp"));
@@ -876,9 +883,24 @@ export default function PageConnexion() {
               <div className="text-5xl mb-2">🔐</div>
               <h2 className="text-titre">{t("mdp.titre")}</h2>
               <p className="text-aide text-[var(--mboa-text-doux)] italic">
-                {mdpParDefaut ? t("mdp.sousTitreDefaut") : t("mdp.sousTitreAppareil")}
+                {mdpParDefaut ? t("mdp.sousTitreCompte") : t("mdp.sousTitreAppareil")}
               </p>
             </div>
+
+            {mdpParDefaut && (
+              <>
+                <label className="text-aide block mb-1 font-bold">{t("insc.nomLabel")}</label>
+                <input
+                  type="text"
+                  autoComplete="name"
+                  placeholder={t("insc.nomLabel")}
+                  value={nomNouveau}
+                  onChange={(e) => setNomNouveau(e.target.value)}
+                  className="champ-mboa mb-3"
+                  style={{ fontSize: 20 }}
+                />
+              </>
+            )}
 
             <label className="text-aide block mb-1 font-bold">{t("insc.mdpLabel")}</label>
             <ChampMotDePasse

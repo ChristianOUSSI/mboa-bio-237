@@ -88,6 +88,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     // Changement de mot de passe forcé
     "mdp.titre": "Nouveau mot de passe",
     "mdp.sousTitreDefaut": "Première connexion sur cet appareil. Le mot de passe initial doit être changé.",
+    "mdp.sousTitreCompte": "Bienvenue ! Créez votre compte administrateur : choisissez votre nom et votre mot de passe.",
     "mdp.sousTitreAppareil": "Vous vous êtes connecté sur un nouvel appareil. Confirmez votre mot de passe.",
     "mdp.btn": "Confirmer",
     "mdp.btnCours": "Enregistrement…",
@@ -632,6 +633,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     // Changement de mot de passe forcé
     "mdp.titre": "New password",
     "mdp.sousTitreDefaut": "First sign-in on this device. The initial password must be changed.",
+    "mdp.sousTitreCompte": "Welcome! Create your admin account: choose your name and password.",
     "mdp.sousTitreAppareil": "You signed in on a new device. Confirm your password.",
     "mdp.btn": "Confirm",
     "mdp.btnCours": "Saving…",

@@ -92,10 +92,10 @@ export function motDePasseAdminInitial(): string {
 }
 
 /** Identifiant de connexion du compte admin de bootstrap. */
-export const EMAIL_ADMIN_INITIAL = "admin@mboa237";
+export const EMAIL_ADMIN_INITIAL = "admin123@test.com";
 
 /** Ancien identifiant bootstrap — migré automatiquement vers le nouveau. */
-export const EMAIL_ADMIN_INITIAL_ANTERIEUR = "mboa-admin@237";
+export const EMAIL_ADMIN_INITIAL_ANTERIEUR = "admin@mboa237";
 
 /** Identifiant affiché du super admin (compte caché, accessible via le chou 🥬). */
 export const IDENTIFIANT_SUPERADMIN = "OJCJ";
