@@ -22,7 +22,12 @@ import { Profil } from "@/core/types/profil";
 export function useGuardRole(roleAttendu: AppRole): { pret: boolean; profil: Profil | null } {
   const router = useRouter();
   const { profil, role } = useSession();
-  const hydrate = useSession.persist.hasHydrated();
+  // `persist` peut être absent pendant le prerender SSR : on considère
+  // alors la session comme hydratée (le client réhydraté take le relais).
+  const hydrate =
+    typeof useSession.persist?.hasHydrated === "function"
+      ? useSession.persist.hasHydrated()
+      : true;
 
   useEffect(() => {
     if (!hydrate) return; // Attend la restauration de la session persistée.
