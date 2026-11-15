@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/core/etat/store";
-import { fileAttenteAchats, toutesCommandes, chargerStock, chargerLivreurs, chargerFournisseurs, activitesAdmin, ActiviteAdmin } from "@/core/data/depots";
+import { fileAttenteAchats, toutesCommandes, chargerStock, chargerLivreurs, chargerFournisseurs, activitesAdmin, synchroniserFileAttente, ActiviteAdmin } from "@/core/data/depots";
+import { fileCompte } from "@/core/data/base_locale";
 import { CarteMboa, BoutonMboa, EnTetePage, FondMboa, PastilleCompteur, SkeletonMboa } from "@/core/design_system/composants";
 import { Achat } from "@/core/types/achat";
 import { Commande, commandeMontantAPayer } from "@/core/types/commande_full";
@@ -46,6 +47,19 @@ export default function TableauAdmin() {
   const [comptes, setComptes] = useState<CompteAuth[]>([]);
   const [activites, setActivites] = useState<ActiviteAdmin[]>([]);
   const [notifOk, setNotifOk] = useState(false);
+  const [opsAttente, setOpsAttente] = useState(0);
+  const [syncEnCours, setSyncEnCours] = useState(false);
+
+  async function verifierFile() {
+    setOpsAttente(await fileCompte());
+  }
+
+  async function synchroniserMaintenant() {
+    setSyncEnCours(true);
+    await synchroniserFileAttente();
+    await verifierFile();
+    setSyncEnCours(false);
+  }
 
   useEffect(() => {
     async function charger() {
@@ -68,6 +82,7 @@ export default function TableauAdmin() {
       const { verifierNouvellesActivitesAdmin } = await import("@/core/utils/son");
       verifierNouvellesActivitesAdmin(acts.map((a) => a.id));
       if (typeof Notification !== "undefined") setNotifOk(Notification.permission === "granted");
+      verifierFile();
     }
     charger();
   }, []);
@@ -134,6 +149,27 @@ export default function TableauAdmin() {
           {supabaseConfigure ? `☁️ ${t("adm.sync.actif")}` : `⚠️ ${t("adm.sync.local")}`}
         </span>
       </div>
+
+      {/* Opérations hors-ligne en attente de synchronisation */}
+      {opsAttente > 0 && (
+        <div className="px-4 pb-2">
+          <CarteMboa className="bg-[var(--mboa-secondary-doux)]">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-corps font-bold text-[var(--mboa-primary)]">
+                📴 {t("adm.sync.attente").replace("{n}", String(opsAttente))}
+              </p>
+              <BoutonMboa
+                variant="primary"
+                className="!min-h-[40px] !px-4"
+                disabled={syncEnCours}
+                onClick={synchroniserMaintenant}
+              >
+                {syncEnCours ? "…" : `☁️ ${t("adm.sync.maintenant")}`}
+              </BoutonMboa>
+            </div>
+          </CarteMboa>
+        </div>
+      )}
 
       {/* Compteurs rapides */}
       <div className="p-4 grid grid-cols-3 gap-3">

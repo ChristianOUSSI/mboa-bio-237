@@ -12,6 +12,33 @@ import { resumerQuantites } from "@/core/types/commande";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
 
+/** Exporte les commandes en CSV (Excel/LibreOffice) pour la compta. */
+function exporterCsv(commandes: Commande[]) {
+  const lignes = [
+    ["id", "date", "client", "telephone", "produits", "montant_fcfa", "statut", "livreur", "paiement"].join(";"),
+    ...commandes.map((c) =>
+      [
+        c.id,
+        c.createdLe,
+        `"${c.consommateurId.replace(/"/g, '""')}"`,
+        c.numeroContact ?? "",
+        `"${resumerQuantites(c.lignes).replace(/"/g, '""')}"`,
+        commandeMontantAPayer(c),
+        STATUT_COMMANDE_INFO[c.statut].libelle,
+        `"${(c.livreurNom ?? "").replace(/"/g, '""')}"`,
+        c.paiement ?? "",
+      ].join(";"),
+    ),
+  ];
+  const blob = new Blob(["﻿" + lignes.join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `commandes-mboa-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function DevisAdminPage() {
   const router = useRouter();
   const { pret, profil } = useGuardRole("admin");
@@ -70,6 +97,11 @@ export default function DevisAdminPage() {
   return (
     <FondMboa>
       <EnTetePage titre={t("adm.dev.titre")} sousTitre={t("adm.dev.sousTitre")} onRetour={() => router.back()} />
+      <div className="px-4 pt-2">
+        <BoutonMboa variant="surface" className="w-full !min-h-[44px]" onClick={() => exporterCsv(commandes)} disabled={commandes.length === 0}>
+          📊 {t("adm.dev.exporter")}
+        </BoutonMboa>
+      </div>
       <div className="flex-1 p-4 space-y-2">
         {commandes.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16">
