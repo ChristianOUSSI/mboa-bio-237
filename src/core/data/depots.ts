@@ -1061,7 +1061,7 @@ export async function validerCode(telephone: string, codeSaisi: string, role?: s
         langue: "en" as never,
         actif: true,
       };
-      await cacheEcrire("profil", profil.id, profil);
+      await sauverProfil(profil);
       await etatEcrire("session_id", profil.id);
       return profil;
     }
@@ -1095,8 +1095,28 @@ export async function profilActuel(): Promise<Profil | null> {
  * Sans ça, `/` renverrait vers /connexion après un rafraîchissement.
  */
 export async function ouvrirSessionLocale(profil: Profil): Promise<void> {
-  await cacheEcrire("profil", profil.id, profil);
+  await sauverProfil(profil);
   await etatEcrire("session_id", profil.id);
+}
+
+/** Crée ou met à jour le profil dans Supabase et le cache local. */
+export async function sauverProfil(profil: Profil): Promise<void> {
+  await cacheEcrire("profil", profil.id, profil);
+  const client = mboaReseau();
+  if (!client) return;
+  const { error } = await client.from("profiles").upsert({
+    id: profil.id,
+    role: profil.role,
+    nom: profil.nom,
+    village: profil.village,
+    telephone_237: profil.telephone,
+    langue: profil.langue,
+    photo_visage: profil.photoVisage ?? null,
+    latitude: profil.latitude ?? null,
+    longitude: profil.longitude ?? null,
+    actif: profil.actif,
+  });
+  if (error) console.warn("[synchro] profil:", error.message);
 }
 
 export async function deconnexionAuth(): Promise<void> {
@@ -1346,6 +1366,18 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
         id: l.id, nom: l.nom, telephone_237: l.telephone, zone: l.zone,
         profil_id: l.profilId, photo: l.photo, moto: l.moto, plaque: l.plaque,
         tarif_course: l.tarifCourse, actif: l.actif,
+      });
+      return !error;
+    }
+    case "profil": {
+      const p = await cacheLire<Profil>("profil", id);
+      if (!p) return true;
+      const { error } = await client.from("profiles").upsert({
+        id: p.id, role: p.role, nom: p.nom, village: p.village,
+        telephone_237: p.telephone, langue: p.langue,
+        photo_visage: p.photoVisage ?? null,
+        latitude: p.latitude ?? null, longitude: p.longitude ?? null,
+        actif: p.actif,
       });
       return !error;
     }
