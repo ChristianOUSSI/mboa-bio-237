@@ -232,9 +232,9 @@ export function BoutonVoix({ texte, label = "🔊" }: { texte: string; label?: s
 }
 
 /** Fond vivant - halos animés et filigrane logo. */
-export function FondMboa({ children }: { children: ReactNode }) {
+export function FondMboa({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className="fond-mboa flex-1 flex flex-col min-h-screen">
+    <div className={`fond-mboa flex-1 flex flex-col min-h-screen ${className}`}>
       <div className="filigrane-mboa" aria-hidden />
       <div className="halo-mboa" style={{ width: 220, height: 220, top: -60, right: -70, background: "rgba(139,195,74,0.35)" }} aria-hidden />
       <div className="halo-mboa" style={{ width: 180, height: 180, bottom: 40, left: -80, background: "rgba(46,125,50,0.22)", animationDelay: "-7s" }} aria-hidden />

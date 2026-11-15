@@ -472,7 +472,7 @@ export default function PageConnexion() {
         : "6XX XXX XXX or email";
 
   return (
-    <FondMboa>
+    <FondMboa className="h-[100dvh] overflow-hidden">
       {/* Aliments flottants en arrière-plan */}
       {ALIMENTS_FLOTTANTS.map((a, i) => {
         const cache = a.role != null || a.super === true;
@@ -539,7 +539,9 @@ export default function PageConnexion() {
           📍 {t("app.village")}
         </p>
         {/* Sélecteur de langue */}
-        <div className="absolute top-4 right-4 z-20">
+        {/* z-30 : le sélecteur de langue reste au-dessus des aliments
+            flottants (z-20), même déplaçables. */}
+        <div className="absolute top-4 right-4 z-30">
           <div className="selecteur-langue" role="group" aria-label={t("a11y.langue")}>
             {(["fr", "en"] as Lang[]).map((l) => (
               <button
