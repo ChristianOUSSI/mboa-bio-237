@@ -86,7 +86,7 @@ export default function AccueilFournisseur() {
       {/* Ventes récentes */}
       {achats.length > 0 && (
         <div className="p-4">
-          <h2 className="text-titre mb-2">{t("fourn.ventesRecentes")}</h2>
+          <h2 className="text-titre titre-section mb-2">{t("fourn.ventesRecentes")}</h2>
           {achats.slice(0, 3).map((a) => (
             <CarteMboa key={a.id} className="mb-2">
               <div className="flex justify-between items-center">

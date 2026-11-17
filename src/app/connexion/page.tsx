@@ -707,7 +707,7 @@ export default function PageConnexion() {
               >
                 {ROLE_EMOJI[roleChoisi]}
               </div>
-              <h2 className="text-titre text-white">{t(`role.${roleChoisi}.nom`)}</h2>
+              <h2 className="text-titre titre-section text-white">{t(`role.${roleChoisi}.nom`)}</h2>
               <p className="text-aide text-white/90 italic mt-2 leading-relaxed">
                 {t(`role.${roleChoisi}.desc`)}
               </p>
@@ -735,7 +735,7 @@ export default function PageConnexion() {
           <CarteMboa className="w-full max-w-md anim-apparition">
             <div className="text-center mb-4">
               <div className="text-5xl mb-2">{ROLE_EMOJI[roleChoisi]}</div>
-              <h2 className="text-titre">{t(`role.${roleChoisi}.nom`)}</h2>
+              <h2 className="text-titre titre-section">{t(`role.${roleChoisi}.nom`)}</h2>
               <p className="text-aide text-[var(--mboa-text-doux)] italic">
                 {t("connex.sousTitre")}
               </p>
@@ -800,7 +800,7 @@ export default function PageConnexion() {
           <CarteMboa className="w-full max-w-md anim-apparition">
             <div className="text-center mb-4">
               <div className="text-5xl mb-2">🛒</div>
-              <h2 className="text-titre">{t("insc.titre")}</h2>
+              <h2 className="text-titre titre-section">{t("insc.titre")}</h2>
               <p className="text-aide text-[var(--mboa-text-doux)] italic">
                 {t("insc.sousTitre")}
               </p>
@@ -899,7 +899,7 @@ export default function PageConnexion() {
           <CarteMboa className="w-full max-w-md anim-apparition">
             <div className="text-center mb-4">
               <div className="text-5xl mb-2">🔐</div>
-              <h2 className="text-titre">{t("mdp.titre")}</h2>
+              <h2 className="text-titre titre-section">{t("mdp.titre")}</h2>
               <p className="text-aide text-[var(--mboa-text-doux)] italic">
                 {mdpParDefaut ? t("mdp.sousTitreCompte") : t("mdp.sousTitreAppareil")}
               </p>
@@ -954,7 +954,7 @@ export default function PageConnexion() {
           <CarteMboa className="w-full max-w-md anim-apparition">
             <div className="text-center mb-4">
               <div className="text-5xl mb-2">🔑</div>
-              <h2 className="text-titre">{t("reset.titre")}</h2>
+              <h2 className="text-titre titre-section">{t("reset.titre")}</h2>
               <p className="text-aide text-[var(--mboa-text-doux)] italic">
                 {t("reset.sousTitre")} {compteOublie.email ?? (compteOublie.telephone ? `+${compteOublie.telephone}` : "")}
               </p>
@@ -1001,7 +1001,7 @@ export default function PageConnexion() {
           <CarteMboa className="w-full max-w-md anim-apparition">
             <div className="text-center mb-4">
               <div className="text-5xl mb-2">🫑</div>
-              <h2 className="text-titre">{t("super.titre")}</h2>
+              <h2 className="text-titre titre-section">{t("super.titre")}</h2>
               <p className="text-aide text-[var(--mboa-text-doux)] italic">
                 {t("super.sousTitre")}
               </p>

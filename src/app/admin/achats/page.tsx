@@ -96,7 +96,7 @@ export default function AchatsAdminPage() {
       <EnTetePage titre={t("adm.ach.titre")} sousTitre={t("adm.ach.sousTitre")} onRetour={() => router.back()} />
       <div className="flex-1 p-4 space-y-4">
         {/* Propositions en attente */}
-        <h2 className="text-titre">{t("adm.ach.enAttente")} ({enAttente.length})</h2>
+        <h2 className="text-titre titre-section">{t("adm.ach.enAttente")} ({enAttente.length})</h2>
         {enAttente.length === 0 && (
           <CarteMboa>
             <p className="text-corps text-[var(--mboa-text-doux)] text-center">{t("adm.ach.vide")}</p>
@@ -159,7 +159,7 @@ export default function AchatsAdminPage() {
         {/* Marchandise achetée, à payer au fournisseur */}
         {aPayer.length > 0 && (
           <>
-            <h2 className="text-titre">{t("adm.ach.aPayer")} ({aPayer.length})</h2>
+            <h2 className="text-titre titre-section">{t("adm.ach.aPayer")} ({aPayer.length})</h2>
             {aPayer.map((a) => (
               <CarteMboa key={a.id}>
                 <div className="flex justify-between items-center mb-2">

@@ -192,7 +192,7 @@ export default function RejoindrePage() {
       <div className="flex-1 p-4 space-y-3">
         {/* Identity */}
         <CarteMboa>
-          <h2 className="text-titre mb-3">{t("rej.who")}</h2>
+          <h2 className="text-titre titre-section mb-3">{t("rej.who")}</h2>
           <input
             type="text"
             placeholder={t("rej.nomPh")}

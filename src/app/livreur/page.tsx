@@ -141,10 +141,10 @@ export default function AccueilLivreur() {
       )}
 
       <div className="flex-1 p-4">
-        <h2 className="text-titre mb-2">{t("liv.mesLivraisons")}</h2>
+        <h2 className="text-titre titre-section mb-2">{t("liv.mesLivraisons")}</h2>
         {courses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <div className="text-6xl mb-4">🏍️</div>
+          <div className="etat-vide">
+            <span className="emoji-vide">🏍️</span>
             <p className="text-corps text-[var(--mboa-text-doux)]">{t("liv.aucune")}</p>
           </div>
         ) : (

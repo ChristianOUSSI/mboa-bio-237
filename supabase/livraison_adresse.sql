@@ -8,4 +8,5 @@ alter table public.commandes
   add column if not exists livraison_quartier text,
   add column if not exists livraison_detail text,
   add column if not exists livraison_lat double precision,
-  add column if not exists livraison_lng double precision;
+  add column if not exists livraison_lng double precision,
+  add column if not exists frais_livraison integer;

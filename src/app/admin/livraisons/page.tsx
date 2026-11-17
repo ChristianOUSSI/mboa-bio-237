@@ -107,7 +107,7 @@ export default function LivraisonsPage() {
           </div>
           <p className="text-aide text-[var(--mboa-text-doux)] mt-1">{t("adm.liv.fraisHint")}</p>
         </CarteMboa>
-        <h2 className="text-titre">{t("adm.liv.aPayer")} ({aPayer.length})</h2>
+        <h2 className="text-titre titre-section">{t("adm.liv.aPayer")} ({aPayer.length})</h2>
         {aPayer.length === 0 ? (
           <CarteMboa>
             <p className="text-corps text-[var(--mboa-text-doux)] text-center">
@@ -150,7 +150,7 @@ export default function LivraisonsPage() {
 
         {enCours2.length > 0 && (
           <>
-            <h2 className="text-titre">{t("adm.liv.enCours")} ({enCours2.length})</h2>
+            <h2 className="text-titre titre-section">{t("adm.liv.enCours")} ({enCours2.length})</h2>
             {enCours2.map((c) => (
               <CarteMboa key={c.id}>
                 <div className="flex justify-between items-start mb-2">

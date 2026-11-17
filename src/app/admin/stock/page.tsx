@@ -322,7 +322,7 @@ export default function StockAdminPage() {
             </div>
           )}
           <CarteMboa>
-            <h2 className="text-titre mb-3">{t("adm.stk.nouveau")}</h2>
+            <h2 className="text-titre titre-section mb-3">{t("adm.stk.nouveau")}</h2>
 
             <input
               type="text"

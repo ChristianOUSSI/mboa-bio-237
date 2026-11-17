@@ -203,7 +203,7 @@ export default function PacksAdminPage() {
       <div className="flex-1 p-4 space-y-3">
         {/* Composition d'un nouveau plat */}
         <CarteMboa>
-          <h2 className="text-titre mb-3">{t("adm.pack.composer")}</h2>
+          <h2 className="text-titre titre-section mb-3">{t("adm.pack.composer")}</h2>
 
           <input
             type="text"
@@ -295,7 +295,7 @@ export default function PacksAdminPage() {
         </CarteMboa>
 
         {/* Plats existants */}
-        <h2 className="text-titre">{t("adm.pack.liste")} ({packs.length})</h2>
+        <h2 className="text-titre titre-section">{t("adm.pack.liste")} ({packs.length})</h2>
         {packs.map((p) => (
           <CarteMboa key={p.id}>
             <div className="flex justify-between items-start mb-1">

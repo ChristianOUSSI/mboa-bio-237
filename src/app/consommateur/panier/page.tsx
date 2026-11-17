@@ -96,6 +96,7 @@ export default function PanierPage() {
         livraisonDetail: livraisonDetail.trim() || null,
         livraisonLat: gps?.lat ?? null,
         livraisonLng: gps?.lng ?? null,
+        fraisLivraison: fraisLivraison > 0 ? fraisLivraison : null,
       });
       panier.vider();
       router.push("/consommateur/suivi");

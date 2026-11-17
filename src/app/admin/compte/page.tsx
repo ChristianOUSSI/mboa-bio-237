@@ -169,7 +169,7 @@ export default function AdminComptePage() {
       <div className="flex-1 p-4 space-y-3">
         {/* État du compte */}
         <CarteMboa className="card-accent">
-          <h2 className="text-titre mb-2">{t("adm.cpt.titre")}</h2>
+          <h2 className="text-titre titre-section mb-2">{t("adm.cpt.titre")}</h2>
           {compte ? (
             <>
               <p className="text-corps">{t("adm.cpt.nom")} : {compte.nom}</p>
@@ -201,7 +201,7 @@ export default function AdminComptePage() {
 
         {/* Comptes administrateurs - plusieurs admins, mêmes droits */}
         <CarteMboa>
-          <h2 className="text-titre mb-2">{t("adm.cpt.admins")}</h2>
+          <h2 className="text-titre titre-section mb-2">{t("adm.cpt.admins")}</h2>
           <div className="space-y-1 mb-3">
             {admins.map((a) => (
               <div key={a.id} className="flex justify-between text-corps">
@@ -254,7 +254,7 @@ export default function AdminComptePage() {
 
         {/* Changement de mot de passe */}
         <CarteMboa>
-          <h2 className="text-titre mb-3">{t("adm.cpt.changerTitre")}</h2>
+          <h2 className="text-titre titre-section mb-3">{t("adm.cpt.changerTitre")}</h2>
 
           <label className="text-aide block mb-1">{t("adm.cpt.actuel")}</label>
           <ChampMotDePasse
@@ -303,7 +303,7 @@ export default function AdminComptePage() {
         {/* Comptes clients / fournisseurs / livreurs : blocage uniquement.
             La suppression et la révocation totale sont réservées au super admin. */}
         <CarteMboa>
-          <h2 className="text-titre mb-2">{t("adm.cpt.autresComptes")}</h2>
+          <h2 className="text-titre titre-section mb-2">{t("adm.cpt.autresComptes")}</h2>
           {autres.length === 0 ? (
             <p className="text-corps text-[var(--mboa-text-doux)] text-center">{t("adm.cpt.aucunCompte")}</p>
           ) : (

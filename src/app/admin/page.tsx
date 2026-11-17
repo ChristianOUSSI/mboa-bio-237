@@ -219,7 +219,7 @@ export default function TableauAdmin() {
 
       {/* Statistiques du jour */}
       <div className="px-4">
-        <h2 className="text-titre mb-2">{t("adm.aujourdhui")}</h2>
+        <h2 className="text-titre titre-section mb-2">{t("adm.aujourdhui")}</h2>
         <div className="grid grid-cols-2 gap-3">
           <CarteMboa className="text-center">
             <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.commandes")}</p>
@@ -234,7 +234,7 @@ export default function TableauAdmin() {
 
       {/* Vue d'ensemble */}
       <div className="p-4">
-        <h2 className="text-titre mb-2">{t("adm.vue")}</h2>
+        <h2 className="text-titre titre-section mb-2">{t("adm.vue")}</h2>
         <CarteMboa className="space-y-1">
           <div className="flex justify-between text-corps">
             <span className="text-[var(--mboa-text-doux)]">{t("adm.caTotal")}</span>
@@ -262,7 +262,7 @@ export default function TableauAdmin() {
       {/* Alertes stock */}
       {(stockBas.length > 0 || ruptures.length > 0) && (
         <div className="px-4">
-          <h2 className="text-titre mb-2">{t("adm.alertes")}</h2>
+          <h2 className="text-titre titre-section mb-2">{t("adm.alertes")}</h2>
           {ruptures.length > 0 && (
             <CarteMboa className="mb-2 bg-[var(--mboa-error-doux)]">
               <p className="text-aide text-[var(--mboa-error)] font-bold mb-1">{t("adm.rupture")} ({ruptures.length})</p>
@@ -289,7 +289,7 @@ export default function TableauAdmin() {
       {/* Activité des autres admins + notifications */}
       <div className="px-4 pb-2">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-titre">{t("adm.act.titre")}</h2>
+          <h2 className="text-titre titre-section">{t("adm.act.titre")}</h2>
           {!notifOk && typeof Notification !== "undefined" && Notification.permission !== "denied" && (
             <button
               onClick={demanderNotif}
@@ -324,7 +324,7 @@ export default function TableauAdmin() {
 
       {/* Raccourcis */}
       <div className="px-4 space-y-2">
-        <h2 className="text-titre mb-2">{t("adm.gestion")}</h2>
+        <h2 className="text-titre titre-section mb-2">{t("adm.gestion")}</h2>
         <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/achats")}>
           📋 {t("adm.fileAchats")} ({achats.length})
         </BoutonMboa>

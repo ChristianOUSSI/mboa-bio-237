@@ -101,7 +101,7 @@ function PagePackInterne() {
           <div className="flex justify-between items-start mb-2">
             <div className="flex items-center gap-2">
               {produit.emoji ?? <PictoCategorie categorie={produit.categorie} size={28} />}
-              <h2 className="text-titre">{produit.nom}</h2>
+              <h2 className="text-titre titre-section">{produit.nom}</h2>
             </div>
             <BoutonVoix texte={produitAnnonceVocale(produit, true)} />
           </div>
@@ -134,7 +134,7 @@ function PagePackInterne() {
         </CarteMboa>
 
         {/* Ce que le plat contient */}
-        <h2 className="text-titre">{t("pack.ingredients")}</h2>
+        <h2 className="text-titre titre-section">{t("pack.ingredients")}</h2>
         <CarteMboa>
           <ul className="space-y-2">
             {produit.composants.map((c, i) => (

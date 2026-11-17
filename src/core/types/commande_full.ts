@@ -39,6 +39,8 @@ export interface Commande {
   clientNom?: string | null;
   clientVillage?: string | null;
   clientTel?: string | null;
+  /** Frais de livraison facturés au client (réglés par l'admin). */
+  fraisLivraison?: number | null;
   createdLe: string;
   livreeLe?: string | null;
   recueLe?: string | null;
@@ -89,7 +91,9 @@ export function commandeCoutGarde(c: Commande): number {
 }
 
 export function commandeMontantAPayer(c: Commande): number {
-  return c.montantTotal + (c.livreurTarif ?? 0);
+  // Le frais de livraison client (fixé par l'admin) prime ; pour les
+  // anciennes commandes sans ce champ, on retombe sur le tarif livreur.
+  return c.montantTotal + (c.fraisLivraison ?? c.livreurTarif ?? 0);
 }
 
 export function commandeAttendConfirmation(c: Commande): boolean {
@@ -163,6 +167,7 @@ export function commandeFromMap(map: Record<string, unknown>): Commande {
     clientNom: (map.client_nom as string) ?? null,
     clientVillage: (map.client_village as string) ?? null,
     clientTel: (map.client_tel as string) ?? null,
+    fraisLivraison: map.frais_livraison != null ? Math.round(Number(map.frais_livraison)) : null,
     createdLe: (map.created_at as string) ?? new Date().toISOString(),
     livreeLe: (map.livree_le as string) ?? null,
     recueLe: (map.recue_le as string) ?? null,

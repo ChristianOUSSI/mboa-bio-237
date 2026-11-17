@@ -86,7 +86,7 @@ export default function CategoriesAdminPage() {
 
       <div className="flex-1 p-4 space-y-3">
         <CarteMboa>
-          <h2 className="text-titre mb-2">{t("adm.cat.nouvelle")}</h2>
+          <h2 className="text-titre titre-section mb-2">{t("adm.cat.nouvelle")}</h2>
           <input
             type="text"
             placeholder={t("adm.cat.nomPh")}
@@ -117,7 +117,7 @@ export default function CategoriesAdminPage() {
           </BoutonMboa>
         </CarteMboa>
 
-        <h2 className="text-titre">{t("adm.cat.liste")} ({persos.length})</h2>
+        <h2 className="text-titre titre-section">{t("adm.cat.liste")} ({persos.length})</h2>
         {persos.length === 0 && (
           <CarteMboa>
             <p className="text-corps text-[var(--mboa-text-doux)] text-center">{t("adm.cat.vide")}</p>

@@ -158,7 +158,7 @@ export default function LivreursAdminPage() {
         {/* Formulaire de création */}
         {modeCreation && (
           <CarteMboa className="anim-apparition">
-            <h2 className="text-titre mb-3">{t("adm.livr.nouveau")}</h2>
+            <h2 className="text-titre titre-section mb-3">{t("adm.livr.nouveau")}</h2>
 
             <label className="text-aide block mb-1">{t("adm.livr.nom")}</label>
             <input

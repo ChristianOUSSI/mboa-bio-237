@@ -186,7 +186,7 @@ export default function SuperAdminPage() {
             </BoutonMboa>
           ) : (
             <div className="space-y-2">
-              <h2 className="text-titre">{t("super.nouveauCompte")}</h2>
+              <h2 className="text-titre titre-section">{t("super.nouveauCompte")}</h2>
               <select
                 value={nvRole}
                 onChange={(e) => setNvRole(e.target.value as RoleAuth)}
