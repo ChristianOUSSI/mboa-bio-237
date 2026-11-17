@@ -152,7 +152,7 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
         client_tel: contact?.clientTel ?? null,
         frais_livraison: contact?.fraisLivraison ?? null,
       };
-      if (patch.appel_souhaite || patch.numero_contact || patch.livraison_quartier || patch.livraison_detail || patch.livraison_lat != null || patch.client_nom) {
+      if (patch.appel_souhaite || patch.numero_contact || patch.livraison_quartier || patch.livraison_detail || patch.livraison_lat != null || patch.client_nom || patch.frais_livraison != null) {
         void mboaReseau()!.from("commandes").update(patch).eq("id", commande.id);
         return {
           ...commande,
