@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { SplashMboa, FondMboa } from "@/core/design_system/composants";
 import { useSession } from "@/core/etat/store";
 import { useTr } from "@/core/i18n";
-import { profilActuel } from "@/core/data/depots";
+import { profilActuel, ouvrirSessionLocale } from "@/core/data/depots";
 
 export default function PageAccueil() {
   const router = useRouter();
@@ -17,9 +17,14 @@ export default function PageAccueil() {
     async function demarrer() {
       // Laisse le splash s'animer avant de basculer
       await new Promise((r) => setTimeout(r, 1600));
-      const p = await profilActuel();
+      // Priorité à la session persistée (localStorage Zustand) : elle
+      // survit même si IndexedDB a été réparé/vidé. `profilActuel`
+      // (IndexedDB) ne sert que de repli.
+      const p = profil ?? (await profilActuel());
       if (p) {
         setSession(p, (p.role as never) ?? "consommateur");
+        // Repare `session_id` si IndexedDB l'avait perdu.
+        ouvrirSessionLocale(p).catch(() => {});
         router.push(`/${p.role}`);
       } else {
         router.push("/connexion");
@@ -27,7 +32,7 @@ export default function PageAccueil() {
       setEnChargement(false);
     }
     demarrer();
-  }, [router, setSession]);
+  }, [router, setSession, profil]);
 
   if (enChargement) {
     return <SplashMboa />;

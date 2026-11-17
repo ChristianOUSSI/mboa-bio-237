@@ -909,10 +909,10 @@ export async function mesAchats(fournisseurId: string, telephone?: string): Prom
   // chiffres, comme GardeFournisseur).
   const tel9 = (telephone ?? "").replace(/\D/g, "").slice(-9);
   const chiffres = (s: string) => s.replace(/^tel_/, "").replace(/\D/g, "");
-  const estLe mien = (a: Achat) =>
+  const estLeMien = (a: Achat) =>
     a.fournisseurId === fournisseurId ||
     (tel9.length === 9 && chiffres(a.fournisseurId).slice(-9) === tel9);
-  const locales = (await cacheTout<Achat>("achat")).filter(estLe mien);
+  const locales = (await cacheTout<Achat>("achat")).filter(estLeMien);
   if (mboaReseau()) {
     const { data, error } = await mboaReseau()!
       .from("achats")
@@ -922,7 +922,7 @@ export async function mesAchats(fournisseurId: string, telephone?: string): Prom
     if (!error && data) {
       const distants = data
         .map((d) => achatFromMap(d as unknown as Record<string, unknown>))
-        .filter(estLe mien);
+        .filter(estLeMien);
       const ids = new Set(distants.map((a) => a.id));
       for (const a of distants) await cacheEcrire("achat", a.id, a);
       return [...distants, ...locales.filter((a) => !ids.has(a.id))];
