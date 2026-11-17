@@ -190,6 +190,14 @@ export default function AccueilLivreur() {
                     </a>
                   )}
 
+                  {(c.clientNom || c.clientVillage) && (
+                    <p className="text-aide mt-1 text-[var(--mboa-text-doux)]">
+                      👤 {c.clientNom}
+                      {c.clientVillage ? ` · ${c.clientVillage}` : ""}
+                      {c.clientTel ? ` · ${c.clientTel}` : ""}
+                    </p>
+                  )}
+
                   {c.appelSouhaite && (
                     <p className="text-aide mt-2 font-bold" style={{ color: "var(--mboa-primary)" }}>
                       📞 {t("liv.appelerAvant")}
