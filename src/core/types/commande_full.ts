@@ -35,6 +35,10 @@ export interface Commande {
   /** Position GPS du client au moment de la commande (optionnelle). */
   livraisonLat?: number | null;
   livraisonLng?: number | null;
+  /** Identité client figée à la commande (secours si le profil change). */
+  clientNom?: string | null;
+  clientVillage?: string | null;
+  clientTel?: string | null;
   createdLe: string;
   livreeLe?: string | null;
   recueLe?: string | null;
@@ -156,6 +160,9 @@ export function commandeFromMap(map: Record<string, unknown>): Commande {
     livraisonDetail: (map.livraison_detail as string) ?? null,
     livraisonLat: map.livraison_lat != null ? Number(map.livraison_lat) : null,
     livraisonLng: map.livraison_lng != null ? Number(map.livraison_lng) : null,
+    clientNom: (map.client_nom as string) ?? null,
+    clientVillage: (map.client_village as string) ?? null,
+    clientTel: (map.client_tel as string) ?? null,
     createdLe: (map.created_at as string) ?? new Date().toISOString(),
     livreeLe: (map.livree_le as string) ?? null,
     recueLe: (map.recue_le as string) ?? null,

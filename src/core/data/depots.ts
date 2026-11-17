@@ -147,8 +147,11 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
         livraison_detail: contact?.livraisonDetail ?? null,
         livraison_lat: contact?.livraisonLat ?? null,
         livraison_lng: contact?.livraisonLng ?? null,
+        client_nom: contact?.clientNom ?? null,
+        client_village: contact?.clientVillage ?? null,
+        client_tel: contact?.clientTel ?? null,
       };
-      if (patch.appel_souhaite || patch.numero_contact || patch.livraison_quartier || patch.livraison_detail || patch.livraison_lat != null) {
+      if (patch.appel_souhaite || patch.numero_contact || patch.livraison_quartier || patch.livraison_detail || patch.livraison_lat != null || patch.client_nom) {
         void mboaReseau()!.from("commandes").update(patch).eq("id", commande.id);
         return {
           ...commande,
@@ -158,6 +161,9 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
           livraisonDetail: patch.livraison_detail,
           livraisonLat: patch.livraison_lat,
           livraisonLng: patch.livraison_lng,
+          clientNom: patch.client_nom,
+          clientVillage: patch.client_village,
+          clientTel: patch.client_tel,
         };
       }
       return commande;
@@ -225,6 +231,9 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
     livraisonDetail: contact?.livraisonDetail ?? null,
     livraisonLat: contact?.livraisonLat ?? null,
     livraisonLng: contact?.livraisonLng ?? null,
+    clientNom: contact?.clientNom ?? null,
+    clientVillage: contact?.clientVillage ?? null,
+    clientTel: contact?.clientTel ?? null,
     createdLe: new Date().toISOString(),
     clos: false,
   };
@@ -1148,7 +1157,9 @@ export async function deconnexionAuth(): Promise<void> {
 
 export async function chargerLivreurs(): Promise<Livreur[]> {
   if (mboaReseau()) {
-    const { data, error } = await mboaReseau()!.from("vitrine_livreurs").select("*").order("nom");
+    // La table `livreurs` porte les chauffeurs ; `vitrine_livreurs` est une
+    // vue de *commandes* enrichies (identité client) et ne doit pas être lue ici.
+    const { data, error } = await mboaReseau()!.from("livreurs").select("*").order("nom");
     if (!error && data) {
       return data.map((d) => livreurFromMap(d as unknown as Record<string, unknown>));
     }
@@ -1350,6 +1361,7 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
         appel_souhaite: c.appelSouhaite, numero_contact: c.numeroContact ?? null,
         livraison_quartier: c.livraisonQuartier ?? null, livraison_detail: c.livraisonDetail ?? null,
         livraison_lat: c.livraisonLat ?? null, livraison_lng: c.livraisonLng ?? null,
+        client_nom: c.clientNom ?? null, client_village: c.clientVillage ?? null, client_tel: c.clientTel ?? null,
       });
       return !error;
     }
