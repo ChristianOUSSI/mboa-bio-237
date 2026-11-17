@@ -50,7 +50,9 @@ export default function ProposerRecoltePage() {
     setEnCours(true);
     try {
       await proposerAchat({
-        fournisseurId: profil.id,
+        // Même convention que /rejoindre et que la fiche fournisseur :
+        // les propositions restent rattachées au même fournisseur.
+        fournisseurId: `tel_${profil.telephone.replace(/\D/g, "")}`,
         nom: nom.trim(),
         categorie,
         unite,

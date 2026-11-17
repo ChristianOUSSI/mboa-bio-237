@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toutesCommandes, payerLivreur } from "@/core/data/depots";
 import { etatLire, etatEcrire } from "@/core/data/base_locale";
@@ -11,6 +11,7 @@ import { STATUT_COMMANDE_INFO, StatutCommande } from "@/core/types/statuts";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { resumerQuantites } from "@/core/types/commande";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 
 const CLE_PAYES = "livreurs_payes";
@@ -46,10 +47,8 @@ export default function LivraisonsPage() {
     setTimeout(() => setFraisSauve(false), 2000);
   }
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    charger();
-  }, []);
+  // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
+  useActualisation(charger);
 
   /** Le livreur est payé uniquement après réception confirmée par la cliente. */
   async function payer(c: Commande) {

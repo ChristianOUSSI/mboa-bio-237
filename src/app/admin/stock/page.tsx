@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { chargerStock, ajusterProduit, creerProduit, supprimerProduit, basculerProduitActif } from "@/core/data/depots";
 import { CarteMboa, EnTetePage, JaugeMboa, BoutonVoix, BadgeStatut, BoutonMboa, PictoCategorie, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
@@ -11,6 +11,7 @@ import { Unite, UNITE_INFO } from "@/core/types/unite";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { choisirPhotoDepuisAppareil } from "@/core/utils/photo";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 
 type Onglet = "stock" | "ajouter";
@@ -45,10 +46,8 @@ export default function StockAdminPage() {
     categoriesPerso().then(setPersos).catch(() => {});
   }
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    charger();
-  }, []);
+  // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
+  useActualisation(charger);
 
   async function ajusterQuantite(p: Produit, delta: number) {
     await ajusterProduit(p.id, { quantite: p.quantite + delta });

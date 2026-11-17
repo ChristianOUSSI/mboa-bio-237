@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toutesAchats, validerAchat, refuserAchat, payerAchat, profilParId } from "@/core/data/depots";
 import { Profil } from "@/core/types/profil";
@@ -9,6 +9,7 @@ import { Achat, achatMontant, achatResume, achatEstPrise } from "@/core/types/ac
 import { STATUT_ACHAT_INFO } from "@/core/types/achat";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 
 export default function AchatsAdminPage() {
@@ -34,10 +35,8 @@ export default function AchatsAdminPage() {
     setProfils(map);
   }
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    charger();
-  }, []);
+  // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
+  useActualisation(charger);
 
   /** Mboa achète chez le fournisseur : la marchandise entre au stock. */
   async function signer(a: Achat) {

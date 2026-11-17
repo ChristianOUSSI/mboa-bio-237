@@ -11,6 +11,7 @@ import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } fro
 import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstVitrine, produitEstPack } from "@/core/types/produit";
 import { Commande } from "@/core/types/commande_full";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 
 export default function MarchePage() {
@@ -26,22 +27,23 @@ export default function MarchePage() {
   const [tri, setTri] = useState<"nom" | "prix_asc" | "prix_desc">("nom");
   const t = useTr();
 
-  useEffect(() => {
-    async function charger() {
-      const [v, c, p] = await Promise.all([chargerVitrine(), chargerCatalogue(), categoriesPerso()]);
-      // The customer only sees real stock: active and quantity > 0
-      setVitrine(v.filter(produitEstVitrine));
-      setCatalogue(c);
-      setPersos(p);
-      if (profil) {
-        const cmds = await commandesCliente(profil.id);
-        setCommandes(cmds);
-      }
-      const compte = await compterFile();
-      setFileAttente(compte);
+  async function charger() {
+    const [v, c, p] = await Promise.all([chargerVitrine(), chargerCatalogue(), categoriesPerso()]);
+    // The customer only sees real stock: active and quantity > 0
+    setVitrine(v.filter(produitEstVitrine));
+    setCatalogue(c);
+    setPersos(p);
+    if (profil) {
+      const cmds = await commandesCliente(profil.id);
+      setCommandes(cmds);
     }
-    charger();
-  }, [profil, setVitrine, setCatalogue, setFileAttente]);
+    const compte = await compterFile();
+    setFileAttente(compte);
+  }
+
+  // Recharge au montage, toutes les 60 s et au retour sur l'onglet :
+  // le stock et les prix restent frais sans action du client.
+  useActualisation(charger, 60000);
 
   useEffect(() => {
     const handler = () => setEnLigne(navigator.onLine);

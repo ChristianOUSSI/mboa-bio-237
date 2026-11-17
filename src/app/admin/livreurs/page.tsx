@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { chargerLivreurs, sauverLivreur } from "@/core/data/depots";
 import { CarteMboa, EnTetePage, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
@@ -8,6 +8,7 @@ import { Livreur, livreurRepere } from "@/core/types/livreur";
 import { creerCompte } from "@/core/auth/auth_service";
 import { validerMotDePasse } from "@/core/auth/auth_local";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useActualisation } from "@/core/utils/use_actualisation";
 import { choisirPhotoDepuisAppareil } from "@/core/utils/photo";
 import { useTr } from "@/core/i18n";
 
@@ -46,10 +47,8 @@ export default function LivreursAdminPage() {
     setLivreurs(await chargerLivreurs());
   }
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    charger();
-  }, []);
+  // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
+  useActualisation(charger);
 
   /**
    * L'admin crée la fiche livreur ET son compte de connexion.

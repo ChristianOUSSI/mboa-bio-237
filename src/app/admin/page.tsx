@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/core/etat/store";
 import { fileAttenteAchats, toutesCommandes, chargerStock, chargerLivreurs, chargerFournisseurs, activitesAdmin, synchroniserFileAttente, compterFile, ActiviteAdmin } from "@/core/data/depots";
@@ -15,6 +15,7 @@ import { StatutCommande } from "@/core/types/statuts";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { tousComptes, CompteAuth } from "@/core/auth/auth_service";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 import { sonNotificationActif, basculerSonNotification } from "@/core/utils/son";
 import { supabaseConfigure } from "@/core/config/app_env";
@@ -62,32 +63,32 @@ export default function TableauAdmin() {
     setSyncEnCours(false);
   }
 
-  useEffect(() => {
-    async function charger() {
-      const [a, c, s, l, f, cp] = await Promise.all([
-        fileAttenteAchats(),
-        toutesCommandes(),
-        chargerStock(),
-        chargerLivreurs(),
-        chargerFournisseurs(),
-        tousComptes(),
-      ]);
-      setAchats(a);
-      setCommandes(c);
-      setStock(s);
-      setLivreurs(l);
-      setFournisseurs(f);
-      setComptes(cp);
-      const acts = await activitesAdmin();
-      setActivites(acts);
-      setOpsFile(await compterFile().catch(() => 0));
-      const { verifierNouvellesActivitesAdmin } = await import("@/core/utils/son");
-      verifierNouvellesActivitesAdmin(acts.map((a) => a.id));
-      if (typeof Notification !== "undefined") setNotifOk(Notification.permission === "granted");
-      verifierFile();
-    }
-    charger();
-  }, []);
+  async function charger() {
+    const [a, c, s, l, f, cp] = await Promise.all([
+      fileAttenteAchats(),
+      toutesCommandes(),
+      chargerStock(),
+      chargerLivreurs(),
+      chargerFournisseurs(),
+      tousComptes(),
+    ]);
+    setAchats(a);
+    setCommandes(c);
+    setStock(s);
+    setLivreurs(l);
+    setFournisseurs(f);
+    setComptes(cp);
+    const acts = await activitesAdmin();
+    setActivites(acts);
+    setOpsFile(await compterFile().catch(() => 0));
+    const { verifierNouvellesActivitesAdmin } = await import("@/core/utils/son");
+    verifierNouvellesActivitesAdmin(acts.map((a) => a.id));
+    if (typeof Notification !== "undefined") setNotifOk(Notification.permission === "granted");
+    verifierFile();
+  }
+
+  // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
+  useActualisation(charger);
 
   async function demanderNotif() {
     if (typeof Notification === "undefined") return;

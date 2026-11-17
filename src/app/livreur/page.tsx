@@ -12,6 +12,7 @@ import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { resumerQuantites } from "@/core/types/commande";
 import { PositionGps } from "@/core/types/suivi_colis";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 
 function positionActuelle(): Promise<PositionGps | null> {
@@ -55,11 +56,9 @@ export default function AccueilLivreur() {
     setCourses(miennes);
   }
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    charger();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profil]);
+  // Recharge au montage, toutes les 30 s et au retour sur l'onglet :
+  // une course assignée par l'admin apparaît sans recharger la page.
+  useActualisation(charger);
 
   // Automatic GPS sharing every 15 s while a delivery is on the way
   useEffect(() => {

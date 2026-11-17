@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toutesCommandes, chargerLivreurs, validerDevis, assignerLivreur, refuserDevis } from "@/core/data/depots";
 import { CarteMboa, EnTetePage, BadgeStatut, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
@@ -10,6 +10,7 @@ import { STATUT_COMMANDE_INFO, StatutCommande } from "@/core/types/statuts";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { resumerQuantites } from "@/core/types/commande";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 
 /** Exporte les commandes en CSV (Excel/LibreOffice) pour la compta. */
@@ -57,10 +58,8 @@ export default function DevisAdminPage() {
     setLivreurs(l.filter((x) => x.actif));
   }
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    charger();
-  }, []);
+  // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
+  useActualisation(charger);
 
   /** Validation du devis + envoi d'un livreur. */
   async function validerEtEnvoyer(c: Commande, livreurId?: string) {

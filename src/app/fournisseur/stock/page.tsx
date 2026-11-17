@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { chargerStock } from "@/core/data/depots";
@@ -8,6 +8,7 @@ import { CarteMboa, EnTetePage, JaugeMboa, BoutonVoix, FondMboa, SkeletonMboa } 
 import { Produit, produitJauge, produitDisponibilite } from "@/core/types/produit";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 
 export default function StockFournisseurPage() {
@@ -17,12 +18,12 @@ export default function StockFournisseurPage() {
 
   const [stock, setStock] = useState<Produit[]>([]);
 
-  useEffect(() => {
-    async function charger() {
-      setStock(await chargerStock());
-    }
-    charger();
-  }, []);
+  async function charger() {
+    setStock(await chargerStock());
+  }
+
+  // Recharge au montage, toutes les 60 s et au retour sur l'onglet.
+  useActualisation(charger, 60000);
 
   if (!pret) {
     return (

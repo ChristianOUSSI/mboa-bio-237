@@ -902,16 +902,27 @@ export async function toutesAchats(): Promise<Achat[]> {
   return locales;
 }
 
-export async function mesAchats(fournisseurId: string): Promise<Achat[]> {
-  const locales = (await cacheTout<Achat>("achat")).filter((a) => a.fournisseurId === fournisseurId);
+export async function mesAchats(fournisseurId: string, telephone?: string): Promise<Achat[]> {
+  // Le fournisseur est identifié tantôt par l'id du compte, tantôt par
+  // `tel_<chiffres>` (convention des fiches et de /rejoindre). On retient
+  // tout achat dont l'id correspond ou dont le téléphone colle (9 derniers
+  // chiffres, comme GardeFournisseur).
+  const tel9 = (telephone ?? "").replace(/\D/g, "").slice(-9);
+  const chiffres = (s: string) => s.replace(/^tel_/, "").replace(/\D/g, "");
+  const estLe mien = (a: Achat) =>
+    a.fournisseurId === fournisseurId ||
+    (tel9.length === 9 && chiffres(a.fournisseurId).slice(-9) === tel9);
+  const locales = (await cacheTout<Achat>("achat")).filter(estLe mien);
   if (mboaReseau()) {
     const { data, error } = await mboaReseau()!
       .from("achats")
       .select("*")
-      .eq("fournisseur_id", fournisseurId)
+      .or(`fournisseur_id.eq.${fournisseurId},fournisseur_id.like.tel_*`)
       .order("propose_le", { ascending: false });
     if (!error && data) {
-      const distants = data.map((d) => achatFromMap(d as unknown as Record<string, unknown>));
+      const distants = data
+        .map((d) => achatFromMap(d as unknown as Record<string, unknown>))
+        .filter(estLe mien);
       const ids = new Set(distants.map((a) => a.id));
       for (const a of distants) await cacheEcrire("achat", a.id, a);
       return [...distants, ...locales.filter((a) => !ids.has(a.id))];

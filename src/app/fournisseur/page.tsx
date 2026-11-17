@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, useReseau } from "@/core/etat/store";
 import { mesAchats } from "@/core/data/depots";
@@ -9,6 +9,7 @@ import { Achat, achatMontant, achatEstPayee, achatEstDu } from "@/core/types/ach
 import { STATUT_ACHAT_INFO } from "@/core/types/achat";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 
 export default function AccueilFournisseur() {
@@ -21,18 +22,18 @@ export default function AccueilFournisseur() {
   const [gainsPaye, setGainsPaye] = useState(0);
   const [gainsEnAttente, setGainsEnAttente] = useState(0);
 
-  useEffect(() => {
-    async function charger() {
-      if (!profil) return;
-      const a = await mesAchats(profil.id);
-      setAchats(a);
-      const paye = a.filter((x) => achatEstPayee(x.statut)).reduce((s, x) => s + achatMontant(x), 0);
-      const enAttente = a.filter((x) => achatEstDu(x.statut)).reduce((s, x) => s + achatMontant(x), 0);
-      setGainsPaye(paye);
-      setGainsEnAttente(enAttente);
-    }
-    charger();
-  }, [profil]);
+  async function charger() {
+    if (!profil) return;
+    const a = await mesAchats(profil.id, profil.telephone);
+    setAchats(a);
+    const paye = a.filter((x) => achatEstPayee(x.statut)).reduce((s, x) => s + achatMontant(x), 0);
+    const enAttente = a.filter((x) => achatEstDu(x.statut)).reduce((s, x) => s + achatMontant(x), 0);
+    setGainsPaye(paye);
+    setGainsEnAttente(enAttente);
+  }
+
+  // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
+  useActualisation(charger);
 
   if (!pret) {
     return (

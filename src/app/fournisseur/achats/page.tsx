@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { mesAchats } from "@/core/data/depots";
@@ -9,6 +9,7 @@ import { Achat, achatMontant, achatResume } from "@/core/types/achat";
 import { STATUT_ACHAT_INFO } from "@/core/types/achat";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 
 export default function MesAchatsPage() {
@@ -18,13 +19,13 @@ export default function MesAchatsPage() {
 
   const [achats, setAchats] = useState<Achat[]>([]);
 
-  useEffect(() => {
-    async function charger() {
-      if (!profil) return;
-      setAchats(await mesAchats(profil.id));
-    }
-    charger();
-  }, [profil]);
+  async function charger() {
+    if (!profil) return;
+    setAchats(await mesAchats(profil.id, profil.telephone));
+  }
+
+  // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
+  useActualisation(charger);
 
   if (!pret) {
     return (

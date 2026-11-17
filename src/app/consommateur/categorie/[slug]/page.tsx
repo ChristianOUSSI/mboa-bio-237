@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
@@ -9,6 +9,7 @@ import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } fro
 import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstVitrine, produitEstPack } from "@/core/types/produit";
 import { usePanier } from "@/core/etat/store";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 
 /** Page d'une catégorie : tous les produits qu'elle contient, prix et photos. */
@@ -39,15 +40,15 @@ function PageCategorieInterne() {
   const [persos, setPersos] = useState<CategoriePerso[]>([]);
   const [chargement, setChargement] = useState(true);
 
-  useEffect(() => {
-    async function charger() {
-      const [v, p] = await Promise.all([chargerVitrine(), categoriesPerso()]);
-      setProduits(v.filter((x) => produitEstVitrine(x) && x.categorie === slug));
-      setPersos(p);
-      setChargement(false);
-    }
-    charger();
-  }, [slug]);
+  async function charger() {
+    const [v, p] = await Promise.all([chargerVitrine(), categoriesPerso()]);
+    setProduits(v.filter((x) => produitEstVitrine(x) && x.categorie === slug));
+    setPersos(p);
+    setChargement(false);
+  }
+
+  // Recharge au montage, toutes les 60 s et au retour sur l'onglet.
+  useActualisation(charger, 60000);
 
   if (!pret || chargement) {
     return (

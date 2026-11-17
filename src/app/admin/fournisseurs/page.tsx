@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { chargerFournisseurs, basculerFournisseurActif } from "@/core/data/depots";
 import { CarteMboa, EnTetePage, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { Fournisseur, fournisseurProduction, fournisseurLie } from "@/core/types/fournisseur";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 
 export default function FournisseursAdminPage() {
@@ -16,9 +17,8 @@ export default function FournisseursAdminPage() {
 
   async function charger() { setFournisseurs(await chargerFournisseurs()); }
 
-  useEffect(() => {
-    charger();
-  }, []);
+  // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
+  useActualisation(charger);
 
   async function basculer(f: Fournisseur, actif: boolean) {
     await basculerFournisseurActif(f.id, actif);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { chargerCatalogue, chargerStock, sauverPack, majPackComposants } from "@/core/data/depots";
 import { CarteMboa, BoutonMboa, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
@@ -10,6 +10,7 @@ import { Unite, UNITE_INFO, unitePour } from "@/core/types/unite";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { choisirPhotoDepuisAppareil } from "@/core/utils/photo";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 
 interface ComposantDraft {
@@ -116,14 +117,14 @@ export default function PacksAdminPage() {
   const [editionComposants, setEditionComposants] = useState<ComposantDraft[]>([]);
   const [editionEnCours, setEditionEnCours] = useState(false);
 
-  useEffect(() => {
-    async function charger() {
-      const [c, s] = await Promise.all([chargerCatalogue(), chargerStock()]);
-      setCatalogue(c);
-      setPacks(s.filter(produitEstPack));
-    }
-    charger();
-  }, []);
+  async function charger() {
+    const [c, s] = await Promise.all([chargerCatalogue(), chargerStock()]);
+    setCatalogue(c);
+    setPacks(s.filter(produitEstPack));
+  }
+
+  // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
+  useActualisation(charger);
 
   async function sauver() {
     const prixNum = parseInt(prix) || 0;
