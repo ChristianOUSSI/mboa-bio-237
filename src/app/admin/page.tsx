@@ -322,38 +322,45 @@ export default function TableauAdmin() {
         )}
       </div>
 
-      {/* Raccourcis */}
-      <div className="px-4 space-y-2">
-        <h2 className="text-titre titre-section mb-2">{t("adm.gestion")}</h2>
-        <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/achats")}>
-          📋 {t("adm.fileAchats")} ({achats.length})
-        </BoutonMboa>
-        <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/stock")}>
-          📦 {t("adm.stock")} ({stock.length})
-        </BoutonMboa>
-        <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/categories")}>
-          🏷️ {t("adm.categories")}
-        </BoutonMboa>
-        <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/devis")}>
-          📝 {t("adm.devis2")} ({commandes.length})
-        </BoutonMboa>
-        <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/livraisons")}>
-          🏍️ {t("adm.livraisons")} ({aPointer})
-        </BoutonMboa>
-        <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/fournisseurs")}>
-          👨‍🌾 {t("adm.fournisseurs")} ({fournisseurs.filter((f) => !f.actif).length > 0
-            ? `${fournisseurs.filter((f) => !f.actif).length} ${t("adm.fourn.enAttente")}`
-            : fournisseurs.length})
-        </BoutonMboa>
-        <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/packs")}>
-          🍲 {t("adm.packs")}
-        </BoutonMboa>
-        <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/livreurs")}>
-          🛵 {t("adm.livreurs")} ({livreurs.length})
-        </BoutonMboa>
-        <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/compte")}>
-          🔐 {t("adm.compte")}
-        </BoutonMboa>
+      {/* Raccourcis - tuiles icônes */}
+      <div className="px-4 pb-6">
+        <h2 className="text-titre titre-section mb-3">{t("adm.gestion")}</h2>
+        <div className="grid grid-cols-2 gap-3">
+          {([
+            { href: "/admin/devis", emoji: "📝", label: t("adm.devis2"), badge: commandes.length },
+            { href: "/admin/achats", emoji: "📋", label: t("adm.fileAchats"), badge: achats.length },
+            { href: "/admin/livraisons", emoji: "🏍️", label: t("adm.livraisons"), badge: aPointer },
+            { href: "/admin/stock", emoji: "📦", label: t("adm.stock"), badge: stock.length },
+            { href: "/admin/categories", emoji: "🏷️", label: t("adm.categories"), badge: null },
+            { href: "/admin/packs", emoji: "🍲", label: t("adm.packs"), badge: null },
+            {
+              href: "/admin/fournisseurs", emoji: "👨‍🌾", label: t("adm.fournisseurs"),
+              badge: fournisseurs.filter((f) => !f.actif).length > 0
+                ? fournisseurs.filter((f) => !f.actif).length
+                : null,
+              badgeLabel: fournisseurs.filter((f) => !f.actif).length > 0 ? t("adm.fourn.enAttente") : null,
+            },
+            { href: "/admin/livreurs", emoji: "🛵", label: t("adm.livreurs"), badge: livreurs.length },
+            { href: "/admin/compte", emoji: "🔐", label: t("adm.compte"), badge: null },
+          ] as const).map((item) => (
+            <button
+              key={item.href}
+              onClick={() => router.push(item.href)}
+              className="btn-mboa btn-surface !p-3 flex flex-col items-center gap-1.5 text-center !min-h-[72px] transition-transform hover:-translate-y-0.5"
+              style={{ position: "relative" }}
+            >
+              <span className="w-10 h-10 rounded-full bg-[var(--mboa-secondary-doux)] flex items-center justify-center text-2xl">
+                {item.emoji}
+              </span>
+              <span className="text-corps font-bold leading-tight">{item.label}</span>
+              {item.badge != null && (
+                <span className="absolute top-1.5 right-1.5 bg-[var(--mboa-primary)] text-white text-aide font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                  {item.badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
     </FondMboa>
   );

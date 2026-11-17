@@ -1014,3 +1014,35 @@ input, select, textarea, button {
   flex-shrink: 0;
   box-shadow: 0 3px 8px rgba(30, 81, 40, 0.2);
 }
+
+/* ============================================================
+   Accessibilité & micro-interactions
+   ============================================================ */
+
+/* Anneau de focus clavier visible partout */
+:focus-visible {
+  outline: 3px solid var(--mboa-secondary-vif);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Suppression de l'anneau pour les clics souris (conservé au clavier) */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Couleur de sélection assortie à la marque */
+::selection {
+  background: var(--mboa-primary);
+  color: #fff;
+}
+
+/* Défilement fluide à l'intérieur des pages */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Lignes de formulaire : icône discrète et curseur de saisie coloré */
+input, select, textarea {
+  caret-color: var(--mboa-primary-vif);
+}
