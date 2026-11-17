@@ -123,6 +123,11 @@ export default function DevisAdminPage() {
                 <span className="text-corps">{resumerQuantites(c.lignes)}</span>
                 <span className="text-chiffre text-[var(--mboa-primary)]">{formaterFcfa(commandeMontantAPayer(c))}</span>
               </div>
+              {(c.fraisLivraison ?? 0) > 0 && (
+                <p className="text-aide text-[var(--mboa-text-doux)]">
+                  {t("panier.produits")} {formaterFcfa(c.montantTotal)} + {t("panier.livraison").toLowerCase()} {formaterFcfa(c.fraisLivraison ?? 0)}
+                </p>
+              )}
 
               {/* Validation : choix du livreur puis envoi */}
               {estNouveau && livreurs.length > 0 && (
