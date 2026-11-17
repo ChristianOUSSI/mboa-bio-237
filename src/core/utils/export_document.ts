@@ -210,7 +210,7 @@ export function optionsDepuisCommande(c: Commande, telephone?: string | null): E
     lignes: c.lignes,
     telephone,
     code: null,
-    fraisLivraison: c.livreurTarif ?? 0,
+    fraisLivraison: c.fraisLivraison ?? c.livreurTarif ?? 0,
     reference: c.id.slice(0, 8).toUpperCase(),
     date: new Date(c.createdLe).toLocaleDateString("fr-CM", {
       day: "2-digit",
