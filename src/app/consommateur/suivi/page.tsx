@@ -184,6 +184,16 @@ export default function SuiviPage() {
                     </p>
                   )}
 
+                  {/* Détail des articles commandés */}
+                  <div className="bg-[var(--mboa-background)] rounded-xl p-2 mt-1">
+                    {c.lignes.map((l, i) => (
+                      <div key={i} className="flex justify-between text-aide py-0.5">
+                        <span>{l.quantite} × {l.nom}</span>
+                        <span className="text-[var(--mboa-text-doux)]">{formaterFcfa(Math.round(l.quantite * l.prix))}</span>
+                      </div>
+                    ))}
+                  </div>
+
                   {/* Adresse de livraison */}
                   {(c.livraisonQuartier || c.livraisonDetail) && (
                     <p className="text-aide text-[var(--mboa-text-doux)] mt-1">

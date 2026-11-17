@@ -101,6 +101,23 @@ export function supprimerCompteDistant(id: string): void {
 export async function synchroniserComptesAdmin(): Promise<number> {
   const client = mboaReseau();
   if (!client) return 0;
+
+  // Tombstones : les comptes supprimés sont purgés partout et jamais
+  // republiés (sinon un appareil les recréerait indéfiniment).
+  try {
+    const { data: tomb } = await client.from(TABLE_SUPPRIMES).select("id");
+    supprimesConnus = new Set(((tomb ?? []) as { id: string }[]).map((t) => t.id));
+    if (supprimesConnus.size > 0) {
+      const { cacheTout: tout } = await import("../data/base_locale");
+      const locaux = (await tout<CompteAuth | null>("compte")).filter(
+        (c): c is CompteAuth => c != null && supprimesConnus!.has(c.id),
+      );
+      for (const c of locaux) await purgerCompteLocal(c, c.id);
+    }
+  } catch {
+    /* table absente : on continue sans tombstones */
+  }
+
   const { data, error } = await client
     .from(TABLE)
     .select("id, data")
@@ -112,6 +129,7 @@ export async function synchroniserComptesAdmin(): Promise<number> {
   for (const ligne of data as { id: string; data: CompteAuth }[]) {
     const distant = ligne.data;
     if (!distant || !estCompteSynchronise(distant)) continue;
+    if (supprimesConnus?.has(distant.id) || distant.supprime) continue;
     const local = await cacheLire<CompteAuth>("compte", distant.id);
     // Pas de timestamp fiable côté local : le distant gagne si le local
     // est absent, inactif, ou si le distant a un createdLe plus récent.
@@ -165,6 +183,14 @@ export async function synchroniserComptesAdmin(): Promise<number> {
     if (groupe.length < 2) continue;
     for (const c of groupe) {
       if (c.id === meilleur.id || !c.actif) continue;
+      // Doublons bootstrap / super admin : ce sont des artefacts de synchro,
+      // pas de vrais comptes — on les SUPPRIME (local + distant) au lieu de
+      // simplement les révoquer, sinon la liste reste encombrée à jamais.
+      if (estBootstrap || c.role === "superadmin") {
+        await purgerCompteLocal(c, c.id);
+        void client.from(TABLE).delete().eq("id", c.id);
+        continue;
+      }
       const inactif = { ...c, actif: false };
       await cacheEcrire("compte", c.id, inactif);
       if (c.telephone) await cacheEcrire("compte", `tel:${c.telephone}`, inactif);

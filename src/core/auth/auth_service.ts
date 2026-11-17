@@ -154,8 +154,8 @@ export async function supprimerCompte(compte: CompteAuth): Promise<void> {
   await cacheEcrire(ENTITE, compte.id, null);
   if (compte.telephone) await cacheEcrire(ENTITE, cleTel(compte.telephone), null);
   if (compte.email) await cacheEcrire(ENTITE, cleMail(compte.email), null);
-  const { supprimerCompteDistant } = await import("./synchro_admin");
-  supprimerCompteDistant(compte.id);
+  const { supprimerCompteDefinitif } = await import("./synchro_admin");
+  await supprimerCompteDefinitif(compte);
 }
 
 /**
