@@ -341,7 +341,9 @@ export default function TableauAdmin() {
           🏍️ {t("adm.livraisons")} ({aPointer})
         </BoutonMboa>
         <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/fournisseurs")}>
-          👨‍🌾 {t("adm.fournisseurs")} ({fournisseurs.length})
+          👨‍🌾 {t("adm.fournisseurs")} ({fournisseurs.filter((f) => !f.actif).length > 0
+            ? `${fournisseurs.filter((f) => !f.actif).length} ${t("adm.fourn.enAttente")}`
+            : fournisseurs.length})
         </BoutonMboa>
         <BoutonMboa variant="surface" className="w-full" onClick={() => router.push("/admin/packs")}>
           🍲 {t("adm.packs")}
