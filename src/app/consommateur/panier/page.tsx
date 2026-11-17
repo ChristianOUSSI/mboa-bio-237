@@ -30,6 +30,9 @@ export default function PanierPage() {
   const [menuExport, setMenuExport] = useState(false);
   const [appelSouhaite, setAppelSouhaite] = useState(false);
   const [numeroContact, setNumeroContact] = useState("");
+  const [livraisonQuartier, setLivraisonQuartier] = useState("");
+  const [livraisonDetail, setLivraisonDetail] = useState("");
+  const [erreurAdresse, setErreurAdresse] = useState(false);
   const [copieOk, setCopieOk] = useState(false);
 
   const montantProduits = panier.montantTotal();
@@ -38,6 +41,11 @@ export default function PanierPage() {
 
   async function validerCommande() {
     if (!profil || panier.lignes.length === 0) return;
+    if (!livraisonQuartier.trim()) {
+      setErreurAdresse(true);
+      return;
+    }
+    setErreurAdresse(false);
     setEnCours(true);
     try {
       const lignes = panier.lignes.map((l) => ({
@@ -57,6 +65,8 @@ export default function PanierPage() {
         clientNom: profil.nom,
         clientVillage: profil.village,
         clientTel: profil.telephone || null,
+        livraisonQuartier: livraisonQuartier.trim(),
+        livraisonDetail: livraisonDetail.trim() || null,
       });
       panier.vider();
       router.push("/consommateur/suivi");
@@ -179,6 +189,35 @@ export default function PanierPage() {
                   );
                 })}
               </div>
+            </CarteMboa>
+
+            {/* Adresse de livraison - obligatoire : sans quartier, le
+                livreur ne sait pas où se rendre. */}
+            <CarteMboa className="mt-4 anim-apparition">
+              <p className="text-corps font-bold mb-2">📍 {t("panier.adresse")}</p>
+              <label className="text-aide block mb-1 font-bold">{t("panier.quartier")}</label>
+              <input
+                type="text"
+                placeholder={t("panier.quartierPh")}
+                value={livraisonQuartier}
+                onChange={(e) => { setLivraisonQuartier(e.target.value); setErreurAdresse(false); }}
+                className="champ-mboa mb-2"
+                style={{ fontSize: 18 }}
+              />
+              <label className="text-aide block mb-1 font-bold">{t("panier.repere")}</label>
+              <input
+                type="text"
+                placeholder={t("panier.reperePh")}
+                value={livraisonDetail}
+                onChange={(e) => setLivraisonDetail(e.target.value)}
+                className="champ-mboa"
+                style={{ fontSize: 18 }}
+              />
+              {erreurAdresse && (
+                <p className="text-[var(--mboa-error)] text-aide mt-2 font-bold anim-secousse">
+                  {t("panier.quartierRequis")}
+                </p>
+              )}
             </CarteMboa>
 
             {/* Cost summary */}

@@ -28,6 +28,10 @@ export interface Commande {
   appelSouhaite: boolean;
   /** Numéro à joindre pour cet appel (sinon le téléphone du profil). */
   numeroContact?: string | null;
+  /** Quartier de livraison choisi par le client (ex. Akwa, Deïdo). */
+  livraisonQuartier?: string | null;
+  /** Repère précis : « derrière le marché, 2ème étage »… */
+  livraisonDetail?: string | null;
   createdLe: string;
   livreeLe?: string | null;
   recueLe?: string | null;
@@ -145,6 +149,8 @@ export function commandeFromMap(map: Record<string, unknown>): Commande {
     appelVocalFait: (map.appel_vocal_fait as boolean) ?? false,
     appelSouhaite: (map.appel_souhaite as boolean) ?? false,
     numeroContact: (map.numero_contact as string) ?? null,
+    livraisonQuartier: (map.livraison_quartier as string) ?? null,
+    livraisonDetail: (map.livraison_detail as string) ?? null,
     createdLe: (map.created_at as string) ?? new Date().toISOString(),
     livreeLe: (map.livree_le as string) ?? null,
     recueLe: (map.recue_le as string) ?? null,

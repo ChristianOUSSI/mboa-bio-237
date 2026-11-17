@@ -108,7 +108,7 @@ export async function toutesCommandes(): Promise<Commande[]> {
   return cacheTout<Commande>("commande");
 }
 
-export async function commander(lignes: { produitId: string; slug: string; nom: string; categorie: string; quantite: number; prix: number; unite: string; photo: string; composants?: { slug: string; nom?: string | null; quantite: number; unite: string }[] }[], consommateurId: string, contact?: { appelSouhaite?: boolean; numeroContact?: string | null; clientNom?: string | null; clientVillage?: string | null; clientTel?: string | null }): Promise<Commande | null> {
+export async function commander(lignes: { produitId: string; slug: string; nom: string; categorie: string; quantite: number; prix: number; unite: string; photo: string; composants?: { slug: string; nom?: string | null; quantite: number; unite: string }[] }[], consommateurId: string, contact?: { appelSouhaite?: boolean; numeroContact?: string | null; clientNom?: string | null; clientVillage?: string | null; clientTel?: string | null; livraisonQuartier?: string | null; livraisonDetail?: string | null }): Promise<Commande | null> {
   const produitsJson = lignes.map((l) => ({
     produit_id: l.produitId,
     slug: l.slug,
@@ -143,13 +143,17 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
       const patch = {
         appel_souhaite: contact?.appelSouhaite ?? false,
         numero_contact: contact?.numeroContact ?? null,
+        livraison_quartier: contact?.livraisonQuartier ?? null,
+        livraison_detail: contact?.livraisonDetail ?? null,
       };
-      if (patch.appel_souhaite || patch.numero_contact) {
+      if (patch.appel_souhaite || patch.numero_contact || patch.livraison_quartier || patch.livraison_detail) {
         void mboaReseau()!.from("commandes").update(patch).eq("id", commande.id);
         return {
           ...commande,
           appelSouhaite: patch.appel_souhaite,
           numeroContact: patch.numero_contact,
+          livraisonQuartier: patch.livraison_quartier,
+          livraisonDetail: patch.livraison_detail,
         };
       }
       return commande;
@@ -170,6 +174,8 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
         client_nom: contact?.clientNom ?? null,
         client_village: contact?.clientVillage ?? null,
         client_tel: contact?.clientTel ?? null,
+        livraison_quartier: contact?.livraisonQuartier ?? null,
+        livraison_detail: contact?.livraisonDetail ?? null,
       })
       .select("*")
       .maybeSingle();
@@ -209,6 +215,8 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
     appelVocalFait: false,
     appelSouhaite: contact?.appelSouhaite ?? false,
     numeroContact: contact?.numeroContact ?? null,
+    livraisonQuartier: contact?.livraisonQuartier ?? null,
+    livraisonDetail: contact?.livraisonDetail ?? null,
     createdLe: new Date().toISOString(),
     clos: false,
   };
@@ -1332,6 +1340,7 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
         telephone_livreur: c.livreurTelephone ?? null, tarif_livreur: c.livreurTarif ?? null,
         tarif_course: c.livreurTarif ?? null, paye_le: null,
         appel_souhaite: c.appelSouhaite, numero_contact: c.numeroContact ?? null,
+        livraison_quartier: c.livraisonQuartier ?? null, livraison_detail: c.livraisonDetail ?? null,
       });
       return !error;
     }

@@ -159,6 +159,14 @@ export default function SuiviPage() {
                     </span>
                   </div>
 
+                  {/* Adresse de livraison */}
+                  {(c.livraisonQuartier || c.livraisonDetail) && (
+                    <p className="text-aide text-[var(--mboa-text-doux)] mt-1">
+                      📍 {c.livraisonQuartier}
+                      {c.livraisonDetail ? ` - ${c.livraisonDetail}` : ""}
+                    </p>
+                  )}
+
                   {/* Who is coming */}
                   {c.livreurNom && (
                     <div className="bg-[var(--mboa-primary-doux)] rounded-xl p-2 mb-2">
