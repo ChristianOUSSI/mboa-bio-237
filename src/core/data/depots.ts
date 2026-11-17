@@ -833,6 +833,32 @@ export async function suiviCommande(commandeId: string): Promise<SuiviColis> {
     }
   }
   suivi.positionDepart = DEPOT_MBOA;
+  // Destination de secours : la position GPS fournie à la commande,
+  // si le client n'a pas (encore) partagé sa position en direct.
+  if (!suivi.positionDestination) {
+    let cmd = await cacheLire<Commande>("commande", commandeId);
+    if (!cmd && client) {
+      const { data } = await client
+        .from("commandes")
+        .select("livraison_lat, livraison_lng")
+        .eq("id", commandeId)
+        .maybeSingle();
+      if (data && data.livraison_lat != null && data.livraison_lng != null) {
+        suivi.positionDestination = {
+          latitude: Number(data.livraison_lat),
+          longitude: Number(data.livraison_lng),
+          horodatage: "",
+        };
+      }
+    }
+    if (!suivi.positionDestination && cmd?.livraisonLat != null && cmd?.livraisonLng != null) {
+      suivi.positionDestination = {
+        latitude: cmd.livraisonLat,
+        longitude: cmd.livraisonLng,
+        horodatage: "",
+      };
+    }
+  }
   return suivi;
 }
 
