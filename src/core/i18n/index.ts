@@ -448,6 +448,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "pack.ingredients": "Ingrédients",
     "pack.voir": "Voir le contenu",
     "pack.introuvable": "Ce plat est introuvable ou n'est plus au comptoir.",
+    "pack.videIngredients": "La composition de ce plat n'est pas encore détaillée.",
     "pack.ajouterPanier": "Ajouter au panier",
 
     // Admin - stock
@@ -1016,6 +1017,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "pack.ingredients": "Ingredients",
     "pack.voir": "See contents",
     "pack.introuvable": "This dish is unavailable.",
+    "pack.videIngredients": "This dish composition is not detailed yet.",
     "pack.ajouterPanier": "Add to cart",
 
     // Admin - stock

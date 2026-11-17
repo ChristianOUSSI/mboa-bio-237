@@ -137,7 +137,10 @@ function PagePackInterne() {
         <h2 className="text-titre titre-section">{t("pack.ingredients")}</h2>
         <CarteMboa>
           <ul className="space-y-2">
-            {produit.composants.map((c, i) => (
+            {produit.composants.length === 0 ? (
+              <p className="text-corps text-[var(--mboa-text-doux)] text-center py-4">{t("pack.videIngredients")}</p>
+            ) : (
+            produit.composants.map((c, i) => (
               <li key={i} className="flex items-center gap-3">
                 <span className="w-8 h-8 rounded-full bg-[var(--mboa-secondary-doux)] flex items-center justify-center text-lg" aria-hidden>
                   🥬
@@ -149,15 +152,23 @@ function PagePackInterne() {
                   {c.quantite} {unitePour(c.unite, c.quantite)}
                 </span>
               </li>
-            ))}
+            ))
+            )}
           </ul>
         </CarteMboa>
 
-        <Link href="/consommateur/panier">
-          <BoutonMboa variant="surface" className="w-full">
-            🛒 {t("panier.titre")}
-          </BoutonMboa>
-        </Link>
+        <div className="sticky bottom-4 z-30 mt-2">
+          {!produitEstRupture(produit) && (
+            <BoutonMboa variant="primary" onClick={poserAuPanier} className="w-full !text-titre mb-2">
+              🛒 {t("pack.ajouterPanier")}
+            </BoutonMboa>
+          )}
+          <Link href="/consommateur/panier">
+            <BoutonMboa variant="surface" className="w-full">
+              {t("panier.titre")}
+            </BoutonMboa>
+          </Link>
+        </div>
       </div>
     </FondMboa>
   );

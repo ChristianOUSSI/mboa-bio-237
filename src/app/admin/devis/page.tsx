@@ -137,7 +137,7 @@ export default function DevisAdminPage() {
                   <select
                     value={livreurSelectionne}
                     onChange={(e) => setLivreurChoisi({ ...livreurChoisi, [c.id]: e.target.value })}
-                    className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl"
+                    className="champ-mboa w-full"
                     style={{ fontSize: 18 }}
                   >
                     {livreurs.map((l) => (

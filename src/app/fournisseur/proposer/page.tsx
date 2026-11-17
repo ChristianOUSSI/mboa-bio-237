@@ -115,7 +115,7 @@ export default function ProposerRecoltePage() {
             placeholder={t("prop.nomPh")}
             value={nom}
             onChange={(e) => setNom(e.target.value)}
-            className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl"
+            className="champ-mboa w-full"
             style={{ fontSize: 20 }}
           />
         </CarteMboa>
@@ -152,7 +152,7 @@ export default function ProposerRecoltePage() {
           <select
             value={unite}
             onChange={(e) => setUnite(e.target.value as Unite)}
-            className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl"
+            className="champ-mboa w-full"
             style={{ fontSize: 20 }}
           >
             {Object.values(Unite).map((u) => (
@@ -186,7 +186,7 @@ export default function ProposerRecoltePage() {
             placeholder="FCFA"
             value={prix}
             onChange={(e) => setPrix(e.target.value)}
-            className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl text-chiffre"
+            className="champ-mboa w-full text-chiffre"
             style={{ fontSize: 32 }}
           />
           {prix && quantite > 0 && (
@@ -196,15 +196,17 @@ export default function ProposerRecoltePage() {
           )}
         </CarteMboa>
 
-        {/* Send button */}
-        <BoutonMboa
-          variant="primary"
-          onClick={envoyer}
-          disabled={!nom.trim() || !prix || enCours}
-          className="w-full !text-titre"
-        >
-          {enCours ? t("rej.envoi") : t("prop.envoyer")}
-        </BoutonMboa>
+        {/* Send button - toujours visible en bas */}
+        <div className="sticky bottom-4 z-30 mt-2">
+          <BoutonMboa
+            variant="primary"
+            onClick={envoyer}
+            disabled={!nom.trim() || !prix || enCours}
+            className="w-full !text-titre"
+          >
+            {enCours ? t("rej.envoi") : t("prop.envoyer")}
+          </BoutonMboa>
+        </div>
       </div>
     </FondMboa>
   );

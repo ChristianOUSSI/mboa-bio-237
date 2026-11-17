@@ -155,7 +155,8 @@ export default function RejoindrePage() {
 
   if (succes) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-screen bg-[var(--mboa-background)]">
+      <FondMboa className="items-center justify-center">
+      <div className="flex-1 flex flex-col items-center justify-center min-h-screen">
         <div className="text-6xl mb-4">✅</div>
         <h1 className="text-ecran text-[var(--mboa-primary)]">{t("rej.succes.titre")}</h1>
         <p className="text-corps text-[var(--mboa-text-doux)] mt-2 text-center px-6 italic">
@@ -165,6 +166,7 @@ export default function RejoindrePage() {
           {t("rej.succes.btn")}
         </BoutonMboa>
       </div>
+      </FondMboa>
     );
   }
 
@@ -198,7 +200,7 @@ export default function RejoindrePage() {
             placeholder={t("rej.nomPh")}
             value={nom}
             onChange={(e) => setNom(e.target.value)}
-            className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
+            className="champ-mboa w-full mb-2"
             style={{ fontSize: 20 }}
           />
           <input
@@ -207,13 +209,13 @@ export default function RejoindrePage() {
             placeholder={t("rej.telPh")}
             value={telephone}
             onChange={(e) => setTelephone(e.target.value)}
-            className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
+            className="champ-mboa w-full mb-2"
             style={{ fontSize: 20 }}
           />
           <select
             value={village}
             onChange={(e) => setVillage(e.target.value)}
-            className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl"
+            className="champ-mboa w-full"
             style={{ fontSize: 18 }}
           >
             <option value="">{t("rej.villagePh")}</option>
@@ -257,7 +259,7 @@ export default function RejoindrePage() {
               placeholder={t("rej.nomProduitPh")}
               value={p.nom}
               onChange={(e) => majProduit(i, { nom: e.target.value })}
-              className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
+              className="champ-mboa w-full mb-2"
               style={{ fontSize: 18 }}
             />
 
@@ -330,7 +332,7 @@ export default function RejoindrePage() {
               placeholder={t("rej.prixPh")}
               value={p.prix}
               onChange={(e) => majProduit(i, { prix: e.target.value })}
-              className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl text-chiffre mb-2"
+              className="champ-mboa w-full text-chiffre mb-2"
               style={{ fontSize: 24 }}
             />
             {p.prix && p.quantite > 0 && (
@@ -367,7 +369,7 @@ export default function RejoindrePage() {
             placeholder={t("rej.notePh")}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl"
+            className="champ-mboa w-full"
             style={{ fontSize: 16, minHeight: 60 }}
           />
         </CarteMboa>

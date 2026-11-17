@@ -211,7 +211,7 @@ export default function PacksAdminPage() {
             placeholder={t("adm.pack.nomHint")}
             value={nom}
             onChange={(e) => setNom(e.target.value)}
-            className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
+            className="champ-mboa w-full mb-2"
             style={{ fontSize: 20 }}
           />
 
@@ -265,7 +265,7 @@ export default function PacksAdminPage() {
                 placeholder="E.g.: 2500"
                 value={prix}
                 onChange={(e) => setPrix(e.target.value)}
-                className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl text-chiffre"
+                className="champ-mboa w-full text-chiffre"
                 style={{ fontSize: 24 }}
               />
             </div>
@@ -277,7 +277,7 @@ export default function PacksAdminPage() {
                 min={1}
                 value={stock}
                 onChange={(e) => setStock(e.target.value)}
-                className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl text-chiffre text-center"
+                className="champ-mboa w-full text-chiffre text-center"
                 style={{ fontSize: 24 }}
               />
             </div>

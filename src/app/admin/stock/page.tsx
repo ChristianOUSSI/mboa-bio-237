@@ -329,7 +329,7 @@ export default function StockAdminPage() {
               placeholder={t("adm.stk.nom")}
               value={npNom}
               onChange={(e) => setNpNom(e.target.value)}
-              className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
+              className="champ-mboa w-full mb-2"
               style={{ fontSize: 20 }}
             />
 
@@ -360,7 +360,7 @@ export default function StockAdminPage() {
             <select
               value={npUnite}
               onChange={(e) => setNpUnite(e.target.value as Unite)}
-              className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
+              className="champ-mboa w-full mb-2"
               style={{ fontSize: 18 }}
             >
               {Object.values(Unite).map((u) => (
@@ -377,7 +377,7 @@ export default function StockAdminPage() {
                   placeholder="E.g.: 500"
                   value={npPrix}
                   onChange={(e) => setNpPrix(e.target.value)}
-                  className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl text-chiffre"
+                  className="champ-mboa w-full text-chiffre"
                   style={{ fontSize: 24 }}
                 />
               </div>
@@ -389,7 +389,7 @@ export default function StockAdminPage() {
                   placeholder="E.g.: 300"
                   value={npPrixAchat}
                   onChange={(e) => setNpPrixAchat(e.target.value)}
-                  className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl text-chiffre"
+                  className="champ-mboa w-full text-chiffre"
                   style={{ fontSize: 24 }}
                 />
               </div>
@@ -404,7 +404,7 @@ export default function StockAdminPage() {
                   placeholder="E.g.: 50"
                   value={npQuantite}
                   onChange={(e) => setNpQuantite(e.target.value)}
-                  className="w-full p-3 border-2 border-[var(--mboa-primary)] rounded-xl text-chiffre"
+                  className="champ-mboa w-full text-chiffre"
                   style={{ fontSize: 24 }}
                 />
               </div>

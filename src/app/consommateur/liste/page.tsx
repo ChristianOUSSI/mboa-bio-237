@@ -208,7 +208,7 @@ export default function ListePage() {
               )}
             </CarteMboa>
 
-            <div className="mt-4 flex gap-2">
+            <div className="sticky bottom-4 z-30 mt-4 flex gap-2">
               <BoutonMboa variant="surface" onClick={() => setModeAjout(!modeAjout)} className="flex-1">
                 {t("liste.ajouterBtn")}
               </BoutonMboa>
