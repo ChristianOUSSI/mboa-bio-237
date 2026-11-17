@@ -31,18 +31,20 @@ async function dataUrlRedimensionnee(dataUrl: string): Promise<string> {
 }
 
 /**
- * Ouvre le sélecteur de fichier (appareil photo sur mobile via `capture`).
+ * Ouvre le sélecteur de fichier.
+ * - `"appareil"` : force l'appareil photo (`capture="environment"`).
+ * - `"galerie"` : galerie / fichiers uniquement.
+ * - `undefined` : choix système (caméra / galerie / fichiers).
  * Retourne une data URL JPEG compressée, ou null si annulé.
  */
-export function choisirPhotoDepuisAppareil(): Promise<string | null> {
+export function choisirPhotoDepuisAppareil(mode?: "appareil" | "galerie"): Promise<string | null> {
   return new Promise((resolve) => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
-    // PAS d'attribut `capture` : il force l'appareil photo et bloque la
-    // galerie sur certains téléphones. Sans lui, le système propose
-    // « Appareil photo / Galerie / Fichiers ».
-    input.style.display = "none";
+    if (mode === "appareil") {
+      input.setAttribute("capture", "environment");
+    }
     // iOS Safari exige que l'input soit dans le DOM pour ouvrir le sélecteur.
     document.body.appendChild(input);
     input.onchange = async (e) => {

@@ -172,6 +172,13 @@ export default function AccueilLivreur() {
                     ))}
                   </div>
 
+                  {(c.livraisonQuartier || c.livraisonDetail) && (
+                    <p className="text-aide mt-2" style={{ color: "var(--mboa-primary)" }}>
+                      📍 {c.livraisonQuartier}
+                      {c.livraisonDetail ? ` - ${c.livraisonDetail}` : ""}
+                    </p>
+                  )}
+
                   {c.appelSouhaite && (
                     <p className="text-aide mt-2 font-bold" style={{ color: "var(--mboa-primary)" }}>
                       📞 {t("liv.appelerAvant")}

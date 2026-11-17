@@ -226,14 +226,26 @@ export default function PacksAdminPage() {
             <button
               type="button"
               onClick={async () => {
-                const dataUrl = await choisirPhotoDepuisAppareil();
+                const dataUrl = await choisirPhotoDepuisAppareil("appareil");
                 if (dataUrl) setPhoto(dataUrl);
               }}
-              className="px-4 rounded-xl border-2 border-[var(--mboa-primary)] bg-[var(--mboa-primary)] text-white font-bold"
-              style={{ fontSize: 18 }}
-              aria-label={t("adm.pack.photo")}
+              className="px-3 rounded-xl border-2 border-[var(--mboa-primary)] bg-[var(--mboa-primary)] text-white font-bold"
+              style={{ fontSize: 15 }}
+              aria-label={t("adm.stk.appareil")}
             >
               📷
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                const dataUrl = await choisirPhotoDepuisAppareil("galerie");
+                if (dataUrl) setPhoto(dataUrl);
+              }}
+              className="px-3 rounded-xl border-2 border-[var(--mboa-primary)] bg-[var(--mboa-background)] text-[var(--mboa-primary)] font-bold"
+              style={{ fontSize: 15 }}
+              aria-label={t("adm.stk.galerie")}
+            >
+              🖼️
             </button>
           </div>
           {photo.startsWith("data:") && (

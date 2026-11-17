@@ -168,6 +168,13 @@ export default function DevisAdminPage() {
                 </p>
               )}
 
+              {(c.livraisonQuartier || c.livraisonDetail) && (
+                <p className="text-aide mt-1" style={{ color: "var(--mboa-primary)" }}>
+                  📍 {c.livraisonQuartier}
+                  {c.livraisonDetail ? ` - ${c.livraisonDetail}` : ""}
+                </p>
+              )}
+
               {c.appelSouhaite && (
                 <p className="text-aide mt-2 font-bold" style={{ color: "var(--mboa-primary)" }}>
                   📞 {t("adm.dev.appelAvant")}

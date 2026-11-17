@@ -13,6 +13,8 @@ import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
 
 const CLE_PAYES = "livreurs_payes";
+const CLE_FRAIS = "frais_livraison";
+const FRAIS_LIVRAISON_DEFAUT = 500;
 
 export default function LivraisonsPage() {
   const router = useRouter();
@@ -21,11 +23,26 @@ export default function LivraisonsPage() {
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [payes, setPayes] = useState<Set<string>>(new Set());
   const [enCours, setEnCours] = useState<string | null>(null);
+  const [fraisSaisie, setFraisSaisie] = useState("");
+  const [fraisSauve, setFraisSauve] = useState(false);
 
   async function charger() {
-    const [c, p] = await Promise.all([toutesCommandes(), etatLire<string[]>(CLE_PAYES)]);
+    const [c, p, f] = await Promise.all([
+      toutesCommandes(),
+      etatLire<string[]>(CLE_PAYES),
+      etatLire<number>(CLE_FRAIS),
+    ]);
     setCommandes(c);
     setPayes(new Set(p ?? []));
+    setFraisSaisie(String(f ?? FRAIS_LIVRAISON_DEFAUT));
+  }
+
+  async function sauverFrais() {
+    const n = parseInt(fraisSaisie, 10);
+    if (!Number.isFinite(n) || n < 0) return;
+    await etatEcrire(CLE_FRAIS, n);
+    setFraisSauve(true);
+    setTimeout(() => setFraisSauve(false), 2000);
   }
 
   useEffect(() => {
@@ -69,6 +86,26 @@ export default function LivraisonsPage() {
     <FondMboa>
       <EnTetePage titre={t("adm.liv.titre")} sousTitre={t("adm.liv.sousTitre")} onRetour={() => router.back()} />
       <div className="flex-1 p-4 space-y-3">
+        {/* Tarif de livraison : fixé par l'admin, lu par le panier client */}
+        <CarteMboa>
+          <p className="text-corps font-bold mb-2">🛵 {t("adm.liv.frais")}</p>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={fraisSaisie}
+              onChange={(e) => setFraisSaisie(e.target.value)}
+              placeholder="500"
+              className="flex-1 p-3 border-2 border-[var(--mboa-primary)] rounded-xl"
+              style={{ fontSize: 18 }}
+            />
+            <BoutonMboa variant="primary" onClick={sauverFrais}>
+              {fraisSauve ? "✓" : t("adm.liv.fraisSauve")}
+            </BoutonMboa>
+          </div>
+          <p className="text-aide text-[var(--mboa-text-doux)] mt-1">{t("adm.liv.fraisHint")}</p>
+        </CarteMboa>
         <h2 className="text-titre">{t("adm.liv.aPayer")} ({aPayer.length})</h2>
         {aPayer.length === 0 ? (
           <CarteMboa>
@@ -84,6 +121,12 @@ export default function LivraisonsPage() {
                 <BoutonVoix texte={`${t("adm.liv.voixFin")} ${c.livreurTarif ?? 0} francs`} />
               </div>
               <p className="text-corps mb-1">{resumerQuantites(c.lignes)}</p>
+              {(c.livraisonQuartier || c.livraisonDetail) && (
+                <p className="text-aide mt-1" style={{ color: "var(--mboa-primary)" }}>
+                  📍 {c.livraisonQuartier}
+                  {c.livraisonDetail ? ` - ${c.livraisonDetail}` : ""}
+                </p>
+              )}
               <div className="flex justify-between items-center mb-2">
                 <span className="text-aide text-[var(--mboa-text-doux)]">
                   {c.livreurNom ?? t("adm.liv.livreur")}
@@ -116,6 +159,12 @@ export default function LivraisonsPage() {
                   </span>
                 </div>
                 <p className="text-corps">{resumerQuantites(c.lignes)}</p>
+                {(c.livraisonQuartier || c.livraisonDetail) && (
+                  <p className="text-aide mt-1" style={{ color: "var(--mboa-primary)" }}>
+                    📍 {c.livraisonQuartier}
+                    {c.livraisonDetail ? ` - ${c.livraisonDetail}` : ""}
+                  </p>
+                )}
                 {c.livreurNom && (
                   <p className="text-aide text-[var(--mboa-text-doux)] mt-1">{t("adm.liv.livreur2")} : {c.livreurNom}</p>
                 )}

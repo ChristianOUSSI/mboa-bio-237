@@ -13,11 +13,13 @@ import {
   partagerWhatsApp,
   imprimerDocument,
 } from "@/core/utils/export_document";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
+import { etatLire } from "@/core/data/base_locale";
 
 const FRAIS_LIVRAISON_DEFAUT = 500;
+const CLE_FRAIS = "frais_livraison";
 
 export default function PanierPage() {
   const router = useRouter();
@@ -34,9 +36,16 @@ export default function PanierPage() {
   const [livraisonDetail, setLivraisonDetail] = useState("");
   const [erreurAdresse, setErreurAdresse] = useState(false);
   const [copieOk, setCopieOk] = useState(false);
+  const [fraisLivraisonCfg, setFraisLivraisonCfg] = useState(FRAIS_LIVRAISON_DEFAUT);
+
+  useEffect(() => {
+    void etatLire<number>(CLE_FRAIS).then((f) => {
+      if (typeof f === "number" && f >= 0) setFraisLivraisonCfg(f);
+    });
+  }, []);
 
   const montantProduits = panier.montantTotal();
-  const fraisLivraison = montantProduits > 0 ? FRAIS_LIVRAISON_DEFAUT : 0;
+  const fraisLivraison = montantProduits > 0 ? fraisLivraisonCfg : 0;
   const montantTotal = montantProduits + fraisLivraison;
 
   async function validerCommande() {

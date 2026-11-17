@@ -108,8 +108,8 @@ export default function StockAdminPage() {
     }
   }
 
-  async function prendrePhotoProduit() {
-    const dataUrl = await choisirPhotoDepuisAppareil();
+  async function prendrePhotoProduit(mode?: "appareil" | "galerie") {
+    const dataUrl = await choisirPhotoDepuisAppareil(mode);
     if (dataUrl) setNpPhoto(dataUrl);
   }
 
@@ -436,10 +436,7 @@ export default function StockAdminPage() {
             </div>
 
             {/* Photo */}
-            <div
-              onClick={prendrePhotoProduit}
-              className="w-full h-32 bg-[var(--mboa-background)] rounded-xl flex items-center justify-center cursor-pointer border-2 border-dashed border-[var(--mboa-primary)] mb-3"
-            >
+            <div className="w-full h-32 bg-[var(--mboa-background)] rounded-xl flex items-center justify-center border-2 border-dashed border-[var(--mboa-primary)] mb-2 overflow-hidden">
               {npPhoto ? (
                 <img src={npPhoto} alt="Product" className="w-full h-full object-cover rounded-xl" />
               ) : (
@@ -448,6 +445,22 @@ export default function StockAdminPage() {
                   <p className="text-aide text-[var(--mboa-text-doux)] mt-1">{t("adm.stk.photo")}</p>
                 </div>
               )}
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => prendrePhotoProduit("appareil")}
+                className="btn-mboa btn-surface !min-h-[48px]"
+              >
+                📷 {t("adm.stk.appareil")}
+              </button>
+              <button
+                type="button"
+                onClick={() => prendrePhotoProduit("galerie")}
+                className="btn-mboa btn-surface !min-h-[48px]"
+              >
+                🖼️ {t("adm.stk.galerie")}
+              </button>
             </div>
 
             <BoutonMboa
