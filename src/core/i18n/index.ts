@@ -217,6 +217,10 @@ const DICT: Record<Lang, Record<string, string>> = {
     "suivi.confirmer": "Confirmer la réception",
     "suivi.annule": "Annulée :",
     "suivi.vide": "Pas encore de commande",
+    "carte.attente": "La carte s'affichera quand le livreur partagera sa position",
+    "carte.comptoir": "Comptoir",
+    "carte.vous": "Vous",
+    "carte.reste": "Reste",
 
     // Espace fournisseur
     "fourn.gainsPaye": "Déjà payé par Mboa",
@@ -780,6 +784,10 @@ const DICT: Record<Lang, Record<string, string>> = {
     "suivi.confirmer": "Confirm receipt",
     "suivi.annule": "Cancelled:",
     "suivi.vide": "No orders yet",
+    "carte.attente": "The map will appear once the driver shares their position",
+    "carte.comptoir": "Counter",
+    "carte.vous": "You",
+    "carte.reste": "Left",
 
     // Espace fournisseur
     "fourn.gainsPaye": "Already paid by Mboa",

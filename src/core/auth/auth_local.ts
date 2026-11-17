@@ -34,6 +34,8 @@ export interface CompteAuth {
    *  hash local - on n'appelle jamais Supabase pour eux. */
   authSupabase?: boolean;
   createdLe: string;
+  /** Tombstone : le compte a été supprimé — ne plus republier. */
+  supprime?: boolean;
 }
 
 /** Empreinte de l'appareil - identifie une installation de PWA. */
@@ -97,6 +99,11 @@ export function motDePasseAdminInitial(): string {
 
 /** Identifiant de connexion du compte admin de bootstrap. */
 export const EMAIL_ADMIN_INITIAL = "admin123@test.com";
+
+/** Ids fixes des comptes bootstrap : tous les appareils écrivent la même
+ *  ligne de synchro → jamais de doublon, quel que soit l'appareil. */
+export const ID_COMPTE_ADMIN_BOOTSTRAP = "bootstrap-admin";
+export const ID_COMPTE_SUPERADMIN = "superadmin-maitre";
 
 /** Ancien identifiant bootstrap — migré automatiquement vers le nouveau. */
 export const EMAIL_ADMIN_INITIAL_ANTERIEUR = "admin@mboa237";

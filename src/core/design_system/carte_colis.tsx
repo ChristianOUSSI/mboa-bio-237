@@ -1,6 +1,7 @@
 "use client";
 
 import { SuiviColis, PositionGps, distanceRestante, tempsRestant } from "../types/suivi_colis";
+import { useTr } from "../i18n";
 
 interface Props {
   suivi: SuiviColis;
@@ -40,6 +41,7 @@ function projeter(points: PositionGps[]): Map<PositionGps, { x: number; y: numbe
  * GPS du livreur actualisée en continu.
  */
 export function CarteColis({ suivi }: Props) {
+  const t = useTr();
   const points: PositionGps[] = [];
   if (suivi.positionDepart) points.push(suivi.positionDepart);
   if (suivi.positionDestination) points.push(suivi.positionDestination);
@@ -49,7 +51,7 @@ export function CarteColis({ suivi }: Props) {
     return (
       <div className="bg-[var(--mboa-surface)] rounded-2xl p-4 text-center">
         <p className="text-aide text-[var(--mboa-text-doux)]">
-          La carte s’affichera quand le livreur partagera sa position
+          {t("carte.attente")}
         </p>
       </div>
     );
@@ -98,7 +100,7 @@ export function CarteColis({ suivi }: Props) {
         {depart && (
           <g>
             <circle cx={depart.x} cy={depart.y} r="10" fill="var(--mboa-primary)" />
-            <text x={depart.x} y={depart.y + 22} textAnchor="middle" fontSize="11" fill="var(--mboa-text)">Comptoir</text>
+            <text x={depart.x} y={depart.y + 22} textAnchor="middle" fontSize="11" fill="var(--mboa-text)">{t("carte.comptoir")}</text>
           </g>
         )}
 
@@ -106,7 +108,7 @@ export function CarteColis({ suivi }: Props) {
         {dest && (
           <g>
             <circle cx={dest.x} cy={dest.y} r="10" fill="var(--mboa-secondary)" />
-            <text x={dest.x} y={dest.y + 22} textAnchor="middle" fontSize="11" fill="var(--mboa-text)">Vous</text>
+            <text x={dest.x} y={dest.y + 22} textAnchor="middle" fontSize="11" fill="var(--mboa-text)">{t("carte.vous")}</text>
           </g>
         )}
 
@@ -125,7 +127,7 @@ export function CarteColis({ suivi }: Props) {
       {(suivi.positionActuelle && suivi.positionDestination) && (
         <div className="flex justify-between mt-2 px-1">
           <span className="text-aide text-[var(--mboa-text-doux)]">
-            Reste : <strong>{distanceRestante(suivi)}</strong>
+            {t("carte.reste")} : <strong>{distanceRestante(suivi)}</strong>
           </span>
           <span className="text-aide text-[var(--mboa-text-doux)]">
             ≈ <strong>{tempsRestant(suivi)}</strong>

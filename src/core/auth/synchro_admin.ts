@@ -24,6 +24,35 @@ import {
  */
 
 const TABLE = "admin_comptes";
+const TABLE_SUPPRIMES = "comptes_supprimes";
+
+/** Ids des comptes supprimés (tombstones) — chargés à chaque synchro. */
+let supprimesConnus: Set<string> | null = null;
+
+/** Purge locale d'un compte (id + alias tel/mail). */
+async function purgerCompteLocal(compte: CompteAuth | null, id: string): Promise<void> {
+  await cacheEcrire("compte", id, null);
+  if (compte?.telephone) await cacheEcrire("compte", `tel:${compte.telephone}`, null);
+  if (compte?.email) await cacheEcrire("compte", `mail:${compte.email}`, null);
+}
+
+/** Enregistre la suppression d'un compte : tombstone distante + purge locale. */
+export async function supprimerCompteDefinitif(compte: CompteAuth): Promise<void> {
+  const client = mboaReseau();
+  if (client) {
+    // Tombstone : les autres appareils purgeront leur copie locale à la
+    // prochaine synchro et ne la republieront plus.
+    void client
+      .from(TABLE_SUPPRIMES)
+      .upsert({ id: compte.id, supprime_le: new Date().toISOString() })
+      .then(({ error }) => {
+        if (error) console.warn("[synchro] tombstone:", error.message);
+      });
+    void client.from(TABLE).delete().eq("id", compte.id);
+  }
+  supprimesConnus?.add(compte.id);
+  await purgerCompteLocal(compte, compte.id);
+}
 
 /** Rôles « à privilèges » : déduplication anti-doublons bootstrap activée. */
 function estCompteAdmin(c: CompteAuth): boolean {
@@ -39,6 +68,8 @@ function estCompteSynchronise(_c: CompteAuth): boolean {
 /** Pousse un compte vers Supabase (fire-and-forget, jamais bloquant). */
 export function publierCompteAdmin(compte: CompteAuth): void {
   if (!estCompteSynchronise(compte)) return;
+  // Ne jamais republier un compte supprimé (tombstone connue).
+  if (supprimesConnus?.has(compte.id)) return;
   const client = mboaReseau();
   if (!client) return;
   void client

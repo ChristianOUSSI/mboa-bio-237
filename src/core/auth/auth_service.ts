@@ -1,4 +1,4 @@
-import { CompteAuth, RoleAuth, empreinteAppareil, hacherMotDePasse, normaliserTel, normaliserEmail, motDePasseAdminInitial, motDePasseSuperAdmin, EMAIL_ADMIN_INITIAL, EMAIL_ADMIN_INITIAL_ANTERIEUR, EMAIL_SUPERADMIN } from "./auth_local";
+import { CompteAuth, RoleAuth, empreinteAppareil, hacherMotDePasse, normaliserTel, normaliserEmail, motDePasseAdminInitial, motDePasseSuperAdmin, EMAIL_ADMIN_INITIAL, EMAIL_ADMIN_INITIAL_ANTERIEUR, EMAIL_SUPERADMIN, ID_COMPTE_ADMIN_BOOTSTRAP, ID_COMPTE_SUPERADMIN } from "./auth_local";
 import { cacheTout, cacheEcrire, cacheLire } from "../data/base_locale";
 import { uuidV4 } from "../utils/identifiants";
 import { publierCompteAdmin } from "./synchro_admin";
@@ -71,8 +71,10 @@ export async function creerCompte(params: {
   motDePasse: string;
   /** Mot de passe par défaut à changer à la première connexion. */
   motDePasseParDefaut?: boolean;
+  /** Id fixe (comptes bootstrap) — sinon uuid aléatoire. */
+  id?: string;
 }): Promise<CompteAuth> {
-  const id = uuidV4();
+  const id = params.id ?? uuidV4();
   const tel = params.telephone ? normaliserTel(params.telephone) : null;
   // normaliserEmail exige un TLD : on accepte aussi les identifiants internes
   // du type « mboa-admin@237 » en conservant la saisie en minuscules.
@@ -197,6 +199,7 @@ export async function assurerCompteAdmin(): Promise<CompteAuth | null> {
     return migre;
   }
   return creerCompte({
+    id: ID_COMPTE_ADMIN_BOOTSTRAP,
     role: "admin",
     nom: "MBOA Counter",
     telephone: null,
@@ -241,6 +244,7 @@ export async function assurerCompteSuperAdmin(): Promise<CompteAuth | null> {
     return compte;
   }
   return creerCompte({
+    id: ID_COMPTE_SUPERADMIN,
     role: "superadmin",
     nom: "CADC",
     telephone: null,
