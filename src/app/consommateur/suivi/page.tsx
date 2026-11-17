@@ -15,6 +15,26 @@ import { resumerQuantites } from "@/core/types/commande";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
 
+/** Vraie carte OpenStreetMap (iframe publique, sans clé API). */
+function CarteOsm({ livreur, destination }: { livreur: PositionGps; destination: PositionGps }) {
+  const lats = [livreur.latitude, destination.latitude];
+  const lngs = [livreur.longitude, destination.longitude];
+  const minLat = Math.min(...lats) - 0.01;
+  const maxLat = Math.max(...lats) + 0.01;
+  const minLng = Math.min(...lngs) - 0.01;
+  const maxLng = Math.max(...lngs) + 0.01;
+  const bbox = `${minLng},${minLat},${maxLng},${maxLat}`;
+  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${destination.latitude},${destination.longitude}`;
+  return (
+    <iframe
+      src={src}
+      title="Carte de livraison"
+      className="w-full h-56 rounded-xl mt-2 border-0"
+      loading="lazy"
+    />
+  );
+}
+
 function demandePosition(): Promise<PositionGps | null> {
   return new Promise((resolve) => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -203,6 +223,12 @@ export default function SuiviPage() {
                       c.statut === StatutCommande.livree) && (
                       <div className="mt-3">
                         <CarteColis suivi={suivi} />
+                        {suivi.positionActuelle && suivi.positionDestination && (
+                          <CarteOsm
+                            livreur={suivi.positionActuelle}
+                            destination={suivi.positionDestination}
+                          />
+                        )}
                       </div>
                     )}
 
