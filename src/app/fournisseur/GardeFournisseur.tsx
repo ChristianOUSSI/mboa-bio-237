@@ -18,7 +18,8 @@ export function GardeFournisseur({ children }: { children: React.ReactNode }) {
     let vivant = true;
     async function verifier() {
       if (!profil?.telephone) {
-        if (vivant) setEtat("autorise");
+        // Sans numéro, impossible de vérifier l'approbation : on bloque.
+        if (vivant) setEtat("attente");
         return;
       }
       const tel = profil.telephone.replace(/\D/g, "").slice(-9);
@@ -27,8 +28,10 @@ export function GardeFournisseur({ children }: { children: React.ReactNode }) {
         (f) => f.telephone.replace(/\D/g, "").slice(-9) === tel
       );
       if (!vivant) return;
-      // Pas de fiche trouvée : on laisse passer (fiche peut ne pas encore synchroniser).
-      setEtat(fiche && !fiche.actif ? "attente" : "autorise");
+      // Seule une fiche active débloque l'espace : candidature en attente
+      // (actif=false) ou aucune fiche (compte fournisseur sans approbation)
+      // renvoie vers l'écran d'attente.
+      setEtat(fiche?.actif ? "autorise" : "attente");
     }
     verifier();
     return () => {

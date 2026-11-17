@@ -12,7 +12,7 @@ import { EntreeCatalogue } from "../types/catalogue";
 import { Categorie } from "../types/categorie";
 import { Commande, commandeFromMap } from "../types/commande_full";
 import { LigneCommande, ligneUniteReelle } from "../types/commande";
-import { Achat, achatFromMap, achatMontant } from "../types/achat";
+import { Achat, StatutAchat, achatFromMap, achatMontant } from "../types/achat";
 import { Profil, profilFromMap } from "../types/profil";
 import { roleResolve } from "../config/app_env";
 import { Livreur, livreurFromMap } from "../types/livreur";
@@ -867,6 +867,7 @@ export async function suiviCommande(commandeId: string): Promise<SuiviColis> {
 // ============================================================
 
 export async function fileAttenteAchats(): Promise<Achat[]> {
+  const locales = (await cacheTout<Achat>("achat")).filter((a) => a.statut === StatutAchat.propose);
   if (mboaReseau()) {
     const { data, error } = await mboaReseau()!
       .from("achats")
@@ -874,27 +875,35 @@ export async function fileAttenteAchats(): Promise<Achat[]> {
       .eq("statut", "propose")
       .order("propose_le", { ascending: true });
     if (!error && data) {
-      return data.map((d) => achatFromMap(d as unknown as Record<string, unknown>));
+      const distants = data.map((d) => achatFromMap(d as unknown as Record<string, unknown>));
+      const ids = new Set(distants.map((a) => a.id));
+      for (const a of distants) await cacheEcrire("achat", a.id, a);
+      return [...distants, ...locales.filter((a) => !ids.has(a.id))];
     }
   }
-  return cacheTout<Achat>("achat");
+  return locales;
 }
 
 /** Toutes les propositions d'achat, tous statuts confondus. */
 export async function toutesAchats(): Promise<Achat[]> {
+  const locales = await cacheTout<Achat>("achat");
   if (mboaReseau()) {
     const { data, error } = await mboaReseau()!
       .from("achats")
       .select("*")
       .order("propose_le", { ascending: false });
     if (!error && data) {
-      return data.map((d) => achatFromMap(d as unknown as Record<string, unknown>));
+      const distants = data.map((d) => achatFromMap(d as unknown as Record<string, unknown>));
+      const ids = new Set(distants.map((a) => a.id));
+      for (const a of distants) await cacheEcrire("achat", a.id, a);
+      return [...distants, ...locales.filter((a) => !ids.has(a.id))];
     }
   }
-  return cacheTout<Achat>("achat");
+  return locales;
 }
 
 export async function mesAchats(fournisseurId: string): Promise<Achat[]> {
+  const locales = (await cacheTout<Achat>("achat")).filter((a) => a.fournisseurId === fournisseurId);
   if (mboaReseau()) {
     const { data, error } = await mboaReseau()!
       .from("achats")
@@ -902,10 +911,13 @@ export async function mesAchats(fournisseurId: string): Promise<Achat[]> {
       .eq("fournisseur_id", fournisseurId)
       .order("propose_le", { ascending: false });
     if (!error && data) {
-      return data.map((d) => achatFromMap(d as unknown as Record<string, unknown>));
+      const distants = data.map((d) => achatFromMap(d as unknown as Record<string, unknown>));
+      const ids = new Set(distants.map((a) => a.id));
+      for (const a of distants) await cacheEcrire("achat", a.id, a);
+      return [...distants, ...locales.filter((a) => !ids.has(a.id))];
     }
   }
-  return cacheTout<Achat>("achat");
+  return locales;
 }
 
 export async function proposerAchat(params: {
@@ -1186,15 +1198,19 @@ export async function deconnexionAuth(): Promise<void> {
 // ============================================================
 
 export async function chargerLivreurs(): Promise<Livreur[]> {
+  const locales = await cacheTout<Livreur>("livreur");
   if (mboaReseau()) {
     // La table `livreurs` porte les chauffeurs ; `vitrine_livreurs` est une
     // vue de *commandes* enrichies (identité client) et ne doit pas être lue ici.
     const { data, error } = await mboaReseau()!.from("livreurs").select("*").order("nom");
     if (!error && data) {
-      return data.map((d) => livreurFromMap(d as unknown as Record<string, unknown>));
+      const distants = data.map((d) => livreurFromMap(d as unknown as Record<string, unknown>));
+      const ids = new Set(distants.map((l) => l.id));
+      for (const l of distants) await cacheEcrire("livreur", l.id, l);
+      return [...distants, ...locales.filter((l) => !ids.has(l.id))];
     }
   }
-  return cacheTout<Livreur>("livreur");
+  return locales;
 }
 
 // ============================================================
@@ -1202,13 +1218,17 @@ export async function chargerLivreurs(): Promise<Livreur[]> {
 // ============================================================
 
 export async function chargerFournisseurs(): Promise<Fournisseur[]> {
+  const locales = await cacheTout<Fournisseur>("fournisseur");
   if (mboaReseau()) {
     const { data, error } = await mboaReseau()!.from("fournisseurs").select("*").order("nom");
     if (!error && data) {
-      return data.map((d) => fournisseurFromMap(d as unknown as Record<string, unknown>));
+      const distants = data.map((d) => fournisseurFromMap(d as unknown as Record<string, unknown>));
+      const ids = new Set(distants.map((f) => f.id));
+      for (const f of distants) await cacheEcrire("fournisseur", f.id, f);
+      return [...distants, ...locales.filter((f) => !ids.has(f.id))];
     }
   }
-  return cacheTout<Fournisseur>("fournisseur");
+  return locales;
 }
 
 // ============================================================
