@@ -836,7 +836,7 @@ export async function suiviCommande(commandeId: string): Promise<SuiviColis> {
   // Destination de secours : la position GPS fournie à la commande,
   // si le client n'a pas (encore) partagé sa position en direct.
   if (!suivi.positionDestination) {
-    let cmd = await cacheLire<Commande>("commande", commandeId);
+    const cmd = await cacheLire<Commande>("commande", commandeId);
     if (!cmd && client) {
       const { data } = await client
         .from("commandes")

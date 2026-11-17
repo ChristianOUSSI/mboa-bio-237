@@ -259,6 +259,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "liv.partagerPos": "📍 Partager ma position",
     "liv.livre": "Livré",
     "liv.attenteClient": "En attente de la confirmation du client…",
+    "liv.itineraire": "Itinéraire GPS",
 
     // Espace admin - accueil
     "adm.sousTitre": "Le comptoir",
@@ -821,6 +822,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "liv.partagerPos": "📍 Share my position",
     "liv.livre": "Delivered",
     "liv.attenteClient": "Waiting for the customer's confirmation…",
+    "liv.itineraire": "GPS directions",
 
     // Espace admin - accueil
     "adm.sousTitre": "The counter",

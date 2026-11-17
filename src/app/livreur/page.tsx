@@ -180,13 +180,13 @@ export default function AccueilLivreur() {
                   )}
                   {c.livraisonLat != null && c.livraisonLng != null && (
                     <a
-                      href={`https://www.google.com/maps?q=${c.livraisonLat},${c.livraisonLng}`}
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${c.livraisonLat},${c.livraisonLng}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-aide mt-1 inline-block underline"
+                      className="text-aide mt-1 inline-block font-bold underline"
                       style={{ color: "var(--mboa-primary)" }}
                     >
-                      🗺️ {c.livraisonLat.toFixed(5)}, {c.livraisonLng.toFixed(5)}
+                      🗺️ {t("liv.itineraire")}
                     </a>
                   )}
 
