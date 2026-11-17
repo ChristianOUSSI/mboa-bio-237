@@ -88,13 +88,14 @@ function PageCategorieInterne() {
 
       <div className="flex-1 px-4 py-2">
         {produits.length === 0 ? (
-          <CarteMboa className="text-center">
+          <div className="etat-vide">
+            <span className="emoji-vide" aria-hidden>🥬</span>
             <p className="text-corps text-[var(--mboa-text-doux)]">{t("march.aucunProduit")}</p>
-          </CarteMboa>
+          </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {produits.map((p) => (
-              <CarteMboa key={p.id}>
+              <CarteMboa key={p.id} className="card-produit !p-3">
                 <div className="flex justify-between items-start mb-1">
                   <div className="flex items-center gap-1">
                     {p.emoji ?? <PictoCategorie categorie={p.categorie} size={24} />}
@@ -103,7 +104,7 @@ function PageCategorieInterne() {
                   <BoutonVoix texte={produitAnnonceVocale(p, true)} />
                 </div>
 
-                <div className="w-full h-32 bg-[var(--mboa-background)] rounded-xl flex items-center justify-center mb-2">
+                <div className="zone-photo w-full h-32 rounded-xl flex items-center justify-center mb-2 overflow-hidden">
                   {p.emoji ? (
                     <span style={{ fontSize: 64 }} aria-hidden>{p.emoji}</span>
                   ) : p.photoReelle ? (
@@ -119,7 +120,7 @@ function PageCategorieInterne() {
                 <JaugeMboa valeur={produitJauge(p)} />
 
                 <div className="flex justify-between items-center mt-2">
-                  <span className="text-chiffre text-[var(--mboa-primary)]">
+                  <span className="puce-prix">
                     {produitPrixLabel(p)}
                   </span>
                   {!produitEstRupture(p) && (

@@ -106,7 +106,7 @@ function PagePackInterne() {
             <BoutonVoix texte={produitAnnonceVocale(produit, true)} />
           </div>
 
-          <div className="w-full h-48 bg-[var(--mboa-background)] rounded-xl flex items-center justify-center mb-3">
+          <div className="zone-photo w-full h-48 rounded-xl flex items-center justify-center mb-3 overflow-hidden">
             {produit.emoji ? (
               <span style={{ fontSize: 80 }} aria-hidden>{produit.emoji}</span>
             ) : produit.photoReelle ? (
@@ -122,7 +122,7 @@ function PagePackInterne() {
           <JaugeMboa valeur={produitJauge(produit)} />
 
           <div className="flex justify-between items-center mt-3">
-            <span className="text-chiffre text-[var(--mboa-primary)]">
+            <span className="puce-prix">
               {produitPrixLabel(produit)}
             </span>
             {!produitEstRupture(produit) && (

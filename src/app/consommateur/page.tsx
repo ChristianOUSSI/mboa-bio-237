@@ -127,16 +127,31 @@ export default function MarchePage() {
         </div>
       )}
 
+      {/* Hero d'accueil */}
+      <div className="px-4 pt-3">
+        <div className="hero-mboa p-5">
+          <p className="text-aide opacity-90 font-bold">{t("march.heroSouhaite")}</p>
+          <h1 className="text-ecran mt-1">
+            {profil?.nom ? `${t("march.heroSalut")}, ${profil.nom.split(" ")[0]} !` : t("march.heroSalut")}
+          </h1>
+          <p className="text-corps opacity-95 mt-1">{t("march.heroTexte")}</p>
+        </div>
+      </div>
+
       {/* Search + sort */}
-      <div className="px-4 py-2">
-        <input
-          type="text"
-          placeholder={t("march.recherche")}
-          value={recherche}
-          onChange={(e) => setRecherche(e.target.value)}
-          className="w-full p-2 border-2 border-[var(--mboa-primary)] rounded-xl mb-2"
-          style={{ fontSize: 16 }}
-        />
+      <div className="px-4 py-3">
+        <div className="champ-recherche mb-2">
+          <span aria-hidden>🔍</span>
+          <input
+            type="text"
+            placeholder={t("march.recherche")}
+            value={recherche}
+            onChange={(e) => setRecherche(e.target.value)}
+          />
+          {recherche && (
+            <button onClick={() => setRecherche("")} aria-label="Effacer" className="text-aide font-bold opacity-70">✕</button>
+          )}
+        </div>
         <div className="flex gap-2">
           {([["nom", "A-Z"], ["prix_asc", t("march.prixAsc")], ["prix_desc", t("march.prixDesc")]] as const).map(([v, label]) => (
             <button
@@ -154,27 +169,24 @@ export default function MarchePage() {
         </div>
       </div>
 
-      {/* 8-category grid */}
+      {/* Category grid */}
       <div className="px-4 py-2">
-        <h2 className="text-titre mb-2">{t("march.categories")}</h2>
+        <h2 className="text-titre titre-section mb-3">{t("march.categories")}</h2>
         <div className="grid grid-cols-4 gap-2">
           {[...CATEGORIES_ORDREES, ...persos.map((x) => x.slug)].map((cat) => (
             <button
               key={cat}
               onClick={() => router.push(`/consommateur/categorie/${encodeURIComponent(cat)}`)}
-              className="flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all"
-              style={{
-                minHeight: 72,
-                borderColor: "transparent",
-                background: "var(--mboa-surface)",
-              }}
+              className="tuile-cat"
             >
-              {emojiCategorie(cat, persos) ? (
-                <span style={{ fontSize: 32 }}>{emojiCategorie(cat, persos)}</span>
-              ) : (
-                <PictoCategorie categorie={cat} size={32} />
-              )}
-              <span className="text-aide mt-1 text-center font-bold">{libelleCategorie(cat, persos)}</span>
+              <span className="emoji-cat">
+                {emojiCategorie(cat, persos) ? (
+                  <span style={{ fontSize: 24 }}>{emojiCategorie(cat, persos)}</span>
+                ) : (
+                  <PictoCategorie categorie={cat} size={24} />
+                )}
+              </span>
+              <span className="text-aide text-center font-bold leading-tight">{libelleCategorie(cat, persos)}</span>
             </button>
           ))}
         </div>
@@ -182,15 +194,16 @@ export default function MarchePage() {
 
       {/* Product showcase */}
       <div className="px-4 py-2 flex-1">
-        <h2 className="text-titre mb-2">{t("march.tousProduits")}</h2>
+        <h2 className="text-titre titre-section mb-2">{t("march.tousProduits")}</h2>
         {produitsFiltres.length === 0 ? (
-          <CarteMboa className="text-center">
+          <div className="etat-vide">
+            <span className="emoji-vide">🥬</span>
             <p className="text-corps text-[var(--mboa-text-doux)]">{t("march.aucunProduit")}</p>
-          </CarteMboa>
+          </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {produitsFiltres.map((p) => (
-              <CarteMboa key={p.id}>
+              <CarteMboa key={p.id} className="card-produit !p-3">
                 <div className="flex justify-between items-start mb-1">
                   <div className="flex items-center gap-1">
                     {p.emoji ?? <PictoCategorie categorie={p.categorie} size={24} />}
@@ -200,7 +213,7 @@ export default function MarchePage() {
                 </div>
 
                 {/* Photo or pictogram */}
-                <div className="w-full h-32 bg-[var(--mboa-background)] rounded-xl flex items-center justify-center mb-2">
+                <div className="zone-photo w-full h-32 rounded-xl flex items-center justify-center mb-2 overflow-hidden">
                   {p.emoji ? (
                     <span style={{ fontSize: 64 }} aria-hidden>{p.emoji}</span>
                   ) : p.photoReelle ? (
@@ -218,7 +231,7 @@ export default function MarchePage() {
 
                 {/* Price + button */}
                 <div className="flex justify-between items-center mt-2">
-                  <span className="text-chiffre text-[var(--mboa-primary)]">
+                  <span className="puce-prix">
                     {produitPrixLabel(p)}
                   </span>
                   {!produitEstRupture(p) && (
