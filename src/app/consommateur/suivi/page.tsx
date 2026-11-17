@@ -152,12 +152,17 @@ export default function SuiviPage() {
                   </div>
 
                   {/* Summary */}
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex justify-between items-center mb-1">
                     <span className="text-corps">{resumerQuantites(c.lignes)}</span>
                     <span className="text-chiffre text-[var(--mboa-primary)]">
                       {formaterFcfa(commandeMontantAPayer(c))}
                     </span>
                   </div>
+                  {(c.fraisLivraison ?? 0) > 0 && (
+                    <p className="text-aide text-[var(--mboa-text-doux)]">
+                      {t("panier.produits")} {formaterFcfa(c.montantTotal)} + {t("panier.livraison").toLowerCase()} {formaterFcfa(c.fraisLivraison ?? 0)}
+                    </p>
+                  )}
 
                   {/* Adresse de livraison */}
                   {(c.livraisonQuartier || c.livraisonDetail) && (
@@ -174,7 +179,17 @@ export default function SuiviPage() {
                       <p className="text-corps font-bold">
                         {c.livreurNom}
                         {c.livreurPlaque ? ` · ${t("suivi.plaque")} ${c.livreurPlaque}` : ""}
+                        {c.livreurMoto ? ` · ${c.livreurMoto}` : ""}
                       </p>
+                      {c.livreurTelephone && (
+                        <a
+                          href={`tel:${c.livreurTelephone}`}
+                          className="text-aide font-bold inline-block mt-1 underline"
+                          style={{ color: "var(--mboa-primary)" }}
+                        >
+                          📞 {c.livreurTelephone}
+                        </a>
+                      )}
                     </div>
                   )}
 
