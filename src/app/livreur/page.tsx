@@ -178,6 +178,17 @@ export default function AccueilLivreur() {
                       {c.livraisonDetail ? ` - ${c.livraisonDetail}` : ""}
                     </p>
                   )}
+                  {c.livraisonLat != null && c.livraisonLng != null && (
+                    <a
+                      href={`https://www.google.com/maps?q=${c.livraisonLat},${c.livraisonLng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-aide mt-1 inline-block underline"
+                      style={{ color: "var(--mboa-primary)" }}
+                    >
+                      🗺️ {c.livraisonLat.toFixed(5)}, {c.livraisonLng.toFixed(5)}
+                    </a>
+                  )}
 
                   {c.appelSouhaite && (
                     <p className="text-aide mt-2 font-bold" style={{ color: "var(--mboa-primary)" }}>

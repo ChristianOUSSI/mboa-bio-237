@@ -32,6 +32,9 @@ export interface Commande {
   livraisonQuartier?: string | null;
   /** Repère précis : « derrière le marché, 2ème étage »… */
   livraisonDetail?: string | null;
+  /** Position GPS du client au moment de la commande (optionnelle). */
+  livraisonLat?: number | null;
+  livraisonLng?: number | null;
   createdLe: string;
   livreeLe?: string | null;
   recueLe?: string | null;
@@ -151,6 +154,8 @@ export function commandeFromMap(map: Record<string, unknown>): Commande {
     numeroContact: (map.numero_contact as string) ?? null,
     livraisonQuartier: (map.livraison_quartier as string) ?? null,
     livraisonDetail: (map.livraison_detail as string) ?? null,
+    livraisonLat: map.livraison_lat != null ? Number(map.livraison_lat) : null,
+    livraisonLng: map.livraison_lng != null ? Number(map.livraison_lng) : null,
     createdLe: (map.created_at as string) ?? new Date().toISOString(),
     livreeLe: (map.livree_le as string) ?? null,
     recueLe: (map.recue_le as string) ?? null,

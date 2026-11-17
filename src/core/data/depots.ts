@@ -108,7 +108,7 @@ export async function toutesCommandes(): Promise<Commande[]> {
   return cacheTout<Commande>("commande");
 }
 
-export async function commander(lignes: { produitId: string; slug: string; nom: string; categorie: string; quantite: number; prix: number; unite: string; photo: string; composants?: { slug: string; nom?: string | null; quantite: number; unite: string }[] }[], consommateurId: string, contact?: { appelSouhaite?: boolean; numeroContact?: string | null; clientNom?: string | null; clientVillage?: string | null; clientTel?: string | null; livraisonQuartier?: string | null; livraisonDetail?: string | null }): Promise<Commande | null> {
+export async function commander(lignes: { produitId: string; slug: string; nom: string; categorie: string; quantite: number; prix: number; unite: string; photo: string; composants?: { slug: string; nom?: string | null; quantite: number; unite: string }[] }[], consommateurId: string, contact?: { appelSouhaite?: boolean; numeroContact?: string | null; clientNom?: string | null; clientVillage?: string | null; clientTel?: string | null; livraisonQuartier?: string | null; livraisonDetail?: string | null; livraisonLat?: number | null; livraisonLng?: number | null }): Promise<Commande | null> {
   const produitsJson = lignes.map((l) => ({
     produit_id: l.produitId,
     slug: l.slug,
@@ -145,8 +145,10 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
         numero_contact: contact?.numeroContact ?? null,
         livraison_quartier: contact?.livraisonQuartier ?? null,
         livraison_detail: contact?.livraisonDetail ?? null,
+        livraison_lat: contact?.livraisonLat ?? null,
+        livraison_lng: contact?.livraisonLng ?? null,
       };
-      if (patch.appel_souhaite || patch.numero_contact || patch.livraison_quartier || patch.livraison_detail) {
+      if (patch.appel_souhaite || patch.numero_contact || patch.livraison_quartier || patch.livraison_detail || patch.livraison_lat != null) {
         void mboaReseau()!.from("commandes").update(patch).eq("id", commande.id);
         return {
           ...commande,
@@ -154,6 +156,8 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
           numeroContact: patch.numero_contact,
           livraisonQuartier: patch.livraison_quartier,
           livraisonDetail: patch.livraison_detail,
+          livraisonLat: patch.livraison_lat,
+          livraisonLng: patch.livraison_lng,
         };
       }
       return commande;
@@ -176,6 +180,8 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
         client_tel: contact?.clientTel ?? null,
         livraison_quartier: contact?.livraisonQuartier ?? null,
         livraison_detail: contact?.livraisonDetail ?? null,
+        livraison_lat: contact?.livraisonLat ?? null,
+        livraison_lng: contact?.livraisonLng ?? null,
       })
       .select("*")
       .maybeSingle();
@@ -217,6 +223,8 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
     numeroContact: contact?.numeroContact ?? null,
     livraisonQuartier: contact?.livraisonQuartier ?? null,
     livraisonDetail: contact?.livraisonDetail ?? null,
+    livraisonLat: contact?.livraisonLat ?? null,
+    livraisonLng: contact?.livraisonLng ?? null,
     createdLe: new Date().toISOString(),
     clos: false,
   };
@@ -1341,6 +1349,7 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
         tarif_course: c.livreurTarif ?? null, paye_le: null,
         appel_souhaite: c.appelSouhaite, numero_contact: c.numeroContact ?? null,
         livraison_quartier: c.livraisonQuartier ?? null, livraison_detail: c.livraisonDetail ?? null,
+        livraison_lat: c.livraisonLat ?? null, livraison_lng: c.livraisonLng ?? null,
       });
       return !error;
     }

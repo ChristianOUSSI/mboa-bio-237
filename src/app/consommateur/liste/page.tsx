@@ -107,8 +107,8 @@ export default function ListePage() {
         )}
 
         {liste.lignes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 anim-apparition">
-            <div className="text-6xl mb-4">📋</div>
+          <div className="etat-vide anim-apparition">
+            <span className="emoji-vide">📋</span>
             <p className="text-corps text-[var(--mboa-text-doux)]">{t("liste.vide")}</p>
             <p className="text-aide text-[var(--mboa-text-doux)] mt-1">{t("liste.ajouterVide")}</p>
           </div>

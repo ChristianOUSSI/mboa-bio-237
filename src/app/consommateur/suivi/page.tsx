@@ -129,8 +129,8 @@ export default function SuiviPage() {
 
       <div className="flex-1 p-4">
         {commandes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <div className="text-6xl mb-4">📦</div>
+          <div className="etat-vide">
+            <span className="emoji-vide">📦</span>
             <p className="text-corps text-[var(--mboa-text-doux)]">{t("suivi.vide")}</p>
             <BoutonMboa variant="primary" onClick={() => router.push("/consommateur")} className="mt-4">{t("panier.allerMarche")}</BoutonMboa>
           </div>

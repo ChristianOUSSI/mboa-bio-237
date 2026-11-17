@@ -36,6 +36,8 @@ export default function PanierPage() {
   const [livraisonDetail, setLivraisonDetail] = useState("");
   const [erreurAdresse, setErreurAdresse] = useState(false);
   const [copieOk, setCopieOk] = useState(false);
+  const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
+  const [gpsEtat, setGpsEtat] = useState<"repos" | "charge" | "ok" | "erreur">("repos");
   const [fraisLivraisonCfg, setFraisLivraisonCfg] = useState(FRAIS_LIVRAISON_DEFAUT);
 
   useEffect(() => {
@@ -47,6 +49,22 @@ export default function PanierPage() {
   const montantProduits = panier.montantTotal();
   const fraisLivraison = montantProduits > 0 ? fraisLivraisonCfg : 0;
   const montantTotal = montantProduits + fraisLivraison;
+
+  function capturerPosition() {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setGpsEtat("erreur");
+      return;
+    }
+    setGpsEtat("charge");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGps({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setGpsEtat("ok");
+      },
+      () => setGpsEtat("erreur"),
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
 
   async function validerCommande() {
     if (!profil || panier.lignes.length === 0) return;
@@ -76,6 +94,8 @@ export default function PanierPage() {
         clientTel: profil.telephone || null,
         livraisonQuartier: livraisonQuartier.trim(),
         livraisonDetail: livraisonDetail.trim() || null,
+        livraisonLat: gps?.lat ?? null,
+        livraisonLng: gps?.lng ?? null,
       });
       panier.vider();
       router.push("/consommateur/suivi");
@@ -117,8 +137,8 @@ export default function PanierPage() {
 
       <div className="flex-1 p-4">
         {panier.lignes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 anim-apparition">
-            <div className="text-6xl mb-4">🛒</div>
+          <div className="etat-vide anim-apparition">
+            <span className="emoji-vide">🛒</span>
             <p className="text-corps text-[var(--mboa-text-doux)]">{t("panier.vide")}</p>
             <BoutonMboa variant="primary" onClick={() => router.push("/consommateur")} className="mt-4">{t("panier.allerMarche")}</BoutonMboa>
           </div>
@@ -222,6 +242,20 @@ export default function PanierPage() {
                 className="champ-mboa"
                 style={{ fontSize: 18 }}
               />
+              <button
+                type="button"
+                onClick={capturerPosition}
+                disabled={gpsEtat === "charge"}
+                className="btn-mboa btn-surface w-full !min-h-[48px] mb-2"
+              >
+                {gpsEtat === "charge"
+                  ? "⏳ …"
+                  : gpsEtat === "ok"
+                    ? `📍 ${t("panier.gpsOk")}`
+                    : gpsEtat === "erreur"
+                      ? `❌ ${t("panier.gpsErreur")}`
+                      : `📍 ${t("panier.gps")}`}
+              </button>
               {erreurAdresse && (
                 <p className="text-[var(--mboa-error)] text-aide mt-2 font-bold anim-secousse">
                   {t("panier.quartierRequis")}
