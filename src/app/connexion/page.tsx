@@ -288,7 +288,7 @@ export default function PageConnexion() {
     setEnCours(true);
     setErreur(null);
     try {
-      const compte = await compteParIdentifiant(identifiant);
+      let compte = await compteParIdentifiant(identifiant);
       if (!compte) {
         setErreur(t("connex.erreurIntrouvable"));
         return;
@@ -320,6 +320,23 @@ export default function PageConnexion() {
       if (!bon) {
         setErreur(t("connex.erreurMdpFaux"));
         return;
+      }
+      // Migration douce vers Supabase Auth : un compte email purement
+      // local est provisionné à sa première connexion réussie en ligne.
+      // Best-effort : tout échec laisse le compte en mode local.
+      if (compte.email && !compte.authSupabase && authSupabaseDisponible()) {
+        try {
+          let migre = await inscrireSupabase(compte.email, motDePasse);
+          if (!migre) {
+            // L'utilisateur existe peut-être déjà chez Supabase avec ce mdp.
+            migre = (await verifierMotDePasseSupabase(compte.email, motDePasse)) === true;
+          }
+          if (migre) {
+            compte = await majCompte(compte, { authSupabase: true });
+          }
+        } catch {
+          /* migration best-effort */
+        }
       }
       // Mot de passe par défaut (compte bootstrap ou partagé) : on impose
       // le choix d'un nouveau mot de passe avant de laisser entrer.
