@@ -15,15 +15,18 @@ import { useTr } from "@/core/i18n";
 /** Exporte les commandes en CSV (Excel/LibreOffice) pour la compta. */
 function exporterCsv(commandes: Commande[]) {
   const lignes = [
-    ["id", "date", "client", "telephone", "produits", "montant_fcfa", "statut", "livreur", "paiement"].join(";"),
+    ["id", "date", "client", "quartier", "livraison_detail", "telephone", "produits", "montant_fcfa", "frais_livraison_fcfa", "statut", "livreur", "paiement"].join(";"),
     ...commandes.map((c) =>
       [
         c.id,
         c.createdLe,
-        `"${c.consommateurId.replace(/"/g, '""')}"`,
-        c.numeroContact ?? "",
+        `"${(c.clientNom ?? "").replace(/"/g, '""')}"`,
+        `"${(c.livraisonQuartier ?? "").replace(/"/g, '""')}"`,
+        `"${(c.livraisonDetail ?? "").replace(/"/g, '""')}"`,
+        c.clientTel ?? c.numeroContact ?? "",
         `"${resumerQuantites(c.lignes).replace(/"/g, '""')}"`,
         commandeMontantAPayer(c),
+        c.fraisLivraison ?? "",
         STATUT_COMMANDE_INFO[c.statut].libelle,
         `"${(c.livreurNom ?? "").replace(/"/g, '""')}"`,
         c.paiement ?? "",

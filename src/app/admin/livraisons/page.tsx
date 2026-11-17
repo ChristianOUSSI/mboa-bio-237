@@ -109,11 +109,12 @@ export default function LivraisonsPage() {
         </CarteMboa>
         <h2 className="text-titre titre-section">{t("adm.liv.aPayer")} ({aPayer.length})</h2>
         {aPayer.length === 0 ? (
-          <CarteMboa>
-            <p className="text-corps text-[var(--mboa-text-doux)] text-center">
+          <div className="etat-vide anim-apparition">
+            <span className="emoji-vide">🏍️</span>
+            <p className="text-corps text-[var(--mboa-text-doux)]">
               {t("adm.liv.rienAPayer")}
             </p>
-          </CarteMboa>
+          </div>
         ) : (
           aPayer.map((c) => (
             <CarteMboa key={c.id}>

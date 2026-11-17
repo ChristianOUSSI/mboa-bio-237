@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useTr } from "../i18n";
 import { basculerTheme, themeActuel, Theme } from "../utils/theme";
+import { useReseau } from "../etat/store";
 
 /** Bouton MBOA - cible tactile minimale 72px, coins arrondis 20px. */
 export function BoutonMboa({
@@ -95,6 +96,25 @@ export function BadgeStatut({ statut, libelle }: { statut: string; libelle: stri
   );
 }
 
+/** Petit pastille d'état réseau visible sur tous les écrans protégés. */
+function IndicateurReseau() {
+  const t = useTr();
+  const { enLigne } = useReseau();
+  return (
+    <span
+      className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1"
+      style={{
+        background: enLigne ? "rgba(255,255,255,0.18)" : "var(--mboa-error)",
+        color: "#fff",
+      }}
+      title={enLigne ? t("march.enLigne") : t("march.horsLigne")}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${enLigne ? "bg-emerald-300" : "bg-white anim-pulsation"}`} />
+      {enLigne ? "" : t("march.horsLigne")}
+    </span>
+  );
+}
+
 /** En-tête de page - dégradé vert animé, titre et bouton retour. */
 export function EnTetePage({
   titre,
@@ -128,7 +148,10 @@ export function EnTetePage({
       )}
       <div className="flex-1 relative z-10">
         <h1 className="text-ecran text-white">{titre}</h1>
-        {sousTitre && <p className="text-aide opacity-85">{sousTitre}</p>}
+        <div className="flex items-center gap-2 flex-wrap">
+          {sousTitre && <p className="text-aide opacity-85">{sousTitre}</p>}
+          <IndicateurReseau />
+        </div>
       </div>
       <button
         onClick={() => setTheme(basculerTheme())}

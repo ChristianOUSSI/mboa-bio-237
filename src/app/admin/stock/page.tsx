@@ -201,13 +201,14 @@ export default function StockAdminPage() {
           </CarteMboa>
 
           {stockFiltre.length === 0 && (
-            <CarteMboa>
-              <p className="text-corps text-[var(--mboa-text-doux)] text-center">
+            <div className="etat-vide anim-apparition">
+              <span className="emoji-vide">📦</span>
+              <p className="text-corps text-[var(--mboa-text-doux)]">
                 {stock.length === 0
                   ? t("adm.stk.vide1")
                   : t("adm.stk.vide2")}
               </p>
-            </CarteMboa>
+            </div>
           )}
           {stockFiltre.map((p) => {
             const margeU = produitMargeUnitaire(p);

@@ -296,6 +296,12 @@ export default function PacksAdminPage() {
 
         {/* Plats existants */}
         <h2 className="text-titre titre-section">{t("adm.pack.liste")} ({packs.length})</h2>
+        {packs.length === 0 && (
+          <div className="etat-vide anim-apparition">
+            <span className="emoji-vide">🍲</span>
+            <p className="text-corps text-[var(--mboa-text-doux)]">{t("adm.pack.vide")}</p>
+          </div>
+        )}
         {packs.map((p) => (
           <CarteMboa key={p.id}>
             <div className="flex justify-between items-start mb-1">
