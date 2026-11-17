@@ -141,7 +141,7 @@ export default function SuiviPage() {
               const timeline = suivi ? suiviTimeline(suivi) : [];
               const info = STATUT_COMMANDE_INFO[c.statut];
               return (
-                <CarteMboa key={c.id}>
+                <CarteMboa key={c.id} className="carte-suivi">
                   {/* Status */}
                   <div className="flex justify-between items-start mb-2">
                     <div>
@@ -174,20 +174,23 @@ export default function SuiviPage() {
 
                   {/* Who is coming */}
                   {c.livreurNom && (
-                    <div className="bg-[var(--mboa-primary-doux)] rounded-xl p-2 mb-2">
-                      <p className="text-aide text-[var(--mboa-text-doux)]">{t("suivi.enRoute")}</p>
-                      <p className="text-corps font-bold">
-                        {c.livreurNom}
-                        {c.livreurPlaque ? ` · ${t("suivi.plaque")} ${c.livreurPlaque}` : ""}
-                        {c.livreurMoto ? ` · ${c.livreurMoto}` : ""}
-                      </p>
+                    <div className="encart-livreur mb-2">
+                      <span className="avatar-livreur" aria-hidden>🏍️</span>
+                      <div className="flex-1">
+                        <p className="text-aide text-[var(--mboa-text-doux)]">{t("suivi.enRoute")}</p>
+                        <p className="text-corps font-bold">
+                          {c.livreurNom}
+                          {c.livreurPlaque ? ` · ${t("suivi.plaque")} ${c.livreurPlaque}` : ""}
+                          {c.livreurMoto ? ` · ${c.livreurMoto}` : ""}
+                        </p>
+                      </div>
                       {c.livreurTelephone && (
                         <a
                           href={`tel:${c.livreurTelephone}`}
-                          className="text-aide font-bold inline-block mt-1 underline"
-                          style={{ color: "var(--mboa-primary)" }}
+                          className="btn-mboa btn-primary !min-h-[44px] !min-w-[44px] !rounded-xl text-xl"
+                          aria-label={`Appeler ${c.livreurNom}`}
                         >
-                          📞 {c.livreurTelephone}
+                          📞
                         </a>
                       )}
                     </div>
@@ -205,7 +208,7 @@ export default function SuiviPage() {
 
                   {/* Timeline */}
                   {timeline.length > 0 && (
-                    <div className="flex justify-between items-center mt-3 mb-2">
+                    <div className="timeline-suivi flex justify-between items-center mt-4 mb-2">
                       {timeline.map((etape, i) => (
                         <div key={i} className="flex flex-col items-center flex-1">
                           <div

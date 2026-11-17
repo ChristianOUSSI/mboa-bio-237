@@ -960,3 +960,57 @@ input, select, textarea, button {
   0%, 100% { transform: translateY(0) rotate(-3deg); }
   50% { transform: translateY(-8px) rotate(3deg); }
 }
+
+/* Carte de suivi commande : accent supérieur comme les produits */
+.carte-suivi {
+  position: relative;
+  overflow: hidden;
+}
+
+.carte-suivi::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--mboa-secondary), var(--mboa-primary-vif), var(--mboa-terre));
+}
+
+/* Timeline de suivi : ligne de progression reliant les jalons */
+.timeline-suivi {
+  position: relative;
+}
+
+.timeline-suivi::before {
+  content: "";
+  position: absolute;
+  top: 20px;
+  left: 10%;
+  right: 10%;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--mboa-trait);
+}
+
+/* Encart livreur */
+.encart-livreur {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, var(--mboa-primary-doux) 0%, var(--mboa-secondary-doux) 100%);
+  border: 1.5px solid var(--mboa-secondary);
+  border-radius: var(--rayon-petit);
+  padding: 12px;
+}
+
+.encart-livreur .avatar-livreur {
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 30% 25%, #FFFFFF 0%, var(--mboa-secondary-vif) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+  box-shadow: 0 3px 8px rgba(30, 81, 40, 0.2);
+}
