@@ -326,8 +326,13 @@ export default function PageConnexion() {
       // Best-effort : tout échec laisse le compte en mode local.
       if (compte.email && !compte.authSupabase && authSupabaseDisponible()) {
         try {
+          // On ne marque authSupabase que si Supabase accepte réellement
+          // la connexion : un signUp peut réussir sans session valide
+          // (confirmation d'email requise), ce qui bloquerait le login.
           let migre = await inscrireSupabase(compte.email, motDePasse);
-          if (!migre) {
+          if (migre) {
+            migre = (await verifierMotDePasseSupabase(compte.email, motDePasse)) === true;
+          } else {
             // L'utilisateur existe peut-être déjà chez Supabase avec ce mdp.
             migre = (await verifierMotDePasseSupabase(compte.email, motDePasse)) === true;
           }
@@ -389,7 +394,13 @@ export default function PageConnexion() {
       // Si Supabase l'accepte, on marque le compte : ses prochaines
       // connexions seront vérifiées côté serveur.
       if (compte.email && authSupabaseDisponible()) {
-        const okAuth = await inscrireSupabase(compte.email, motDePasse);
+        let okAuth = await inscrireSupabase(compte.email, motDePasse);
+        if (okAuth) {
+          // Ne marquer authSupabase que si la connexion serveur aboutit
+          // vraiment : avec confirmation d'email activée, signUp réussit
+          // mais signIn serait refusé → le compte serait verrouillé.
+          okAuth = (await verifierMotDePasseSupabase(compte.email, motDePasse)) === true;
+        }
         if (okAuth) {
           const marque = await majCompte(compte, { authSupabase: true });
           ouvrirSession(marque);

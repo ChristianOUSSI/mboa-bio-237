@@ -110,9 +110,19 @@ export default function MarchePage() {
         }
       />
 
-      {/* Network indicator */}
-      <div className={`px-4 py-1 text-center text-aide ${enLigne ? "text-[var(--mboa-primary)]" : "text-[var(--mboa-error)]"}`}>
-        {enLigne ? `● ${t("march.enLigne")}` : `● ${t("march.horsLigne")}`}{fileAttente > 0 ? ` · ${fileAttente} ${t("march.enAttente")}` : ""}
+      {/* Network indicator - pastille discrete */}
+      <div className="px-4 py-1 flex justify-center">
+        <span
+          className="text-aide px-3 py-1 rounded-full inline-flex items-center gap-1.5"
+          style={{
+            background: enLigne ? "var(--mboa-secondary-doux)" : "var(--mboa-error-doux)",
+            color: enLigne ? "var(--mboa-primary)" : "var(--mboa-error)",
+          }}
+        >
+          <span className={`w-2 h-2 rounded-full ${enLigne ? "bg-[var(--mboa-primary-vif)]" : "bg-[var(--mboa-error)]"} ${!enLigne ? "anim-pulsation" : ""}`} />
+          {enLigne ? t("march.enLigne") : t("march.horsLigne")}
+          {fileAttente > 0 ? ` · ${fileAttente} ${t("march.enAttente")}` : ""}
+        </span>
       </div>
 
       {/* My orders */}

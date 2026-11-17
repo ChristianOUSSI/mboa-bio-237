@@ -159,6 +159,14 @@ export default function PanierPage() {
                 <CarteMboa key={l.produitId} className="anim-apparition" style={{ animationDelay: `${Math.min(i, 6) * 0.05}s` }}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
+                      {/* Miniature produit */}
+                      <span className="w-10 h-10 rounded-xl bg-[var(--mboa-secondary-doux)] flex items-center justify-center overflow-hidden flex-shrink-0 text-xl">
+                        {l.photo ? (
+                          <img src={l.photo} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          "🥬"
+                        )}
+                      </span>
                       <BoutonVoix texte={`${l.quantite} ${t("liste.de")} ${l.nom}, ${l.prix} francs`} />
                       <span className="text-corps font-bold">{l.nom}</span>
                     </div>
@@ -264,8 +272,8 @@ export default function PanierPage() {
               )}
             </CarteMboa>
 
-            {/* Cost summary */}
-            <CarteMboa className="mt-3 anim-apparition">
+            {/* Cost summary - bloqué en bas : total et validation toujours visibles */}
+            <CarteMboa className="mt-3 anim-apparition sticky bottom-4 z-30 !shadow-[0_16px_40px_-10px_rgba(30,81,40,0.4)]" style={{ border: "2px solid var(--mboa-primary)" }}>
               <div className="space-y-1 mb-3">
                 <div className="flex justify-between text-corps">
                   <span>{t("panier.produits")}</span>
