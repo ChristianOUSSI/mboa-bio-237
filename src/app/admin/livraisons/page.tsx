@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toutesCommandes, payerLivreur } from "@/core/data/depots";
 import { etatLire, etatEcrire } from "@/core/data/base_locale";
+import { lireParametre, ecrireParametre } from "@/core/data/parametres";
 import { CarteMboa, EnTetePage, BadgeStatut, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { Commande, commandeMontantAPayer } from "@/core/types/commande_full";
 import { STATUT_COMMANDE_INFO, StatutCommande } from "@/core/types/statuts";
@@ -30,7 +31,7 @@ export default function LivraisonsPage() {
     const [c, p, f] = await Promise.all([
       toutesCommandes(),
       etatLire<string[]>(CLE_PAYES),
-      etatLire<number>(CLE_FRAIS),
+      lireParametre<number>(CLE_FRAIS, FRAIS_LIVRAISON_DEFAUT),
     ]);
     setCommandes(c);
     setPayes(new Set(p ?? []));
@@ -40,7 +41,7 @@ export default function LivraisonsPage() {
   async function sauverFrais() {
     const n = parseInt(fraisSaisie, 10);
     if (!Number.isFinite(n) || n < 0) return;
-    await etatEcrire(CLE_FRAIS, n);
+    await ecrireParametre(CLE_FRAIS, n);
     setFraisSauve(true);
     setTimeout(() => setFraisSauve(false), 2000);
   }

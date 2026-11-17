@@ -16,7 +16,7 @@ import {
 import { useEffect, useState } from "react";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
-import { etatLire } from "@/core/data/base_locale";
+import { lireParametre } from "@/core/data/parametres";
 
 const FRAIS_LIVRAISON_DEFAUT = 500;
 const CLE_FRAIS = "frais_livraison";
@@ -39,7 +39,7 @@ export default function PanierPage() {
   const [fraisLivraisonCfg, setFraisLivraisonCfg] = useState(FRAIS_LIVRAISON_DEFAUT);
 
   useEffect(() => {
-    void etatLire<number>(CLE_FRAIS).then((f) => {
+    void lireParametre<number>(CLE_FRAIS, FRAIS_LIVRAISON_DEFAUT).then((f) => {
       if (typeof f === "number" && f >= 0) setFraisLivraisonCfg(f);
     });
   }, []);
