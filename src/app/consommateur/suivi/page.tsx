@@ -205,7 +205,13 @@ export default function SuiviPage() {
                   {/* Who is coming */}
                   {c.livreurNom && (
                     <div className="encart-livreur mb-2">
-                      <span className="avatar-livreur" aria-hidden>🏍️</span>
+                      {c.livreurPhoto ? (
+                        <img src={c.livreurPhoto} alt="" className="avatar-livreur object-cover" />
+                      ) : (
+                        <span className="avatar-livreur" aria-hidden>
+                          {c.livreurNom ? c.livreurNom.trim().charAt(0).toUpperCase() : "🏍️"}
+                        </span>
+                      )}
                       <div className="flex-1">
                         <p className="text-aide text-[var(--mboa-text-doux)]">{t("suivi.enRoute")}</p>
                         <p className="text-corps font-bold">

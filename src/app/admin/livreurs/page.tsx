@@ -8,6 +8,7 @@ import { Livreur, livreurRepere } from "@/core/types/livreur";
 import { creerCompte } from "@/core/auth/auth_service";
 import { validerMotDePasse } from "@/core/auth/auth_local";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { choisirPhotoDepuisAppareil } from "@/core/utils/photo";
 import { useTr } from "@/core/i18n";
 
 interface FormulaireLivreur {
@@ -17,6 +18,7 @@ interface FormulaireLivreur {
   moto: string;
   plaque: string;
   tarifCourse: string;
+  photo: string;
 }
 
 const FORMULAIRE_VIDE: FormulaireLivreur = {
@@ -26,6 +28,7 @@ const FORMULAIRE_VIDE: FormulaireLivreur = {
   moto: "",
   plaque: "",
   tarifCourse: "500",
+  photo: "",
 };
 
 export default function LivreursAdminPage() {
@@ -77,6 +80,7 @@ export default function LivreursAdminPage() {
         moto: form.moto.trim() || null,
         plaque: form.plaque.trim() || null,
         tarifCourse: tarif,
+        photo: form.photo || null,
       });
 
       // Mot de passe provisoire, communiqué au livreur par le comptoir
@@ -226,6 +230,43 @@ export default function LivreursAdminPage() {
               className="champ-mboa mb-3"
               style={{ fontSize: 22 }}
             />
+
+            {/* Photo du livreur */}
+            <label className="text-aide block mb-1">{t("adm.stk.photo")}</label>
+            <div className="flex gap-2 mb-3">
+              <button
+                type="button"
+                onClick={async () => {
+                  const d = await choisirPhotoDepuisAppareil("appareil");
+                  if (d) setForm({ ...form, photo: d });
+                }}
+                className="btn-mboa btn-surface flex-1 !min-h-[48px]"
+              >
+                📷 {t("adm.stk.appareil")}
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const d = await choisirPhotoDepuisAppareil("galerie");
+                  if (d) setForm({ ...form, photo: d });
+                }}
+                className="btn-mboa btn-surface flex-1 !min-h-[48px]"
+              >
+                🖼️ {t("adm.stk.galerie")}
+              </button>
+            </div>
+            {form.photo && (
+              <div className="mb-3">
+                <img src={form.photo} alt="Livreur" className="w-full h-40 object-cover rounded-xl" />
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, photo: "" })}
+                  className="text-aide text-[var(--mboa-error)] font-bold mt-1"
+                >
+                  {t("adm.cat.supprimer")} la photo
+                </button>
+              </div>
+            )}
 
             {erreur && (
               <p className="text-[var(--mboa-error)] text-aide mb-2 text-center anim-secousse">
