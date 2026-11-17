@@ -140,6 +140,21 @@ export default function ListePage() {
                       <span className="text-corps font-bold">{l.nom}</span>
                     </div>
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => liste.ajuster(i, l.quantite - 1)}
+                        className="btn-mboa btn-surface !min-h-[40px] !min-w-[40px] !rounded-xl text-xl"
+                        aria-label={`Remove one ${l.nom}`}
+                      >
+                        −
+                      </button>
+                      <span className="text-corps font-bold min-w-[28px] text-center">{l.quantite}</span>
+                      <button
+                        onClick={() => liste.ajuster(i, l.quantite + 1)}
+                        className="btn-mboa btn-secondary !min-h-[40px] !min-w-[40px] !rounded-xl text-xl"
+                        aria-label={`Add one ${l.nom}`}
+                      >
+                        +
+                      </button>
                       <span className="text-chiffre text-[var(--mboa-primary)]">
                         {formaterFcfaCourt(Math.round(l.quantite * l.prix))}
                       </span>

@@ -133,6 +133,7 @@ interface ListeState {
   poser: (ligne: LigneCommande) => void;
       poserLibre: (nom: string, categorie: string, unite: string, prix: number) => void;
   retirer: (index: number) => void;
+  ajuster: (index: number, quantite: number) => void;
   vider: () => void;
   montantEstime: () => number;
 }
@@ -172,6 +173,13 @@ export const useListe = create<ListeState>()(
       retirer: (index) =>
         set((state) => ({
           lignes: state.lignes.filter((_, i) => i !== index),
+          modifiee: true,
+        })),
+      ajuster: (index, quantite) =>
+        set((state) => ({
+          lignes: state.lignes
+            .map((l, i) => (i === index ? { ...l, quantite: Math.max(1, Math.round(quantite)) } : l))
+            .filter((l) => l.quantite > 0),
           modifiee: true,
         })),
       vider: () => set(() => ({ lignes: [], modifiee: false, titre: "Ma liste" })),
