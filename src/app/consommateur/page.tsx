@@ -80,6 +80,9 @@ export default function MarchePage() {
   // Produits phares : les annonces « phare » nomment un produit du marché.
   const produitsPhares = vitrine.filter((p) => annonceEstPhare(annonces, p));
   const promoPct = (p: Produit) => annoncePromoPct(annonces, p);
+  // « Nouveau » : produit ajouté au stock il y a moins de 7 jours.
+  const estNouveau = (p: Produit) =>
+    !!p.createdLe && Date.now() - new Date(p.createdLe).getTime() < 7 * 24 * 3600 * 1000;
 
   const produitsFiltres = vitrine.filter((p) =>
     !recherche.trim() || p.nom.toLowerCase().includes(recherche.toLowerCase())
@@ -311,6 +314,11 @@ export default function MarchePage() {
                   <div className="flex items-center gap-1">
                     {p.emoji ?? <PictoCategorie categorie={p.categorie} size={24} />}
                     <h3 className="text-corps font-bold">{p.nom}</h3>
+                    {estNouveau(p) && (
+                      <span className="text-aide px-1.5 py-0.5 rounded-full font-bold" style={{ background: "var(--mboa-accent-doux)", color: "var(--mboa-primary)", fontSize: 11 }}>
+                        {t("march.nouveau")}
+                      </span>
+                    )}
                   </div>
                   <BoutonVoix texte={produitAnnonceVocale(p, true)} />
                 </div>

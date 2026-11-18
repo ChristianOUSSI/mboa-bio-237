@@ -68,6 +68,8 @@ function PageCategorieInterne() {
   const emoji = emojiCategorie(slug, persos);
 
   const promoPct = (p: Produit) => annoncePromoPct(annonces, p);
+  const estNouveau = (p: Produit) =>
+    !!p.createdLe && Date.now() - new Date(p.createdLe).getTime() < 7 * 24 * 3600 * 1000;
 
   function poserAuPanier(produit: Produit) {
     const u = produitUniteReelle(produit);
@@ -108,6 +110,11 @@ function PageCategorieInterne() {
                   <div className="flex items-center gap-1">
                     {p.emoji ?? <PictoCategorie categorie={p.categorie} size={24} />}
                     <h3 className="text-corps font-bold">{p.nom}</h3>
+                    {estNouveau(p) && (
+                      <span className="text-aide px-1.5 py-0.5 rounded-full font-bold" style={{ background: "var(--mboa-accent-doux)", color: "var(--mboa-primary)", fontSize: 11 }}>
+                        {t("march.nouveau")}
+                      </span>
+                    )}
                   </div>
                   <BoutonVoix texte={produitAnnonceVocale(p, true)} />
                 </div>

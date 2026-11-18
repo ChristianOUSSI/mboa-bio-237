@@ -1609,6 +1609,9 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
       if (!a) return true;
       const { error } = await client.from("annonces").upsert({
         id: a.id, type: a.type, titre: a.titre, texte: a.texte ?? "",
+        produit_slug: a.produitSlug ?? null,
+        expire_le: a.expireLe ?? null,
+        code: a.code ?? null,
         actif: a.actif, created_le: a.createdLe,
       });
       return !error;
