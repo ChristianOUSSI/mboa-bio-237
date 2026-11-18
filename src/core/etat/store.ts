@@ -13,16 +13,6 @@ import { etatEcrire } from "../data/base_locale";
 // Session
 // ============================================================
 
-/** Cookie miroir lu par src/proxy.ts pour la protection des routes. */
-function poserCookieSession(role: AppRole | null): void {
-  if (typeof document === "undefined") return;
-  if (role) {
-    document.cookie = `mboa-session-role=${role}; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax`;
-  } else {
-    document.cookie = "mboa-session-role=; path=/; max-age=0";
-  }
-}
-
 interface SessionState {
   profil: Profil | null;
   role: AppRole;
@@ -38,7 +28,6 @@ export const useSession = create<SessionState>()(
       role: "consommateur",
       setSession: (profil, role) => {
         const r = role ?? (profil?.role as AppRole) ?? "consommateur";
-        poserCookieSession(profil ? r : null);
         set(() => ({ profil, role: r }));
       },
       majProfil: (maj) =>
@@ -46,7 +35,6 @@ export const useSession = create<SessionState>()(
           profil: state.profil ? { ...state.profil, ...maj } : null,
         })),
       deconnexion: () => {
-        poserCookieSession(null);
         // Session IndexedDB aussi, sinon "/" re-connecterait silencieusement.
         etatEcrire("session_id", null).catch(() => {});
         // Referme aussi la session Supabase Auth éventuelle.
@@ -54,15 +42,7 @@ export const useSession = create<SessionState>()(
         set(() => ({ profil: null, role: "consommateur" }));
       },
     }),
-    {
-      name: "mboa-session",
-      // Au rechargement, re-persiste le cookie miroir depuis la session
-      // localStorage : sinon les sessions créées avant le cookie, ou un
-      // cookie effacé, feraient échouer le proxy et déconnecteraient.
-      onRehydrateStorage: () => (state) => {
-        if (state?.profil) poserCookieSession(state.role);
-      },
-    },
+    { name: "mboa-session" },
   ),
 );
 

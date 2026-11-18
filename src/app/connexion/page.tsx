@@ -234,8 +234,8 @@ export default function PageConnexion() {
   const [mdpParDefaut, setMdpParDefaut] = useState(false);
   const [compteOublie, setCompteOublie] = useState<CompteAuth | null>(null);
 
-  // Déjà connecté : le proxy peut renvoyer ici quand le cookie a sauté
-  // alors que localStorage garde la session — on retourne à l'espace.
+  // Déjà connecté : si l'utilisateur arrive ici avec une session
+  // (lien tapé par mégarde, historique), on retourne à son espace.
   useEffect(() => {
     if (profil) router.replace(`/${role}`);
   }, [profil, role, router]);
