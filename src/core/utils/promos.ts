@@ -6,7 +6,7 @@ const norm = (x: string) =>
 
 /** Le produit est-il mis en avant par une annonce « phare » ? */
 export function annonceEstPhare(annonces: Annonce[], produit: Produit): boolean {
-  const titres = annonces.filter((a) => a.type === "phare").map((a) => norm(a.titre));
+  const titres = annonces.filter((a) => a.actif && a.type === "phare").map((a) => norm(a.titre));
   const nom = norm(produit.nom);
   return titres.some((t) => t.includes(nom) || nom.includes(t));
 }
@@ -19,7 +19,7 @@ export function annonceEstPhare(annonces: Annonce[], produit: Produit): boolean 
 export function annoncePromoPct(annonces: Annonce[], produit: Produit): number | null {
   const nom = norm(produit.nom);
   for (const a of annonces) {
-    if (a.type !== "promo") continue;
+    if (!a.actif || a.type !== "promo") continue;
     const titre = norm(a.titre);
     const txt = norm(a.titre + " " + a.texte);
     if (!(txt.includes(nom) || nom.includes(titre))) continue;

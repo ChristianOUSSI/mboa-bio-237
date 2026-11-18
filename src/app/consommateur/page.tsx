@@ -164,7 +164,7 @@ export default function MarchePage() {
         </div>
 
         {/* Annonces du comptoir : promo / info / produit phare */}
-        {annonces.filter((a) => a.id !== annonceFermee).map((a) => {
+        {annonces.filter((a) => a.actif && a.id !== annonceFermee).map((a) => {
           const info = TYPE_ANNONCE_INFO[a.type] ?? TYPE_ANNONCE_INFO.info;
           const fond =
             a.type === "promo" ? "var(--mboa-accent-doux)" : a.type === "phare" ? "var(--mboa-secondary-doux)" : "var(--mboa-info-doux, rgba(59,130,246,0.12))";

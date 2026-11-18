@@ -1655,24 +1655,32 @@ export async function sauverAnnonce(params: {
   titre: string;
   texte?: string;
 }): Promise<void> {
-  const { annonceFromMap } = await import("../types/annonce");
   const id = params.id ?? uuidV4();
+  const annonce = {
+    id,
+    type: params.type,
+    titre: params.titre.trim(),
+    texte: params.texte?.trim() ?? "",
+    actif: true,
+    createdLe: new Date().toISOString(),
+  };
+  await cacheEcrire("annonce", id, annonce);
   const client = mboaReseau();
   if (client) {
     const { error } = await client.from("annonces").upsert({
       id,
-      type: params.type,
-      titre: params.titre.trim(),
-      texte: params.texte?.trim() ?? "",
+      type: annonce.type,
+      titre: annonce.titre,
+      texte: annonce.texte,
       actif: true,
     });
     if (!error) {
-      void notifierActiviteAdmin("act.annonceCreee", params.titre.trim());
+      void notifierActiviteAdmin("act.annonceCreee", annonce.titre);
       return;
     }
   }
-  await fileAjouter("annonce", id, "upsert:annonce", params);
-  void notifierActiviteAdmin("act.annonceCreee", params.titre.trim());
+  await fileAjouter("annonce", id, "upsert:annonce", annonce);
+  void notifierActiviteAdmin("act.annonceCreee", annonce.titre);
 }
 
 export async function basculerAnnonceActive(annonceId: string, actif: boolean): Promise<void> {
