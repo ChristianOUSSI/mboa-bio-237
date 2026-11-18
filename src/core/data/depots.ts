@@ -11,6 +11,7 @@ import { uniteResolve } from "../types/unite";
 import { EntreeCatalogue } from "../types/catalogue";
 import { Categorie } from "../types/categorie";
 import { Commande, commandeFromMap } from "../types/commande_full";
+import { StatutCommande } from "../types/statuts";
 import { LigneCommande, ligneUniteReelle } from "../types/commande";
 import { Achat, StatutAchat, achatFromMap, achatMontant } from "../types/achat";
 import { Profil, profilFromMap } from "../types/profil";
@@ -717,7 +718,6 @@ export async function sauverLivreur(params: {
     nom: params.nom,
     telephone: params.telephone,
     zone: params.zone,
-    profilId: null,
     photo: params.photo ?? null,
     moto: params.moto ?? null,
     plaque: params.plaque ?? null,
@@ -1725,4 +1725,62 @@ export async function supprimerAnnonce(annonceId: string): Promise<void> {
   const { cacheSupprimer } = await import("./base_locale");
   await cacheSupprimer("annonce", annonceId);
   await fileAjouter("annonce", annonceId, "delete:annonce", {});
+}
+
+/** Remet en stock une ligne de commande annulée (miroir de decrementerStock). */
+async function restaurerStock(ligne: LigneCommande): Promise<void> {
+  if (!ligne.produitId || ligne.produitId.startsWith("libre_")) return;
+  const uLigne = ligneUniteReelle(ligne);
+
+  let produit: Produit | null = null;
+  if (mboaReseau()) {
+    const { data } = await mboaReseau()!
+      .from("produits")
+      .select("*")
+      .eq("id", ligne.produitId)
+      .maybeSingle();
+    if (data) produit = produitFromMap(data as unknown as Record<string, unknown>);
+  }
+  if (!produit) produit = await cacheLire<Produit>("produit", ligne.produitId);
+  if (!produit) return;
+  if (produitUniteReelle(produit) !== uLigne) return;
+
+  const nouvelleQte = produit.quantite + ligne.quantite;
+  produit.quantite = nouvelleQte;
+  if (mboaReseau()) {
+    await mboaReseau()!.from("produits").update({ quantite: nouvelleQte }).eq("id", produit.id);
+    await mboaReseau()!.from("vitrine").update({ quantite: nouvelleQte }).eq("id", produit.id);
+  }
+  await cacheEcrire("produit", produit.id, produit);
+  await cacheEcrire("vitrine", produit.id, produit);
+}
+
+/**
+ * Annule une course déjà validée (stock décrémenté) : remet le stock
+ * et passe la commande à annulee. À utiliser à la place de refuserDevis
+ * pour les courses en cours — sinon les produits restent en rupture
+ * et le client ne peut plus recommander.
+ */
+export async function annulerCourseComplete(commande: Commande): Promise<void> {
+  const dejaSorti =
+    commande.statut === StatutCommande.valideeAdmin ||
+    commande.statut === StatutCommande.enLivraison ||
+    commande.stockSorti;
+  if (dejaSorti) {
+    for (const l of commande.lignes) await restaurerStock(l);
+  }
+  if (mboaReseau()) {
+    const { error } = await mboaReseau()!
+      .from("commandes")
+      .update({ statut_enum: "annulee", annule_le: new Date().toISOString() })
+      .eq("id", commande.id);
+    if (!error) {
+      await cacheEcrire("commande", commande.id, { ...commande, statut: StatutCommande.annulee });
+      void notifierActiviteAdmin("act.courseAnnulee", commande.lignes.map((l) => l.nom).join(", "));
+      return;
+    }
+  }
+  await fileAjouter("commande", commande.id, "update:statut=annulee", {});
+  await cacheEcrire("commande", commande.id, { ...commande, statut: StatutCommande.annulee });
+  void notifierActiviteAdmin("act.courseAnnulee", commande.lignes.map((l) => l.nom).join(", "));
 }

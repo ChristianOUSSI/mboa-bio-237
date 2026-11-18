@@ -213,6 +213,11 @@ export default function PanierPage() {
     );
   }
 
+  function recommander() {
+    for (const l of recap?.lignes ?? []) panier.poser(l);
+    router.push("/consommateur/panier");
+  }
+
   // Écran de confirmation : récap complet de la commande envoyée.
   if (recap) {
     return (
@@ -259,6 +264,9 @@ export default function PanierPage() {
           <div className="mt-4 space-y-2">
             <BoutonMboa onClick={() => router.push("/consommateur/suivi")} className="w-full">
               {t("panier.voirSuivi")}
+            </BoutonMboa>
+            <BoutonMboa variant="surface" onClick={recommander} className="w-full">
+              🛒 {t("panier.recommander")}
             </BoutonMboa>
             <BoutonMboa variant="surface" onClick={partagerRecap} className="w-full">
               {t("panier.partager")}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toutesCommandes, payerLivreur, refuserDevis } from "@/core/data/depots";
+import { toutesCommandes, payerLivreur, annulerCourseComplete } from "@/core/data/depots";
 import { etatLire, etatEcrire } from "@/core/data/base_locale";
 import { lireParametre, ecrireParametre } from "@/core/data/parametres";
 import { CarteMboa, EnTetePage, BadgeStatut, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
@@ -53,7 +53,7 @@ export default function LivraisonsPage() {
 
   /** Annule une course assignée ou en cours (retour au comptoir). */
   async function annulerCourse(c: Commande) {
-    await refuserDevis(c.id);
+    await annulerCourseComplete(c);
     await charger();
   }
 

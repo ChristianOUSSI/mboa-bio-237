@@ -84,7 +84,7 @@ export default function LivreursAdminPage() {
 
     setEnCours(true);
     try {
-      await sauverLivreur({
+      const livreurCree = await sauverLivreur({
         nom: form.nom.trim(),
         telephone: form.telephone.replace(/\D/g, ""),
         zone: form.zone.trim(),
@@ -106,6 +106,22 @@ export default function LivreursAdminPage() {
           village: form.zone.trim(),
           motDePasse: mdp,
         });
+        // Lie la fiche livreur au compte : sans ce lien, les courses
+        // assignées (livreur_id = fiche.id) n'apparaissent jamais
+        // dans l'espace livreur (session = compte.id).
+        if (livreurCree) {
+          await sauverLivreur({
+            id: livreurCree.id,
+            nom: livreurCree.nom,
+            telephone: livreurCree.telephone,
+            zone: livreurCree.zone,
+            moto: livreurCree.moto,
+            plaque: livreurCree.plaque,
+            tarifCourse: livreurCree.tarifCourse,
+            photo: livreurCree.photo,
+            lienCompteId: compte.id,
+          });
+        }
         setMdpGenere({
           nom: compte.nom,
           telephone: form.telephone.replace(/\D/g, ""),

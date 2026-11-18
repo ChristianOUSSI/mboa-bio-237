@@ -36,6 +36,7 @@ export default function MarchePage() {
   const [annonceFermee, setAnnonceFermee] = useState("");
   const [onboarding, setOnboarding] = useState(false);
   const [filtreCat, setFiltreCat] = useState("");
+  const [monterVisible, setMonterVisible] = useState(false);
   const t = useTr();
 
   async function charger() {
@@ -66,11 +67,15 @@ export default function MarchePage() {
       void Notification.requestPermission().catch(() => {});
     }
     const handler = () => setEnLigne(navigator.onLine);
+    const surScroll = () => setMonterVisible(window.scrollY > 500);
+    surScroll();
     window.addEventListener("online", handler);
     window.addEventListener("offline", handler);
+    window.addEventListener("scroll", surScroll, { passive: true });
     return () => {
       window.removeEventListener("online", handler);
       window.removeEventListener("offline", handler);
+      window.removeEventListener("scroll", surScroll);
     };
   }, [setEnLigne]);
 
@@ -449,6 +454,22 @@ export default function MarchePage() {
           <BoutonMboa variant="surface" className="w-full">📦 {t("march.mesCommandes")}</BoutonMboa>
         </Link>
       </div>
+      {monterVisible && (
+        <button
+          type="button"
+          aria-label={t("march.retourHaut")}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed z-40 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-lg transition-transform active:scale-90"
+          style={{
+            bottom: "calc(1.25rem + env(safe-area-inset-bottom, 0px))",
+            right: "1rem",
+            background: "var(--mboa-primary)",
+            color: "#fff",
+          }}
+        >
+          ↑
+        </button>
+      )}
       {onboarding && <OnboardingMboa onTermine={() => setOnboarding(false)} />}
     </FondMboa>
   );
