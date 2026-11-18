@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/core/etat/store";
-import { toutesCommandes, demarrerLivraison, marquerLivree, majPositionLivreur, partagerPositionGps } from "@/core/data/depots";
+import { toutesCommandes, chargerLivreurs, demarrerLivraison, marquerLivree, majPositionLivreur, partagerPositionGps } from "@/core/data/depots";
 import { cacheEcrire } from "@/core/data/base_locale";
 import { CarteMboa, EnTetePage, BadgeStatut, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { Commande, commandeMontantAPayer } from "@/core/types/commande_full";
@@ -43,12 +43,28 @@ export default function AccueilLivreur() {
   const [enCours, setEnCours] = useState<string | null>(null);
 
   async function charger() {
-    const toutes = await toutesCommandes();
-    // The driver only sees their own assigned deliveries
+    const [toutes, livreurs] = await Promise.all([toutesCommandes(), chargerLivreurs()]);
+    // `livreur_id` porte l'id de la FICHE livreur, pas celui du compte :
+    // on matche la fiche dont le téléphone (ou l'id direct) correspond
+    // à la session, sinon le livreur ne verrait jamais ses courses.
+    const telSession = (profil?.telephone ?? "").replace(/\D/g, "").slice(-9);
+    const mesFiches = new Set(
+      livreurs
+        .filter(
+          (l) =>
+            l.profilId === profil?.id ||
+            l.id === profil?.id ||
+            (telSession.length >= 9 && (l.telephone ?? "").replace(/\D/g, "").slice(-9) === telSession),
+        )
+        .map((l) => l.id),
+    );
+    // Le livreur ne voit que SES courses : ni les nouvelles (pas encore
+    // assignées), ni les annulées.
     const miennes = profil
       ? toutes.filter(
           (c) =>
-            c.livreurId === profil.id &&
+            c.livreurId != null &&
+            mesFiches.has(c.livreurId) &&
             c.statut !== StatutCommande.nouvelle &&
             c.statut !== StatutCommande.annulee,
         )

@@ -708,6 +708,8 @@ export async function sauverLivreur(params: {
   plaque?: string | null;
   tarifCourse: number;
   photo?: string | null;
+  /** Id du compte de connexion associé (rattache fiche ↔ session). */
+  lienCompteId?: string | null;
 }): Promise<Livreur | null> {
   const id = params.id ?? uuidV4();
   const livreur: Livreur = {
@@ -720,6 +722,7 @@ export async function sauverLivreur(params: {
     moto: params.moto ?? null,
     plaque: params.plaque ?? null,
     tarifCourse: Math.round(params.tarifCourse),
+    profilId: params.lienCompteId ?? null,
     actif: true,
   };
   if (mboaReseau()) {
@@ -734,6 +737,7 @@ export async function sauverLivreur(params: {
         plaque: params.plaque ?? null,
         tarif_course: livreur.tarifCourse,
         photo: params.photo ?? null,
+        profil_id: params.lienCompteId ?? null,
         actif: true,
       })
       .select("*")
