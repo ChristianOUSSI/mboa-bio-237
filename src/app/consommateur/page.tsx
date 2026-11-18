@@ -70,6 +70,12 @@ export default function MarchePage() {
     );
   }
 
+  // Produits phares : les annonces « phare » nomment un produit du marché.
+  const norm = (x: string) => x.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+  const titresPhares = annonces.filter((a) => a.type === "phare").map((a) => norm(a.titre));
+  const estPhare = (p: Produit) => titresPhares.some((t) => t.includes(norm(p.nom)) || norm(p.nom).includes(t));
+  const produitsPhares = vitrine.filter(estPhare);
+
   const produitsFiltres = vitrine.filter((p) =>
     !recherche.trim() || p.nom.toLowerCase().includes(recherche.toLowerCase())
   ).sort((a, b) => {
@@ -240,6 +246,37 @@ export default function MarchePage() {
 
       {/* Product showcase */}
       <div className="px-4 py-2 flex-1">
+        {produitsPhares.length > 0 && (
+          <div className="mb-4">
+            <h2 className="text-titre titre-section mb-2">⭐ {t("march.phare")}</h2>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: "none" }}>
+              {produitsPhares.map((p) => (
+                <CarteMboa key={p.id} className="card-produit !p-3 shrink-0" style={{ width: 190 }}>
+                  <div className="zone-photo w-full h-24 rounded-xl flex items-center justify-center mb-2 overflow-hidden">
+                    {p.emoji ? (
+                      <span style={{ fontSize: 48 }} aria-hidden>{p.emoji}</span>
+                    ) : p.photoReelle ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.photoReelle} alt={p.nom} className="w-full h-full object-cover" />
+                    ) : (
+                      <PictoCategorie categorie={p.categorie} size={48} />
+                    )}
+                  </div>
+                  <h3 className="text-corps font-bold truncate">{p.nom}</h3>
+                  <p className="puce-prix mt-1 inline-block">{produitPrixLabel(p)}</p>
+                  {!produitEstRupture(p) && (
+                    <button
+                      onClick={() => poserAuPanier(p)}
+                      className="btn-mboa btn-primary w-full !min-h-[44px] !rounded-xl mt-2 font-bold"
+                    >
+                      + {t("march.ajouter")}
+                    </button>
+                  )}
+                </CarteMboa>
+              ))}
+            </div>
+          </div>
+        )}
         <h2 className="text-titre titre-section mb-2">{t("march.tousProduits")}</h2>
         {produitsFiltres.length === 0 ? (
           <div className="etat-vide">

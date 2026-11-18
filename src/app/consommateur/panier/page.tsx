@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { usePanier } from "@/core/etat/store";
 import { CarteMboa, BoutonMboa, EnTetePage, BoutonVoix, FondMboa, SkeletonMboa, ChargementMboa } from "@/core/design_system/composants";
 import { formaterFcfa, formaterFcfaCourt } from "@/core/utils/format_monnaie";
-import { commander } from "@/core/data/depots";
+import { commander, chargerVitrine } from "@/core/data/depots";
+import { Produit, produitEstRupture, produitPrixLabel, produitUniteReelle } from "@/core/types/produit";
 import { resumerQuantites } from "@/core/types/commande";
 import { ModePaiement, MODE_PAIEMENT_INFO } from "@/core/types/statuts";
 import {
@@ -40,12 +41,34 @@ export default function PanierPage() {
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsEtat, setGpsEtat] = useState<"repos" | "charge" | "ok" | "erreur">("repos");
   const [fraisLivraisonCfg, setFraisLivraisonCfg] = useState(FRAIS_LIVRAISON_DEFAUT);
+  const [suggestions, setSuggestions] = useState<Produit[]>([]);
 
   useEffect(() => {
     void lireParametre<number>(CLE_FRAIS, FRAIS_LIVRAISON_DEFAUT).then((f) => {
       if (typeof f === "number" && f >= 0) setFraisLivraisonCfg(f);
     });
+    // Suggestions : produits du marché absents du panier.
+    void chargerVitrine().then((v) => {
+      const ids = new Set(panier.lignes.map((l) => l.produitId));
+      setSuggestions(v.filter((p) => p.actif && p.quantite > 0 && !ids.has(p.id)).slice(0, 8));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function poserSuggestion(produit: Produit) {
+    panier.poser({
+      produitId: produit.id,
+      slug: produit.slug,
+      nom: produit.nom,
+      categorie: produit.categorie,
+      quantite: 1,
+      prix: produit.prix,
+      coutAchat: produit.prixAchat ?? 0,
+      photo: produit.photoReelle,
+      unite: produitUniteReelle(produit),
+      composants: produit.composants,
+    });
+  }
 
   const montantProduits = panier.montantTotal();
   const fraisLivraison = montantProduits > 0 ? fraisLivraisonCfg : 0;
@@ -147,6 +170,30 @@ export default function PanierPage() {
           </div>
         ) : (
           <>
+            {/* Suggestions : produits du marché absents du panier */}
+            {suggestions.length > 0 && (
+              <div className="mb-4 anim-apparition">
+                <p className="text-corps font-bold mb-2">💡 {t("panier.aussi")}</p>
+                <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: "none" }}>
+                  {suggestions.map((p) => (
+                    <CarteMboa key={p.id} className="!p-3 shrink-0 flex flex-col items-center text-center" style={{ width: 140 }}>
+                      <span style={{ fontSize: 40 }} aria-hidden>{p.emoji ?? "🥬"}</span>
+                      <p className="text-aide font-bold mt-1 truncate w-full">{p.nom}</p>
+                      <p className="puce-prix mt-1">{produitPrixLabel(p)}</p>
+                      {!produitEstRupture(p) && (
+                        <button
+                          onClick={() => poserSuggestion(p)}
+                          className="btn-mboa btn-primary w-full !min-h-[40px] !rounded-xl mt-2 text-aide font-bold"
+                        >
+                          + {t("march.ajouter")}
+                        </button>
+                      )}
+                    </CarteMboa>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Quantities summary */}
             <CarteMboa className="mb-3 card-accent anim-apparition">
               <div className="flex justify-between items-center">
