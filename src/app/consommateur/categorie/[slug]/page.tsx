@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { chargerVitrine, toutesAnnonces } from "@/core/data/depots";
 import { Annonce } from "@/core/types/annonce";
-import { annoncePromoPct } from "@/core/utils/promos";
+import { annoncePromoPct, annonceExpiree } from "@/core/utils/promos";
 import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
 import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstVitrine, produitEstPack } from "@/core/types/produit";
 import { usePanier } from "@/core/etat/store";
@@ -45,7 +45,7 @@ function PageCategorieInterne() {
 
   async function charger() {
     const [v, p, a] = await Promise.all([chargerVitrine(), categoriesPerso(), toutesAnnonces()]);
-    setAnnonces(a.filter((x) => x.actif));
+    setAnnonces(a.filter((x) => x.actif && !annonceExpiree(x)));
     setProduits(v.filter((x) => produitEstVitrine(x) && x.categorie === slug));
     setPersos(p);
     setChargement(false);
