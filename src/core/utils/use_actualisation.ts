@@ -13,7 +13,11 @@ export function useActualisation(charger: () => void | Promise<void>, ms = 30000
 
   useEffect(() => {
     void ref.current();
-    const timer = setInterval(() => void ref.current(), ms);
+    const timer = setInterval(() => {
+      // Pas de requêtes quand l'onglet est caché : ça économise data et
+      // batterie, et le retour sur l'onglet déclenche déjà un rechargement.
+      if (document.visibilityState === "visible") void ref.current();
+    }, ms);
     const auRetour = () => {
       if (document.visibilityState === "visible") void ref.current();
     };

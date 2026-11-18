@@ -117,8 +117,10 @@ export default function SuiviPage() {
     if (!profil) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     recharger(profil.id);
-    // Real-time map: re-poll tracking every 5 seconds
-    const timer = setInterval(() => recharger(profil.id), 5000);
+    // Real-time map: re-poll tracking every 15 seconds
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") recharger(profil.id);
+    }, 15000);
     return () => clearInterval(timer);
   }, [profil]);
 

@@ -1,5 +1,5 @@
 // Service Worker MBOA BIO 237 - cache offline-first
-const CACHE_NAME = "mboa-bio-v11";
+const CACHE_NAME = "mboa-bio-v12";
 const ASSETS = [
   "/",
   "/connexion",
@@ -38,13 +38,17 @@ self.addEventListener("fetch", (event) => {
     );
     return;
   }
-  // Static assets : cache-first
+  // Static assets : cache-first — uniquement les ressources same-origin.
+  // Les appels API (Supabase, etc.) ne doivent JAMAIS être mis en cache :
+  // sinon le SW sert des données périmées et les écritures semblent perdues.
   if (event.request.method === "GET") {
+    const memeOrigine = new URL(event.request.url).origin === self.location.origin;
+    if (!memeOrigine) return; // laisse le navigateur gérer les requêtes externes
     event.respondWith(
       caches.match(event.request).then((cached) => {
         if (cached) return cached;
         return fetch(event.request).then((response) => {
-          if (response.status === 200 && event.request.url.startsWith("http")) {
+          if (response.status === 200) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone)).catch(() => {});
           }
