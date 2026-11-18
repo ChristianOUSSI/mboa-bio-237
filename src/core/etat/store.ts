@@ -13,6 +13,16 @@ import { etatEcrire } from "../data/base_locale";
 // Session
 // ============================================================
 
+/** Cookie miroir lu par src/proxy.ts pour la protection des routes. */
+function poserCookieSession(role: AppRole | null): void {
+  if (typeof document === "undefined") return;
+  if (role) {
+    document.cookie = `mboa-session-role=${role}; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax`;
+  } else {
+    document.cookie = "mboa-session-role=; path=/; max-age=0";
+  }
+}
+
 interface SessionState {
   profil: Profil | null;
   role: AppRole;

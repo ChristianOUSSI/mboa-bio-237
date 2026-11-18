@@ -144,7 +144,7 @@ const ALIMENTS_FLOTTANTS: {
   { emoji: "🍇", top: "2%", left: "2%", taille: 26, delai: "-0.7s", role: "fournisseur" },
   { emoji: "🍑", top: "2%", right: "2%", taille: 26, delai: "-2.2s", role: "livreur" },
   { emoji: "🍈", bottom: "2%", left: "2%", taille: 26, delai: "-3.1s", role: "admin" },
-  { emoji: "🥬", top: "82%", right: "10%", taille: 38, delai: "-1s", super: true },
+  { emoji: "🥬", bottom: "2%", right: "2%", taille: 38, delai: "-1s", super: true },
 ];
 
 /** Emoji illustrant chaque espace. */
