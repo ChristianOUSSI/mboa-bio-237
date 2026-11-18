@@ -333,6 +333,13 @@ export default function TableauAdmin() {
           )}
           {notifOk && <span className="text-aide text-[var(--mboa-text-doux)]">{t("adm.act.notifOk")}</span>}
           <SonToggle />
+          <button
+            onClick={() => router.push("/admin/activite")}
+            className="text-aide font-bold"
+            style={{ color: "var(--mboa-primary)" }}
+          >
+            {t("adm.act.voirTout")} →
+          </button>
         </div>
         {activites.length === 0 ? (
           <CarteMboa>
