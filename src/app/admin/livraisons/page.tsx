@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toutesCommandes, payerLivreur } from "@/core/data/depots";
+import { toutesCommandes, payerLivreur, refuserDevis } from "@/core/data/depots";
 import { etatLire, etatEcrire } from "@/core/data/base_locale";
 import { lireParametre, ecrireParametre } from "@/core/data/parametres";
 import { CarteMboa, EnTetePage, BadgeStatut, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
@@ -49,6 +49,12 @@ export default function LivraisonsPage() {
 
   // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
   useActualisation(charger);
+
+  /** Annule une course assignée ou en cours (retour au comptoir). */
+  async function annulerCourse(c: Commande) {
+    await refuserDevis(c.id);
+    await charger();
+  }
 
   /** Le livreur est payé uniquement après réception confirmée par la cliente. */
   async function payer(c: Commande) {
@@ -169,6 +175,12 @@ export default function LivraisonsPage() {
                 {c.livreurNom && (
                   <p className="text-aide text-[var(--mboa-text-doux)] mt-1">{t("adm.liv.livreur2")} : {c.livreurNom}</p>
                 )}
+                <button
+                  onClick={() => annulerCourse(c)}
+                  className="text-aide text-[var(--mboa-error)] font-bold mt-2"
+                >
+                  {t("adm.liv.annulerCourse")}
+                </button>
               </CarteMboa>
             ))}
           </>

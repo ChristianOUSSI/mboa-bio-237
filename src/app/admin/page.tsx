@@ -52,6 +52,20 @@ export default function TableauAdmin() {
   const [opsAttente, setOpsAttente] = useState(0);
   const [syncEnCours, setSyncEnCours] = useState(false);
 
+  // Produits les plus commandés (toutes commandes connues)
+  const topProduits = (() => {
+    const tot = new Map<string, { nom: string; qte: number }>();
+    for (const c of commandes) {
+      for (const l of c.lignes) {
+        const cle = l.slug || l.nom;
+        const cur = tot.get(cle) ?? { nom: l.nom, qte: 0 };
+        cur.qte += l.quantite;
+        tot.set(cle, cur);
+      }
+    }
+    return [...tot.values()].sort((a, b) => b.qte - a.qte).slice(0, 5);
+  })();
+
   async function verifierFile() {
     setOpsAttente(await fileCompte());
   }
@@ -259,6 +273,24 @@ export default function TableauAdmin() {
           </div>
         </CarteMboa>
       </div>
+
+      {/* Top produits */}
+      {topProduits.length > 0 && (
+        <div className="px-4">
+          <h2 className="text-titre titre-section mb-2">{t("adm.topProduits")}</h2>
+          <CarteMboa className="space-y-1">
+            {topProduits.map((tp, i) => (
+              <div key={i} className="flex justify-between items-center text-corps">
+                <span className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-[var(--mboa-secondary-doux)] text-[var(--mboa-primary)] text-aide font-bold flex items-center justify-center">{i + 1}</span>
+                  {tp.nom}
+                </span>
+                <span className="font-bold text-[var(--mboa-primary)]">×{tp.qte}</span>
+              </div>
+            ))}
+          </CarteMboa>
+        </div>
+      )}
 
       {/* Alertes stock */}
       {(stockBas.length > 0 || ruptures.length > 0) && (

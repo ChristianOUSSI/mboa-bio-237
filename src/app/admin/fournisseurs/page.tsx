@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { chargerFournisseurs, basculerFournisseurActif } from "@/core/data/depots";
+import { chargerFournisseurs, basculerFournisseurActif, supprimerFournisseur } from "@/core/data/depots";
 import { CarteMboa, EnTetePage, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { Fournisseur, fournisseurProduction, fournisseurLie } from "@/core/types/fournisseur";
 import { useGuardRole } from "@/core/auth/use_guard_role";
@@ -14,11 +14,18 @@ export default function FournisseursAdminPage() {
   const { pret, profil } = useGuardRole("admin");
   const t = useTr();
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
+  const [confirmSuppr, setConfirmSuppr] = useState<string | null>(null);
 
   async function charger() { setFournisseurs(await chargerFournisseurs()); }
 
   // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
   useActualisation(charger);
+
+  async function supprimer(f: Fournisseur) {
+    await supprimerFournisseur(f.id);
+    setConfirmSuppr(null);
+    await charger();
+  }
 
   async function basculer(f: Fournisseur, actif: boolean) {
     await basculerFournisseurActif(f.id, actif);
@@ -53,6 +60,19 @@ export default function FournisseursAdminPage() {
                 </span>
               </div>
             </div>
+            {confirmSuppr === f.id ? (
+              <div className="flex gap-2 mt-2">
+                <BoutonMboa variant="error" className="flex-1 !min-h-[44px]" onClick={() => supprimer(f)}>{t("adm.stk.confirmer")}</BoutonMboa>
+                <BoutonMboa variant="surface" className="flex-1 !min-h-[44px]" onClick={() => setConfirmSuppr(null)}>{t("adm.stk.annuler")}</BoutonMboa>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmSuppr(f.id)}
+                className="text-aide text-[var(--mboa-error)] font-bold mt-2"
+              >
+                {t("adm.fourn.supprimer")}
+              </button>
+            )}
             {!f.actif && (
               <div className="flex gap-2 mt-2">
                 <BoutonMboa variant="primary" className="flex-1 !min-h-[44px]" onClick={() => basculer(f, true)}>

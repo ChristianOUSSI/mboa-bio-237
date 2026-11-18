@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { chargerStock, ajusterProduit, creerProduit, supprimerProduit, basculerProduitActif } from "@/core/data/depots";
+import { chargerStock, ajusterProduit, creerProduit, supprimerProduit, basculerProduitActif, modifierProduit } from "@/core/data/depots";
 import { CarteMboa, EnTetePage, JaugeMboa, BoutonVoix, BadgeStatut, BoutonMboa, PictoCategorie, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { Produit, produitJauge, produitMargeUnitaire, produitMargePct, produitEstAPerte, produitDisponibilite, produitEstPack } from "@/core/types/produit";
 import { CATEGORIES_ORDREES } from "@/core/types/categorie";
@@ -41,6 +41,17 @@ export default function StockAdminPage() {
   const [npSucces, setNpSucces] = useState(false);
   const [npErreur, setNpErreur] = useState("");
 
+  // Formulaire d'édition produit
+  const [edition, setEdition] = useState<Produit | null>(null);
+  const [edNom, setEdNom] = useState("");
+  const [edCategorie, setEdCategorie] = useState<string>("fruit");
+  const [edUnite, setEdUnite] = useState<Unite>(Unite.kg);
+  const [edPrix, setEdPrix] = useState("");
+  const [edPrixAchat, setEdPrixAchat] = useState("");
+  const [edPhoto, setEdPhoto] = useState("");
+  const [edPerissable, setEdPerissable] = useState(true);
+  const [edEnCours, setEdEnCours] = useState(false);
+
   async function charger() {
     setStock(await chargerStock());
     categoriesPerso().then(setPersos).catch(() => {});
@@ -68,6 +79,42 @@ export default function StockAdminPage() {
   async function togglerActif(p: Produit) {
     await basculerProduitActif(p.id, !p.actif);
     await charger();
+  }
+
+  function ouvrirEdition(p: Produit) {
+    setEdition(p);
+    setEdNom(p.nom);
+    setEdCategorie(p.categorie);
+    setEdUnite(p.unite ?? Unite.kg);
+    setEdPrix(String(p.prix));
+    setEdPrixAchat(p.prixAchat != null ? String(p.prixAchat) : "");
+    setEdPhoto(p.photoReelle ?? "");
+    setEdPerissable(p.perissable);
+  }
+
+  async function sauverEdition() {
+    if (!edition || edEnCours) return;
+    setEdEnCours(true);
+    try {
+      await modifierProduit(edition.id, {
+        nom: edNom,
+        categorie: edCategorie,
+        unite: edUnite,
+        prix: parseInt(edPrix) || edition.prix,
+        prixAchat: edPrixAchat ? parseInt(edPrixAchat) : null,
+        photo: edPhoto || "",
+        perissable: edPerissable,
+      });
+      setEdition(null);
+      await charger();
+    } finally {
+      setEdEnCours(false);
+    }
+  }
+
+  async function prendrePhotoEdition(mode?: "appareil" | "galerie") {
+    const d = await choisirPhotoDepuisAppareil(mode);
+    if (d) setEdPhoto(d);
   }
 
   async function confirmerSuppression(p: Produit) {
@@ -199,6 +246,68 @@ export default function StockAdminPage() {
             </div>
           </CarteMboa>
 
+          {/* Formulaire d'édition produit */}
+          {edition && (
+            <CarteMboa className="mb-3 anim-apparition" style={{ border: "2px solid var(--mboa-primary)" }}>
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-titre titre-section">✏️ {t("adm.stk.modifier")} — {edition.nom}</h3>
+                <button onClick={() => setEdition(null)} className="text-aide font-bold">✕</button>
+              </div>
+
+              <label className="text-aide block mb-1">{t("adm.stk.nom")}</label>
+              <input type="text" value={edNom} onChange={(e) => setEdNom(e.target.value)} className="champ-mboa w-full mb-2" style={{ fontSize: 18 }} />
+
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <div>
+                  <label className="text-aide block mb-1">{t("adm.stk.categorie")}</label>
+                  <select value={edCategorie} onChange={(e) => setEdCategorie(e.target.value)} className="champ-mboa w-full" style={{ fontSize: 16 }}>
+                    {[...CATEGORIES_ORDREES, ...persos.map((x) => x.slug)].map((c) => (
+                      <option key={c} value={c}>{libelleCategorie(c, persos)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-aide block mb-1">{t("adm.stk.unite")}</label>
+                  <select value={edUnite} onChange={(e) => setEdUnite(e.target.value as Unite)} className="champ-mboa w-full" style={{ fontSize: 16 }}>
+                    {Object.values(Unite).map((u) => (
+                      <option key={u} value={u}>{UNITE_INFO[u]?.un ?? u}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <div>
+                  <label className="text-aide block mb-1">{t("adm.stk.prixVente2")}</label>
+                  <input type="number" inputMode="numeric" value={edPrix} onChange={(e) => setEdPrix(e.target.value)} className="champ-mboa w-full" style={{ fontSize: 18 }} />
+                </div>
+                <div>
+                  <label className="text-aide block mb-1">{t("adm.stk.prixAchat")}</label>
+                  <input type="number" inputMode="numeric" value={edPrixAchat} onChange={(e) => setEdPrixAchat(e.target.value)} className="champ-mboa w-full" style={{ fontSize: 18 }} />
+                </div>
+              </div>
+
+              <label className="text-aide block mb-1">{t("adm.stk.photo") ?? "Photo"}</label>
+              <div className="flex gap-2 mb-2">
+                <button type="button" onClick={() => prendrePhotoEdition("appareil")} className="btn-mboa btn-surface flex-1 !min-h-[44px]">📷 {t("adm.stk.appareil")}</button>
+                <button type="button" onClick={() => prendrePhotoEdition("galerie")} className="btn-mboa btn-surface flex-1 !min-h-[44px]">🖼️ {t("adm.stk.galerie")}</button>
+              </div>
+              {edPhoto && <img src={edPhoto} alt="" className="w-full h-32 object-cover rounded-xl mb-2" />}
+
+              <div className="flex gap-2 mb-3">
+                <button type="button" onClick={() => setEdPerissable(true)} className="flex-1 p-2 rounded-xl text-aide" style={{ background: edPerissable ? "var(--mboa-secondary-doux)" : "var(--mboa-background)", border: "2px solid " + (edPerissable ? "var(--mboa-primary)" : "transparent") }}>{t("adm.stk.oui")}</button>
+                <button type="button" onClick={() => setEdPerissable(false)} className="flex-1 p-2 rounded-xl text-aide" style={{ background: !edPerissable ? "var(--mboa-secondary-doux)" : "var(--mboa-background)", border: "2px solid " + (!edPerissable ? "var(--mboa-primary)" : "transparent") }}>{t("adm.stk.non")}</button>
+              </div>
+
+              <div className="flex gap-2">
+                <BoutonMboa variant="surface" className="flex-1" onClick={() => setEdition(null)}>{t("adm.stk.annuler")}</BoutonMboa>
+                <BoutonMboa variant="primary" className="flex-1" onClick={sauverEdition} disabled={edEnCours || !edNom.trim()}>
+                  {edEnCours ? "…" : t("adm.stk.modifier")}
+                </BoutonMboa>
+              </div>
+            </CarteMboa>
+          )}
+
           {stockFiltre.length === 0 && (
             <div className="etat-vide anim-apparition">
               <span className="emoji-vide">📦</span>
@@ -222,7 +331,17 @@ export default function StockAdminPage() {
                     {produitEstPack(p) && <BadgeStatut statut="valide" libelle={t("adm.stk.pack")} />}
                     {!p.actif && <BadgeStatut statut="annule" libelle={t("adm.stk.inactif")} />}
                   </div>
-                  {aPerte && <BadgeStatut statut="litige" libelle={t("adm.stk.aPerte")} />}
+                  <div className="flex items-center gap-1">
+                    {aPerte && <BadgeStatut statut="litige" libelle={t("adm.stk.aPerte")} />}
+                    <button
+                      onClick={() => ouvrirEdition(p)}
+                      className="btn-mboa btn-surface !min-h-[36px] !min-w-[36px] !rounded-lg text-base"
+                      aria-label={t("adm.stk.modifier")}
+                      title={t("adm.stk.modifier")}
+                    >
+                      ✏️
+                    </button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center mb-2">
                   <div>

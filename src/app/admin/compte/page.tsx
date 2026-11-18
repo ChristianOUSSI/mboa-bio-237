@@ -14,6 +14,7 @@ import {
 } from "@/core/auth/auth_service";
 import { CompteAuth, estMotDePasseInitial, validerMotDePasse } from "@/core/auth/auth_local";
 import { synchroniserComptesAdmin } from "@/core/auth/synchro_admin";
+import { notifierActiviteAdmin } from "@/core/data/depots";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
 
@@ -59,8 +60,10 @@ export default function AdminComptePage() {
     try {
       if (c.actif) {
         await desactiverCompte(c);
+        void notifierActiviteAdmin("act.compteBloque", `${c.nom} (${t(`role.${c.role}.nom`)})`);
       } else {
         await majCompte(c, { actif: true });
+        void notifierActiviteAdmin("act.compteReactive", `${c.nom} (${t(`role.${c.role}.nom`)})`);
       }
       await charger();
     } finally {
@@ -68,12 +71,15 @@ export default function AdminComptePage() {
     }
   }
 
-  /** Crée un compte admin supplémentaire (mêmes droits, identifiants propres). */
+  /** Crée un compte admin supplémentaire (mêmes droits, identifiants propres).
+   *  L'identifiant de connexion peut être un email OU un numéro de téléphone. */
   async function creerAdmin() {
     setErreur(null);
     setSucces(null);
-    const mail = adminMail.trim().toLowerCase();
-    if (!adminNom.trim() || !mail.includes("@")) {
+    const ident = adminMail.trim();
+    const estEmail = ident.includes("@");
+    const tel = estEmail ? null : ident.replace(/\D/g, "");
+    if (!adminNom.trim() || (!estEmail && (tel?.length ?? 0) < 9)) {
       setErreur(t("adm.cpt.adminErreurMail"));
       return;
     }
@@ -84,14 +90,15 @@ export default function AdminComptePage() {
     }
     setEnCours(true);
     try {
-      await creerCompte({
+      const cree = await creerCompte({
         role: "admin",
         nom: adminNom.trim(),
-        telephone: null,
-        email: mail,
+        telephone: tel && tel.length >= 9 ? tel : null,
+        email: estEmail ? ident.toLowerCase() : null,
         village: "Douala",
         motDePasse: adminMdp,
       });
+      void notifierActiviteAdmin("act.adminCree", cree.nom);
       setAdminNom("");
       setAdminMail("");
       setAdminMdp("");
@@ -230,10 +237,11 @@ export default function AdminComptePage() {
                 style={{ fontSize: 18 }}
               />
               <input
-                type="email"
+                type="text"
                 placeholder={t("adm.cpt.adminMail")}
                 value={adminMail}
                 onChange={(e) => setAdminMail(e.target.value)}
+                inputMode="email"
                 className="champ-mboa"
                 style={{ fontSize: 18 }}
               />

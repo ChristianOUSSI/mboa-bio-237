@@ -482,6 +482,111 @@ export async function basculerProduitActif(produitId: string, actif: boolean): P
   void notifierActiviteAdmin(actif ? "act.produitActive" : "act.produitDesactive", produit?.nom);
 }
 
+/** L'admin modifie les informations complètes d'un produit. */
+export async function modifierProduit(produitId: string, maj: {
+  nom?: string;
+  categorie?: string;
+  unite?: string;
+  prix?: number;
+  prixAchat?: number | null;
+  photo?: string;
+  perissable?: boolean;
+  emoji?: string | null;
+}): Promise<void> {
+  let produit = await cacheLire<Produit>("produit", produitId);
+  if (!produit && mboaReseau()) {
+    const { data } = await mboaReseau()!
+      .from("produits")
+      .select("*")
+      .eq("id", produitId)
+      .maybeSingle();
+    if (data) produit = produitFromMap(data as unknown as Record<string, unknown>);
+  }
+  if (!produit) return;
+
+  const distant: Record<string, unknown> = {};
+  if (maj.nom != null && maj.nom.trim()) {
+    produit.nom = maj.nom.trim();
+    distant.nom = produit.nom;
+  }
+  if (maj.categorie != null) {
+    produit.categorie = maj.categorie as never;
+    distant.categorie = maj.categorie;
+  }
+  if (maj.unite != null) {
+    produit.unite = uniteResolve(maj.unite);
+    distant.unite = maj.unite;
+  }
+  if (maj.prix != null) {
+    produit.prix = Math.round(maj.prix);
+    distant.prix = produit.prix;
+  }
+  if (maj.prixAchat !== undefined) {
+    produit.prixAchat = maj.prixAchat;
+    distant.prix_achat = maj.prixAchat;
+  }
+  if (maj.photo != null) {
+    produit.photoReelle = maj.photo;
+    distant.photo_reelle = maj.photo;
+  }
+  if (maj.perissable != null) {
+    produit.perissable = maj.perissable;
+    distant.perissable = maj.perissable;
+  }
+  if (maj.emoji !== undefined) {
+    produit.emoji = maj.emoji;
+    distant.emoji = maj.emoji;
+  }
+  if (mboaReseau() && Object.keys(distant).length > 0) {
+    await mboaReseau()!.from("produits").update(distant).eq("id", produitId);
+    await mboaReseau()!.from("vitrine").update(distant).eq("id", produitId);
+  }
+  await cacheEcrire("produit", produit.id, produit);
+  await cacheEcrire("vitrine", produit.id, produit);
+  void notifierActiviteAdmin("act.produitModifie", produit.nom);
+}
+
+/** Active ou désactive un livreur (compte conservé). */
+export async function basculerLivreurActif(livreurId: string, actif: boolean): Promise<void> {
+  const l = await cacheLire<Livreur>("livreur", livreurId);
+  if (mboaReseau()) {
+    await mboaReseau()!.from("livreurs").update({ actif }).eq("id", livreurId);
+  }
+  if (l) {
+    await cacheEcrire("livreur", l.id, { ...l, actif });
+  }
+  await fileAjouter("livreur", livreurId, "update:actif", { actif });
+  void notifierActiviteAdmin(actif ? "act.livreurActive" : "act.livreurDesactive", l?.nom);
+}
+
+/** Supprime définitivement un livreur (fiche + droits de connexion restent côté comptes). */
+export async function supprimerLivreur(livreurId: string): Promise<void> {
+  if (mboaReseau()) {
+    const { error } = await mboaReseau()!.from("livreurs").delete().eq("id", livreurId);
+    if (!error) {
+      const l = await cacheLire<Livreur>("livreur", livreurId);
+      void notifierActiviteAdmin("act.livreurSupprime", l?.nom);
+      return;
+    }
+  }
+  await fileAjouter("livreur", livreurId, "delete:livreur", {});
+  void notifierActiviteAdmin("act.livreurSupprime", livreurId.slice(0, 8));
+}
+
+/** Supprime définitivement une fiche fournisseur. */
+export async function supprimerFournisseur(fournisseurId: string): Promise<void> {
+  const f = await cacheLire<Fournisseur>("fournisseur", fournisseurId);
+  if (mboaReseau()) {
+    const { error } = await mboaReseau()!.from("fournisseurs").delete().eq("id", fournisseurId);
+    if (!error) {
+      void notifierActiviteAdmin("act.fournisseurSupprime", f?.nom);
+      return;
+    }
+  }
+  await fileAjouter("fournisseur", fournisseurId, "delete:fournisseur", {});
+  void notifierActiviteAdmin("act.fournisseurSupprime", f?.nom ?? fournisseurId.slice(0, 8));
+}
+
 /** Enregistre le mode et la référence de paiement d'une commande (à la livraison). */
 export async function enregistrerPaiementCommande(commandeId: string, mode: string, reference?: string): Promise<void> {
   if (mboaReseau()) {

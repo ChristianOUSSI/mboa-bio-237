@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { chargerLivreurs, sauverLivreur } from "@/core/data/depots";
-import { CarteMboa, EnTetePage, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { chargerLivreurs, sauverLivreur, basculerLivreurActif, supprimerLivreur } from "@/core/data/depots";
+import { CarteMboa, EnTetePage, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa, BadgeStatut } from "@/core/design_system/composants";
 import { Livreur, livreurRepere } from "@/core/types/livreur";
 import { creerCompte } from "@/core/auth/auth_service";
 import { validerMotDePasse } from "@/core/auth/auth_local";
@@ -42,6 +42,7 @@ export default function LivreursAdminPage() {
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
   const [modeCreation, setModeCreation] = useState(false);
+  const [confirmSuppr, setConfirmSuppr] = useState<string | null>(null);
 
   async function charger() {
     setLivreurs(await chargerLivreurs());
@@ -54,6 +55,17 @@ export default function LivreursAdminPage() {
    * L'admin crée la fiche livreur ET son compte de connexion.
    * Le livreur n'a pas d'inscription libre : il reçoit ses identifiants.
    */
+  async function basculer(l: Livreur) {
+    await basculerLivreurActif(l.id, !l.actif);
+    await charger();
+  }
+
+  async function supprimer(l: Livreur) {
+    await supprimerLivreur(l.id);
+    setConfirmSuppr(null);
+    await charger();
+  }
+
   async function creerLivreur() {
     setErreur(null);
     if (form.nom.trim().length === 0) {
@@ -305,6 +317,32 @@ export default function LivreursAdminPage() {
                 )}
               </div>
               <BoutonVoix texte={`${l.nom}, ${t("adm.livr.zone2")} ${l.zone}. ${t("adm.livr.repere")} : ${livreurRepere(l)}`} />
+            </div>
+            <div className="flex gap-2 mt-2">
+              {!l.actif && <BadgeStatut statut="annule" libelle={t("adm.stk.inactif")} />}
+              <button
+                onClick={() => basculer(l)}
+                className="flex-1 p-2 rounded-xl text-aide"
+                style={{
+                  background: l.actif ? "var(--mboa-error-doux)" : "var(--mboa-secondary-doux)",
+                  color: l.actif ? "var(--mboa-error)" : "var(--mboa-primary)",
+                }}
+              >
+                {l.actif ? t("adm.livr.desactiver") : t("adm.livr.reactiver")}
+              </button>
+              {confirmSuppr === l.id ? (
+                <div className="flex gap-1 flex-1">
+                  <button onClick={() => supprimer(l)} className="flex-1 p-2 rounded-xl text-aide font-bold bg-[var(--mboa-error)] text-white">{t("adm.stk.confirmer")}</button>
+                  <button onClick={() => setConfirmSuppr(null)} className="flex-1 p-2 rounded-xl text-aide bg-[var(--mboa-background)]">{t("adm.stk.annuler")}</button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmSuppr(l.id)}
+                  className="flex-1 p-2 rounded-xl text-aide bg-[var(--mboa-error-doux)] text-[var(--mboa-error)]"
+                >
+                  {t("adm.livr.supprimer")}
+                </button>
+              )}
             </div>
           </CarteMboa>
         ))}
