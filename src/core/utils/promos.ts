@@ -6,7 +6,9 @@ const norm = (x: string) =>
 
 /** Le produit est-il mis en avant par une annonce « phare » ? */
 export function annonceEstPhare(annonces: Annonce[], produit: Produit): boolean {
-  const titres = annonces.filter((a) => a.actif && a.type === "phare").map((a) => norm(a.titre));
+  // Lien explicite prioritaire : produit choisi dans l'admin.
+  if (annonces.some((a) => a.actif && a.type === "phare" && a.produitSlug === produit.slug)) return true;
+  const titres = annonces.filter((a) => a.actif && a.type === "phare" && !a.produitSlug).map((a) => norm(a.titre));
   const nom = norm(produit.nom);
   return titres.some((t) => t.includes(nom) || nom.includes(t));
 }
@@ -20,6 +22,16 @@ export function annoncePromoPct(annonces: Annonce[], produit: Produit): number |
   const nom = norm(produit.nom);
   for (const a of annonces) {
     if (!a.actif || a.type !== "promo") continue;
+    // Lien explicite prioritaire : slug produit choisi dans l'admin.
+    if (a.produitSlug) {
+      if (a.produitSlug !== produit.slug) continue;
+      const m0 = norm(a.titre + " " + a.texte).match(/(\d{1,2})\s*%/);
+      if (m0) {
+        const p0 = parseInt(m0[1], 10);
+        if (p0 > 0 && p0 < 90) return p0;
+      }
+      continue;
+    }
     const titre = norm(a.titre);
     const txt = norm(a.titre + " " + a.texte);
     if (!(txt.includes(nom) || nom.includes(titre))) continue;

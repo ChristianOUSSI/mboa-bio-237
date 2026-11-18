@@ -19,3 +19,6 @@ create policy "annonces_anon" on public.annonces
   with check (true);
 
 create index if not exists annonces_actif_idx on public.annonces (actif, created_le desc);
+
+-- Lien optionnel annonce → produit (rend la promo déterministe).
+alter table public.annonces add column if not exists produit_slug text;

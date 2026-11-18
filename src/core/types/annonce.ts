@@ -10,6 +10,7 @@ export interface Annonce {
   type: TypeAnnonce;
   titre: string;
   texte: string;
+  produitSlug?: string | null;
   actif: boolean;
   createdLe: string;
 }
@@ -20,6 +21,7 @@ export function annonceFromMap(map: Record<string, unknown>): Annonce {
     type: ((map.type as string) ?? "info") as TypeAnnonce,
     titre: (map.titre as string) ?? "",
     texte: (map.texte as string) ?? "",
+    produitSlug: (map.produit_slug as string) ?? null,
     actif: (map.actif as boolean) ?? true,
     createdLe: (map.created_le as string) ?? "",
   };

@@ -5,7 +5,8 @@ import { EnTetePage, CarteMboa, BoutonMboa } from "@/core/design_system/composan
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
-import { toutesAnnonces, sauverAnnonce, basculerAnnonceActive, supprimerAnnonce } from "@/core/data/depots";
+import { toutesAnnonces, sauverAnnonce, basculerAnnonceActive, supprimerAnnonce, chargerVitrine } from "@/core/data/depots";
+import { Produit } from "@/core/types/produit";
 import { Annonce, TypeAnnonce, TYPE_ANNONCE_INFO } from "@/core/types/annonce";
 
 export default function PageAnnonces() {
@@ -15,10 +16,14 @@ export default function PageAnnonces() {
   const [type, setType] = useState<TypeAnnonce>("promo");
   const [titre, setTitre] = useState("");
   const [texte, setTexte] = useState("");
+  const [produitSlug, setProduitSlug] = useState("");
+  const [produits, setProduits] = useState<Produit[]>([]);
   const [enCours, setEnCours] = useState(false);
 
   async function charger() {
-    setAnnonces(await toutesAnnonces());
+    const [a, v] = await Promise.all([toutesAnnonces(), chargerVitrine()]);
+    setAnnonces(a);
+    setProduits(v.filter((p) => p.actif));
   }
   useActualisation(charger, 30000);
 
@@ -26,9 +31,10 @@ export default function PageAnnonces() {
     if (!titre.trim()) return;
     setEnCours(true);
     try {
-      await sauverAnnonce({ type, titre, texte });
+      await sauverAnnonce({ type, titre, texte, produitSlug: produitSlug || null });
       setTitre("");
       setTexte("");
+      setProduitSlug("");
       setType("promo");
       await charger();
     } finally {
@@ -71,6 +77,16 @@ export default function PageAnnonces() {
             onChange={(e) => setTitre(e.target.value)}
             className="champ-mboa w-full mb-2"
           />
+          <select
+            value={produitSlug}
+            onChange={(e) => setProduitSlug(e.target.value)}
+            className="champ-mboa w-full mb-2"
+          >
+            <option value="">{t("ann.produitPh")}</option>
+            {produits.map((p) => (
+              <option key={p.id} value={p.slug}>{p.nom}</option>
+            ))}
+          </select>
           <textarea
             placeholder={t("ann.textePh")}
             value={texte}
@@ -109,6 +125,7 @@ export default function PageAnnonces() {
                         {a.actif ? t("ann.actives") : t("ann.inactive")}
                       </span>
                     </div>
+                    {a.produitSlug ? <p className="text-aide mt-1">🎯 {produits.find((p) => p.slug === a.produitSlug)?.nom ?? a.produitSlug}</p> : null}
                     {a.texte ? <p className="text-aide mt-1">{a.texte}</p> : null}
                     <p className="text-aide mt-1">
                       {t(`ann.type.${a.type}`)} · {new Date(a.createdLe).toLocaleDateString()}

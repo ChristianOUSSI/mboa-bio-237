@@ -1654,6 +1654,7 @@ export async function sauverAnnonce(params: {
   type: "promo" | "info" | "phare";
   titre: string;
   texte?: string;
+  produitSlug?: string | null;
 }): Promise<void> {
   const id = params.id ?? uuidV4();
   const annonce = {
@@ -1661,6 +1662,7 @@ export async function sauverAnnonce(params: {
     type: params.type,
     titre: params.titre.trim(),
     texte: params.texte?.trim() ?? "",
+    produitSlug: params.produitSlug ?? null,
     actif: true,
     createdLe: new Date().toISOString(),
   };
@@ -1672,6 +1674,7 @@ export async function sauverAnnonce(params: {
       type: annonce.type,
       titre: annonce.titre,
       texte: annonce.texte,
+      produit_slug: params.produitSlug ?? null,
       actif: true,
     });
     if (!error) {

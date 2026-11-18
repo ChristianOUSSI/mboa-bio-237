@@ -431,6 +431,7 @@ create table if not exists public.annonces (
   type text not null default 'info' check (type in ('promo', 'info', 'phare')),
   titre text not null,
   texte text not null default '',
+  produit_slug text,
   actif boolean not null default true,
   created_le timestamptz not null default now()
 );
