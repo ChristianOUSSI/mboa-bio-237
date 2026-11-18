@@ -83,7 +83,7 @@ function ouvrirDb(dejaRepare = false): Promise<IDBDatabase> {
       }
       // Index "entite" : cacheTout() lit une entite sans scanner tout le store
       // (les photos base64 des produits rendaient chaque scan tres lourd).
-      const storeCache = db.transaction("cache", "versionchange").objectStore("cache");
+      const storeCache = req.transaction!.objectStore("cache");
       if (!storeCache.indexNames.contains("entite")) {
         storeCache.createIndex("entite", "entite");
       }
@@ -169,22 +169,36 @@ export async function cacheTout<T = unknown>(entite: string): Promise<T[]> {
     const db = await ouvrirDb();
     const tx = db.transaction("cache", "readonly");
     const store = tx.objectStore("cache");
-    const req = store.openCursor();
     const result: T[] = [];
+    // Index "entite" (v2) : lecture ciblee sans scanner tout le store.
+    // Repli sur le curseur complet si l'index est absent.
+    const index = store.indexNames.contains("entite") ? store.index("entite") : null;
     return new Promise((resolve, reject) => {
-      req.onsuccess = () => {
-        const cursor = req.result;
-        if (cursor) {
-          const val = cursor.value as EntiteCache;
-          if (val.entite === entite) {
+      const fin = () => resolve(result);
+      const err = (e: unknown) => reject(e);
+      if (index) {
+        const req = index.getAll(entite);
+        req.onsuccess = () => {
+          for (const val of req.result as EntiteCache[]) {
             result.push(val.payload as T);
           }
-          cursor.continue();
-        } else {
-          resolve(result);
-        }
-      };
-      req.onerror = () => reject(req.error);
+          fin();
+        };
+        req.onerror = () => err(req.error);
+      } else {
+        const req = store.openCursor();
+        req.onsuccess = () => {
+          const cursor = req.result;
+          if (cursor) {
+            const val = cursor.value as EntiteCache;
+            if (val.entite === entite) result.push(val.payload as T);
+            cursor.continue();
+          } else {
+            fin();
+          }
+        };
+        req.onerror = () => err(req.error);
+      }
     });
   } catch {
     return [];

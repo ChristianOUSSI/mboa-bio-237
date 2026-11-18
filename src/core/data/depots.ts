@@ -25,22 +25,47 @@ import { uuidV4, slugDe } from "../utils/identifiants";
 // DepotProduits
 // ============================================================
 
-export async function chargerVitrine(): Promise<Produit[]> {
+/**
+ * Dedoublonne les lectures concurrentes : si deux composants
+ * demandent la meme donnee en meme temps (montage groupe,
+ * polling qui se chevauche), une seule requete part et tout
+ * le monde partage la meme promesse.
+ */
+const _lecturesEnVol = new Map<string, Promise<unknown>>();
+function dedoublonner<T>(cle: string, fn: () => Promise<T>): Promise<T> {
+  const existante = _lecturesEnVol.get(cle);
+  if (existante) return existante as Promise<T>;
+  const promesse = fn().finally(() => {
+    _lecturesEnVol.delete(cle);
+  });
+  _lecturesEnVol.set(cle, promesse);
+  return promesse;
+}
+
+export function chargerVitrine(): Promise<Produit[]> {
+  return dedoublonner("chargerVitrine", () => _chargerVitrine());
+}
+
+async function _chargerVitrine(): Promise<Produit[]> {
   const client = mboaReseau();
   if (client) {
     const { data, error } = await client.from("vitrine").select("*");
     if (!error && data) {
       const produits = data.map((d) => produitFromMap(d as unknown as Record<string, unknown>));
-      for (const p of produits) {
-        await cacheEcrire("vitrine", p.id, p);
-      }
+      // Ecritures cache en parallele : une transaction par produit
+      // serait sequentielle et lente quand le catalogue est grand.
+      await Promise.all(produits.map((p) => cacheEcrire("vitrine", p.id, p)));
       return produits;
     }
   }
   return cacheTout<Produit>("vitrine");
 }
 
-export async function chargerStock(): Promise<Produit[]> {
+export function chargerStock(): Promise<Produit[]> {
+  return dedoublonner("chargerStock", () => _chargerStock());
+}
+
+async function _chargerStock(): Promise<Produit[]> {
   const client = mboaReseau();
   if (client) {
     const { data, error } = await client.from("produits").select("*").order("nom");
@@ -51,7 +76,11 @@ export async function chargerStock(): Promise<Produit[]> {
   return cacheTout<Produit>("produit");
 }
 
-export async function chargerCatalogue(): Promise<EntreeCatalogue[]> {
+export function chargerCatalogue(): Promise<EntreeCatalogue[]> {
+  return dedoublonner("chargerCatalogue", () => _chargerCatalogue());
+}
+
+async function _chargerCatalogue(): Promise<EntreeCatalogue[]> {
   const client = mboaReseau();
   if (client) {
     const { data, error } = await client.from("catalogue").select("*").order("ordre");
@@ -80,7 +109,11 @@ export async function chargerCatalogue(): Promise<EntreeCatalogue[]> {
 // DepotCommandes
 // ============================================================
 
-export async function commandesCliente(consommateurId: string): Promise<Commande[]> {
+export function commandesCliente(consommateurId: string): Promise<Commande[]> {
+  return dedoublonner("commandesCliente" + "|" + [consommateurId].join("|"), () => _commandesCliente(consommateurId));
+}
+
+async function _commandesCliente(consommateurId: string): Promise<Commande[]> {
   const client = mboaReseau();
   if (client) {
     const { data, error } = await client
@@ -92,10 +125,17 @@ export async function commandesCliente(consommateurId: string): Promise<Commande
       return data.map((d) => commandeFromMap(d as unknown as Record<string, unknown>));
     }
   }
-  return cacheTout<Commande>("commande");
+  // Le cache local contient toutes les commandes de l'appareil :
+  // on filtre pour ne pas montrer les devis des autres clients.
+  const locales = await cacheTout<Commande>("commande");
+  return locales.filter((c) => c.consommateurId === consommateurId);
 }
 
-export async function toutesCommandes(): Promise<Commande[]> {
+export function toutesCommandes(): Promise<Commande[]> {
+  return dedoublonner("toutesCommandes", () => _toutesCommandes());
+}
+
+async function _toutesCommandes(): Promise<Commande[]> {
   const client = mboaReseau();
   if (client) {
     const { data, error } = await client
@@ -921,7 +961,11 @@ export async function majPackComposants(
   return produit;
 }
 
-export async function suiviCommande(commandeId: string): Promise<SuiviColis> {
+export function suiviCommande(commandeId: string): Promise<SuiviColis> {
+  return dedoublonner("suiviCommande" + "|" + [commandeId].join("|"), () => _suiviCommande(commandeId));
+}
+
+async function _suiviCommande(commandeId: string): Promise<SuiviColis> {
   let suivi: SuiviColis;
   if (mboaReseau()) {
     const { data, error } = await mboaReseau()!.rpc("suivi_commande", { p_commande: commandeId });
@@ -1003,7 +1047,11 @@ export async function suiviCommande(commandeId: string): Promise<SuiviColis> {
 // DepotAchats
 // ============================================================
 
-export async function fileAttenteAchats(): Promise<Achat[]> {
+export function fileAttenteAchats(): Promise<Achat[]> {
+  return dedoublonner("fileAttenteAchats", () => _fileAttenteAchats());
+}
+
+async function _fileAttenteAchats(): Promise<Achat[]> {
   const locales = (await cacheTout<Achat>("achat")).filter((a) => a.statut === StatutAchat.propose);
   if (mboaReseau()) {
     const { data, error } = await mboaReseau()!
@@ -1022,7 +1070,11 @@ export async function fileAttenteAchats(): Promise<Achat[]> {
 }
 
 /** Toutes les propositions d'achat, tous statuts confondus. */
-export async function toutesAchats(): Promise<Achat[]> {
+export function toutesAchats(): Promise<Achat[]> {
+  return dedoublonner("toutesAchats", () => _toutesAchats());
+}
+
+async function _toutesAchats(): Promise<Achat[]> {
   const locales = await cacheTout<Achat>("achat");
   if (mboaReseau()) {
     const { data, error } = await mboaReseau()!
@@ -1039,7 +1091,11 @@ export async function toutesAchats(): Promise<Achat[]> {
   return locales;
 }
 
-export async function mesAchats(fournisseurId: string, telephone?: string): Promise<Achat[]> {
+export function mesAchats(fournisseurId: string, telephone?: string): Promise<Achat[]> {
+  return dedoublonner("mesAchats" + "|" + [fournisseurId, telephone].join("|"), () => _mesAchats(fournisseurId, telephone));
+}
+
+async function _mesAchats(fournisseurId: string, telephone?: string): Promise<Achat[]> {
   // Le fournisseur est identifié tantôt par l'id du compte, tantôt par
   // `tel_<chiffres>` (convention des fiches et de /rejoindre). On retient
   // tout achat dont l'id correspond ou dont le téléphone colle (9 derniers
@@ -1345,7 +1401,11 @@ export async function deconnexionAuth(): Promise<void> {
 // DepotLivreurs
 // ============================================================
 
-export async function chargerLivreurs(): Promise<Livreur[]> {
+export function chargerLivreurs(): Promise<Livreur[]> {
+  return dedoublonner("chargerLivreurs", () => _chargerLivreurs());
+}
+
+async function _chargerLivreurs(): Promise<Livreur[]> {
   const locales = await cacheTout<Livreur>("livreur");
   if (mboaReseau()) {
     // La table `livreurs` porte les chauffeurs ; `vitrine_livreurs` est une
@@ -1365,7 +1425,11 @@ export async function chargerLivreurs(): Promise<Livreur[]> {
 // DepotFournisseurs
 // ============================================================
 
-export async function chargerFournisseurs(): Promise<Fournisseur[]> {
+export function chargerFournisseurs(): Promise<Fournisseur[]> {
+  return dedoublonner("chargerFournisseurs", () => _chargerFournisseurs());
+}
+
+async function _chargerFournisseurs(): Promise<Fournisseur[]> {
   const locales = await cacheTout<Fournisseur>("fournisseur");
   if (mboaReseau()) {
     const { data, error } = await mboaReseau()!.from("fournisseurs").select("*").order("nom");
@@ -1383,7 +1447,11 @@ export async function chargerFournisseurs(): Promise<Fournisseur[]> {
 // Compteur file d'envoi
 // ============================================================
 
-export async function compterFile(): Promise<number> {
+export function compterFile(): Promise<number> {
+  return dedoublonner("compterFile", () => _compterFile());
+}
+
+async function _compterFile(): Promise<number> {
   return fileCompte();
 }
 
@@ -1448,7 +1516,11 @@ export async function notifierActiviteAdmin(action: string, detail?: string): Pr
 }
 
 /** Lit le fil d'activité admin (réservé aux admins) - fusionne local + Supabase. */
-export async function activitesAdmin(): Promise<ActiviteAdmin[]> {
+export function activitesAdmin(): Promise<ActiviteAdmin[]> {
+  return dedoublonner("activitesAdmin", () => _activitesAdmin());
+}
+
+async function _activitesAdmin(): Promise<ActiviteAdmin[]> {
   const locales = (await etatLire<ActiviteAdmin[]>(CLE_ACTIVITE_ADMIN)) ?? [];
   const client = mboaReseau();
   if (!client) return locales;
@@ -1644,7 +1716,11 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
 // Annonces du comptoir (promo / info / produit phare)
 // ============================================================
 
-export async function toutesAnnonces(): Promise<import("../types/annonce").Annonce[]> {
+export function toutesAnnonces(): Promise<import("../types/annonce").Annonce[]> {
+  return dedoublonner("toutesAnnonces", () => _toutesAnnonces());
+}
+
+async function _toutesAnnonces(): Promise<import("../types/annonce").Annonce[]> {
   const { annonceFromMap } = await import("../types/annonce");
   const locales = await cacheTout<import("../types/annonce").Annonce>("annonce");
   const client = mboaReseau();
