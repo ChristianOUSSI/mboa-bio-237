@@ -13,6 +13,7 @@ import { Commande } from "@/core/types/commande_full";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
+import { formaterDate } from "@/core/utils/format_date";
 import { toutesAnnonces } from "@/core/data/depots";
 import { TYPE_ANNONCE_INFO, Annonce } from "@/core/types/annonce";
 import { annonceEstPhare, annoncePromoPct, annonceExpiree } from "@/core/utils/promos";
@@ -188,7 +189,7 @@ export default function MarchePage() {
                 <p className="text-aide font-bold" style={{ color: "var(--mboa-primary)" }}>{info.libelle}</p>
                 <p className="text-corps font-bold mt-0.5">{a.titre}</p>
                 {a.texte ? <p className="text-aide mt-0.5">{a.texte}</p> : null}
-                {a.expireLe ? <p className="text-aide mt-0.5 font-bold">⏳ {new Date(a.expireLe).toLocaleDateString()}</p> : null}
+                {a.expireLe ? <p className="text-aide mt-0.5 font-bold">⏳ {formaterDate(a.expireLe)}</p> : null}
               </div>
               <button
                 onClick={() => setAnnonceFermee(a.id)}

@@ -5,6 +5,7 @@ import { EnTetePage, CarteMboa, BoutonMboa } from "@/core/design_system/composan
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
+import { formaterDate } from "@/core/utils/format_date";
 import { toutesAnnonces, sauverAnnonce, basculerAnnonceActive, supprimerAnnonce, chargerVitrine } from "@/core/data/depots";
 import { Produit } from "@/core/types/produit";
 import { Annonce, TypeAnnonce, TYPE_ANNONCE_INFO } from "@/core/types/annonce";
@@ -106,11 +107,12 @@ export default function PageAnnonces() {
           <label className="text-aide block mt-2 mb-1 font-bold">{t("ann.codePh")}</label>
           <input
             type="text"
-            placeholder="Ex : FETE20"
+            placeholder={t("ann.codeEx")}
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             className="champ-mboa w-full mb-2"
           />
+          <p className="text-aide -mt-1 mb-2">{t("ann.codeNote")}</p>
           <label className="text-aide block mt-2 mb-1 font-bold">{t("ann.expirePh")}</label>
           <input
             type="datetime-local"
@@ -153,7 +155,7 @@ export default function PageAnnonces() {
                     {a.produitSlug ? <p className="text-aide mt-1">🎯 {produits.find((p) => p.slug === a.produitSlug)?.nom ?? a.produitSlug}</p> : null}
                     {a.texte ? <p className="text-aide mt-1">{a.texte}</p> : null}
                     <p className="text-aide mt-1">
-                      {t(`ann.type.${a.type}`)} · {new Date(a.createdLe).toLocaleDateString()}{a.expireLe ? ` · ⏳ ${new Date(a.expireLe).toLocaleDateString()}` : ""}
+                      {t(`ann.type.${a.type}`)} · {formaterDate(a.createdLe)}{a.expireLe ? ` · ⏳ ${formaterDate(a.expireLe)}` : ""}
                     </p>
                   </div>
                 </div>

@@ -36,7 +36,20 @@ export default function SuperAdminPage() {
 
   async function charger() {
     await synchroniserComptesAdmin().catch(() => 0);
-    setComptes(await tousComptes());
+    const bruts = await tousComptes();
+    // Le cache contient des index mail:/tel: qui dupliquent chaque fiche :
+    // on n'affiche qu'une carte par compte (id unique), en préférant la
+    // version active puis la plus récente si les copies divergent.
+    const parId = new Map<string, CompteAuth>();
+    for (const c of bruts) {
+      const prev = parId.get(c.id);
+      const mieux =
+        !prev ||
+        (c.actif && !prev.actif) ||
+        (c.actif === prev.actif && (c.createdLe ?? "") > (prev.createdLe ?? ""));
+      if (mieux) parId.set(c.id, c);
+    }
+    setComptes([...parId.values()]);
   }
 
   useEffect(() => {

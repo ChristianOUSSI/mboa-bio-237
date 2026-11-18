@@ -7,6 +7,7 @@ import { CarteMboa, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_sys
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
+import { formaterDate, formaterDateHeure } from "@/core/utils/format_date";
 
 /** Journal complet des actions admin : qui a fait quoi, et quand. */
 export default function ActiviteAdminPage() {
@@ -51,7 +52,7 @@ export default function ActiviteAdminPage() {
                   {a.detail ? <span className="text-[var(--mboa-text-doux)]"> · {a.detail}</span> : null}
                 </p>
                 <span className="text-aide text-[var(--mboa-text-doux)] whitespace-nowrap shrink-0">
-                  {new Date(a.quand).toLocaleString()}
+                  {formaterDateHeure(a.quand)}
                 </span>
               </div>
             </CarteMboa>

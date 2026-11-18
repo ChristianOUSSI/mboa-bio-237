@@ -108,7 +108,7 @@ export async function toutesCommandes(): Promise<Commande[]> {
   return cacheTout<Commande>("commande");
 }
 
-export async function commander(lignes: { produitId: string; slug: string; nom: string; categorie: string; quantite: number; prix: number; unite: string; photo: string; composants?: { slug: string; nom?: string | null; quantite: number; unite: string }[] }[], consommateurId: string, contact?: { appelSouhaite?: boolean; numeroContact?: string | null; clientNom?: string | null; clientVillage?: string | null; clientTel?: string | null; livraisonQuartier?: string | null; livraisonDetail?: string | null; livraisonLat?: number | null; livraisonLng?: number | null; fraisLivraison?: number | null }): Promise<Commande | null> {
+export async function commander(lignes: { produitId: string; slug: string; nom: string; categorie: string; quantite: number; prix: number; unite: string; photo: string; composants?: { slug: string; nom?: string | null; quantite: number; unite: string }[] }[], consommateurId: string, contact?: { appelSouhaite?: boolean; numeroContact?: string | null; clientNom?: string | null; clientVillage?: string | null; clientTel?: string | null; livraisonQuartier?: string | null; livraisonDetail?: string | null; livraisonLat?: number | null; livraisonLng?: number | null; fraisLivraison?: number | null; modePaiement?: string | null }): Promise<Commande | null> {
   const produitsJson = lignes.map((l) => ({
     produit_id: l.produitId,
     slug: l.slug,
@@ -151,8 +151,9 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
         client_village: contact?.clientVillage ?? null,
         client_tel: contact?.clientTel ?? null,
         frais_livraison: contact?.fraisLivraison ?? null,
+        paiement: contact?.modePaiement ?? null,
       };
-      if (patch.appel_souhaite || patch.numero_contact || patch.livraison_quartier || patch.livraison_detail || patch.livraison_lat != null || patch.client_nom || patch.frais_livraison != null) {
+      if (patch.appel_souhaite || patch.numero_contact || patch.livraison_quartier || patch.livraison_detail || patch.livraison_lat != null || patch.client_nom || patch.frais_livraison != null || patch.paiement != null) {
         void mboaReseau()!.from("commandes").update(patch).eq("id", commande.id);
         return {
           ...commande,
@@ -166,6 +167,7 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
           clientVillage: patch.client_village,
           clientTel: patch.client_tel,
           fraisLivraison: patch.frais_livraison,
+          paiement: patch.paiement as never,
         };
       }
       return commande;
@@ -191,6 +193,7 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
         livraison_lat: contact?.livraisonLat ?? null,
         livraison_lng: contact?.livraisonLng ?? null,
         frais_livraison: contact?.fraisLivraison ?? null,
+        paiement: contact?.modePaiement ?? null,
       })
       .select("*")
       .maybeSingle();
@@ -226,6 +229,7 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
     montantTotal,
     coutAchat: 0,
     livraisonMoto: true,
+    paiement: (contact?.modePaiement as never) ?? null,
     stockSorti: false,
     appelVocalFait: false,
     appelSouhaite: contact?.appelSouhaite ?? false,
@@ -1641,7 +1645,8 @@ export async function toutesAnnonces(): Promise<import("../types/annonce").Annon
     const { data, error } = await client
       .from("annonces")
       .select("*")
-      .order("created_le", { ascending: false });
+      .order("created_le", { ascending: false })
+      .limit(200);
     if (!error && data) {
       const distantes = data.map((d) => annonceFromMap(d as unknown as Record<string, unknown>));
       const ids = new Set(distantes.map((a) => a.id));

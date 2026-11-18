@@ -17,6 +17,7 @@ import { tousComptes, CompteAuth } from "@/core/auth/auth_service";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
+import { formaterDateHeure } from "@/core/utils/format_date";
 import { sonNotificationActif, basculerSonNotification } from "@/core/utils/son";
 import { supabaseConfigure } from "@/core/config/app_env";
 
@@ -354,7 +355,7 @@ export default function TableauAdmin() {
                   {a.detail ? ` · ${a.detail}` : ""}
                 </span>
                 <span className="text-aide text-[var(--mboa-text-doux)] whitespace-nowrap ml-2">
-                  {new Date(a.quand).toLocaleString()}
+                  {formaterDateHeure(a.quand)}
                 </span>
               </div>
             ))}

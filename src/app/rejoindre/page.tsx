@@ -111,9 +111,9 @@ export default function RejoindrePage() {
     if (tel.length < 9) errs.push(t("rej.erreur.tel"));
     if (villageEffectif().length === 0) errs.push(t("rej.erreur.village"));
     produits.forEach((p, i) => {
-      if (p.nom.trim().length === 0) errs.push(`Produit ${i + 1}: ${t("rej.erreur.produitNom")}`);
+      if (p.nom.trim().length === 0) errs.push(`${t("rej.produitN").replace("{n}", String(i + 1))}: ${t("rej.erreur.produitNom")}`);
       const prixNum = parseInt(p.prix) || 0;
-      if (prixNum <= 0) errs.push(`Produit ${i + 1}: ${t("rej.erreur.produitPrix")}`);
+      if (prixNum <= 0) errs.push(`${t("rej.produitN").replace("{n}", String(i + 1))}: ${t("rej.erreur.produitPrix")}`);
     });
     return errs;
   }

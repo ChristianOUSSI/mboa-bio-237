@@ -141,6 +141,7 @@ export default function PanierPage() {
         livraisonLat: gps?.lat ?? null,
         livraisonLng: gps?.lng ?? null,
         fraisLivraison: fraisLivraison > 0 ? fraisLivraison : null,
+        modePaiement,
       });
       panier.vider();
       setEnvoye(true);
