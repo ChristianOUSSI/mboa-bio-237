@@ -26,12 +26,15 @@ export default function AchatsAdminPage() {
     setAchats(liste);
     // Résout les noms des fournisseurs déclarants
     const map = new Map<string, Profil>();
-    for (const a of liste) {
-      if (a.fournisseurId && !map.has(a.fournisseurId) && !a.fournisseurId.startsWith("tel_")) {
-        const p = await profilParId(a.fournisseurId);
-        if (p) map.set(a.fournisseurId, p);
-      }
-    }
+    // Résolution des noms en parallèle : séquentiel, chaque achat
+    // ajoutait un aller-retour réseau au chargement de la page.
+    const ids = [...new Set(liste.map((a) => a.fournisseurId).filter((id) => id && !id.startsWith("tel_")))];
+    await Promise.all(
+      ids.map(async (id) => {
+        const p = await profilParId(id);
+        if (p) map.set(id, p);
+      }),
+    );
     setProfils(map);
   }
 

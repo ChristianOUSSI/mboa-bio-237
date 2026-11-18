@@ -85,30 +85,35 @@ export default function SuiviPage() {
       statutsPrec.current.set(c.id, c.statut);
     }
     setCommandes(cmds);
-    const sMap = new Map<string, SuiviColis>();
-    for (const c of cmds) {
-      const s = await suiviCommande(c.id);
-      // Shares the customer's position once per active delivery
-      const active =
-        c.statut === StatutCommande.valideeAdmin ||
-        c.statut === StatutCommande.enLivraison ||
-        c.statut === StatutCommande.livree;
-      // Demande la permission de notification une fois, uniquement
-      // pendant une livraison active (pas à l'ouverture de la page).
-      if (active && !notifDemandee.current && typeof Notification !== "undefined" && Notification.permission === "default") {
-        notifDemandee.current = true;
-        Notification.requestPermission().catch(() => {});
+    // Suivis en parallele : un await sequentiel par commande rendait
+    // la page lente des qu'il y avait plusieurs livraisons.
+    const entrees = await Promise.all(cmds.map(async (c) => [c.id, await suiviCommande(c.id)] as const));
+    const sMap = new Map<string, SuiviColis>(entrees);
+    // Une seule position GPS lue pour toutes les livraisons actives.
+    const actives = cmds.filter(
+      (c) =>
+        (c.statut === StatutCommande.valideeAdmin ||
+          c.statut === StatutCommande.enLivraison ||
+          c.statut === StatutCommande.livree) &&
+        !positionsPartagees.current.has(c.id),
+    );
+    if (actives.length > 0 && typeof Notification !== "undefined" && Notification.permission === "default" && !notifDemandee.current) {
+      notifDemandee.current = true;
+      Notification.requestPermission().catch(() => {});
+    }
+    if (actives.length > 0) {
+      const pos = await demandePosition();
+      if (pos) {
+        await Promise.all(
+          actives.map(async (c) => {
+            await cacheEcrire("gps_client", c.id, pos);
+            partagerPositionGps("client", c.id, pos);
+            const s = sMap.get(c.id);
+            if (s) s.positionDestination = pos;
+            positionsPartagees.current.add(c.id);
+          }),
+        );
       }
-      if (active && !positionsPartagees.current.has(c.id)) {
-        const pos = await demandePosition();
-        if (pos) {
-          await cacheEcrire("gps_client", c.id, pos);
-          partagerPositionGps("client", c.id, pos);
-          s.positionDestination = pos;
-          positionsPartagees.current.add(c.id);
-        }
-      }
-      sMap.set(c.id, s);
     }
     setSuivis(sMap);
   }

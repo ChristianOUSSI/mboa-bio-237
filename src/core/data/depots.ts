@@ -32,6 +32,8 @@ import { uuidV4, slugDe } from "../utils/identifiants";
  * le monde partage la meme promesse.
  */
 const _lecturesEnVol = new Map<string, Promise<unknown>>();
+// Empreintes JSON des derniers produits vitrine ecrits en cache.
+const _empreintesVitrine = new Map<string, string>();
 function dedoublonner<T>(cle: string, fn: () => Promise<T>): Promise<T> {
   const existante = _lecturesEnVol.get(cle);
   if (existante) return existante as Promise<T>;
@@ -52,9 +54,23 @@ async function _chargerVitrine(): Promise<Produit[]> {
     const { data, error } = await client.from("vitrine").select("*");
     if (!error && data) {
       const produits = data.map((d) => produitFromMap(d as unknown as Record<string, unknown>));
-      // Ecritures cache en parallele : une transaction par produit
-      // serait sequentielle et lente quand le catalogue est grand.
-      await Promise.all(produits.map((p) => cacheEcrire("vitrine", p.id, p)));
+      // Ne re-ecrit en cache que les produits qui ont change : avec les
+      // photos base64, reecrire tout le catalogue a chaque poll coutait
+      // des Mo de transactions IndexedDB pour rien.
+      const aEcrire: Promise<void>[] = [];
+      const vus = new Set<string>();
+      for (const p of produits) {
+        vus.add(p.id);
+        const emp = JSON.stringify(p);
+        if (_empreintesVitrine.get(p.id) !== emp) {
+          _empreintesVitrine.set(p.id, emp);
+          aEcrire.push(cacheEcrire("vitrine", p.id, p));
+        }
+      }
+      for (const id of [..._empreintesVitrine.keys()]) {
+        if (!vus.has(id)) _empreintesVitrine.delete(id);
+      }
+      await Promise.all(aEcrire);
       return produits;
     }
   }
@@ -1062,7 +1078,7 @@ async function _fileAttenteAchats(): Promise<Achat[]> {
     if (!error && data) {
       const distants = data.map((d) => achatFromMap(d as unknown as Record<string, unknown>));
       const ids = new Set(distants.map((a) => a.id));
-      for (const a of distants) await cacheEcrire("achat", a.id, a);
+      await Promise.all(distants.map((a) => cacheEcrire("achat", a.id, a)));
       return [...distants, ...locales.filter((a) => !ids.has(a.id))];
     }
   }
@@ -1084,7 +1100,7 @@ async function _toutesAchats(): Promise<Achat[]> {
     if (!error && data) {
       const distants = data.map((d) => achatFromMap(d as unknown as Record<string, unknown>));
       const ids = new Set(distants.map((a) => a.id));
-      for (const a of distants) await cacheEcrire("achat", a.id, a);
+      await Promise.all(distants.map((a) => cacheEcrire("achat", a.id, a)));
       return [...distants, ...locales.filter((a) => !ids.has(a.id))];
     }
   }
@@ -1117,7 +1133,7 @@ async function _mesAchats(fournisseurId: string, telephone?: string): Promise<Ac
         .map((d) => achatFromMap(d as unknown as Record<string, unknown>))
         .filter(estLeMien);
       const ids = new Set(distants.map((a) => a.id));
-      for (const a of distants) await cacheEcrire("achat", a.id, a);
+      await Promise.all(distants.map((a) => cacheEcrire("achat", a.id, a)));
       return [...distants, ...locales.filter((a) => !ids.has(a.id))];
     }
   }
@@ -1414,7 +1430,7 @@ async function _chargerLivreurs(): Promise<Livreur[]> {
     if (!error && data) {
       const distants = data.map((d) => livreurFromMap(d as unknown as Record<string, unknown>));
       const ids = new Set(distants.map((l) => l.id));
-      for (const l of distants) await cacheEcrire("livreur", l.id, l);
+      await Promise.all(distants.map((l) => cacheEcrire("livreur", l.id, l)));
       return [...distants, ...locales.filter((l) => !ids.has(l.id))];
     }
   }
@@ -1436,7 +1452,7 @@ async function _chargerFournisseurs(): Promise<Fournisseur[]> {
     if (!error && data) {
       const distants = data.map((d) => fournisseurFromMap(d as unknown as Record<string, unknown>));
       const ids = new Set(distants.map((f) => f.id));
-      for (const f of distants) await cacheEcrire("fournisseur", f.id, f);
+      await Promise.all(distants.map((f) => cacheEcrire("fournisseur", f.id, f)));
       return [...distants, ...locales.filter((f) => !ids.has(f.id))];
     }
   }
@@ -1733,7 +1749,7 @@ async function _toutesAnnonces(): Promise<import("../types/annonce").Annonce[]> 
     if (!error && data) {
       const distantes = data.map((d) => annonceFromMap(d as unknown as Record<string, unknown>));
       const ids = new Set(distantes.map((a) => a.id));
-      for (const a of distantes) await cacheEcrire("annonce", a.id, a);
+      await Promise.all(distantes.map((a) => cacheEcrire("annonce", a.id, a)));
       return [...distantes, ...locales.filter((a) => !ids.has(a.id))];
     }
   }

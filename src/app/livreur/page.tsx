@@ -76,19 +76,23 @@ export default function AccueilLivreur() {
   // une course assignée par l'admin apparaît sans recharger la page.
   useActualisation(charger);
 
-  // Automatic GPS sharing every 15 s while a delivery is on the way
+  // Automatic GPS sharing every 15 s while a delivery is on the way.
+  // Une seule position lue par cycle, partagee entre les courses ;
+  // le tick est ignore onglet cache (la batterie compte sur moto).
   useEffect(() => {
     const enRoute = courses.filter((c) => c.statut === StatutCommande.enLivraison);
     if (enRoute.length === 0) return;
     const timer = setInterval(async () => {
-      for (const c of enRoute) {
-        const pos = await positionActuelle();
-        if (pos) {
+      if (document.visibilityState !== "visible") return;
+      const pos = await positionActuelle();
+      if (!pos) return;
+      await Promise.all(
+        enRoute.map(async (c) => {
           await cacheEcrire("gps_livreur", c.id, pos);
           await majPositionLivreur(c.id, pos.latitude, pos.longitude);
           partagerPositionGps("livreur", c.id, pos);
-        }
-      }
+        }),
+      );
     }, 15000);
     return () => clearInterval(timer);
   }, [courses]);
