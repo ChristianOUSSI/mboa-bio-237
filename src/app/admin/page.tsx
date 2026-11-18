@@ -5,19 +5,17 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/core/etat/store";
 import { fileAttenteAchats, toutesCommandes, chargerStock, chargerLivreurs, chargerFournisseurs, activitesAdmin, synchroniserFileAttente, compterFile, ActiviteAdmin } from "@/core/data/depots";
 import { fileCompte } from "@/core/data/base_locale";
-import { CarteMboa, BoutonMboa, EnTetePage, FondMboa, PastilleCompteur, SkeletonMboa } from "@/core/design_system/composants";
+import { CarteMboa, BoutonMboa, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { Achat } from "@/core/types/achat";
-import { Commande, commandeMontantAPayer } from "@/core/types/commande_full";
+import { Commande } from "@/core/types/commande_full";
 import { Produit } from "@/core/types/produit";
 import { Livreur } from "@/core/types/livreur";
 import { Fournisseur } from "@/core/types/fournisseur";
 import { StatutCommande } from "@/core/types/statuts";
-import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { tousComptes, CompteAuth } from "@/core/auth/auth_service";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
-import { formaterDateHeure } from "@/core/utils/format_date";
 import { sonNotificationActif, basculerSonNotification } from "@/core/utils/son";
 import { supabaseConfigure } from "@/core/config/app_env";
 
@@ -52,20 +50,6 @@ export default function TableauAdmin() {
   const [opsFile, setOpsFile] = useState(0);
   const [opsAttente, setOpsAttente] = useState(0);
   const [syncEnCours, setSyncEnCours] = useState(false);
-
-  // Produits les plus commandés (toutes commandes connues)
-  const topProduits = (() => {
-    const tot = new Map<string, { nom: string; qte: number }>();
-    for (const c of commandes) {
-      for (const l of c.lignes) {
-        const cle = l.slug || l.nom;
-        const cur = tot.get(cle) ?? { nom: l.nom, qte: 0 };
-        cur.qte += l.quantite;
-        tot.set(cle, cur);
-      }
-    }
-    return [...tot.values()].sort((a, b) => b.qte - a.qte).slice(0, 5);
-  })();
 
   async function verifierFile() {
     setOpsAttente(await fileCompte());
@@ -113,19 +97,27 @@ export default function TableauAdmin() {
 
   const devisNouveaux = commandes.filter((c) => c.statut === StatutCommande.nouvelle).length;
   const aPointer = commandes.filter((c) => c.statut === StatutCommande.livree).length;
-  const enLivraison = commandes.filter((c) => c.statut === StatutCommande.enLivraison).length;
 
-  // Valeur du stock
-  const valeurStock = stock.reduce((s, p) => s + p.prix * p.quantite, 0);
-  const coutStock = stock.reduce((s, p) => s + (p.prixAchat ?? 0) * p.quantite, 0);
-  const margePotentielle = valeurStock - coutStock;
-
-  // Alertes stock bas
+  // Alertes stock
   const stockBas = stock.filter((p) => p.actif && p.quantite > 0 && p.quantite <= 5);
   const ruptures = stock.filter((p) => p.actif && p.quantite <= 0);
 
   // Comptes - alerte mot de passe admin par défaut
   const mdpParDefaut = comptes.find((c) => c.role === "admin" && c.motDePasseParDefaut);
+
+  // Activités non lues : tout ce qui est plus récent que la dernière
+  // visite du journal compte pour la pastille du bouton Flux.
+  const CLE_ACT_LUE = "mboa_act_lue_le";
+  const dernierVu = typeof window !== "undefined" ? Number(localStorage.getItem(CLE_ACT_LUE) ?? 0) : 0;
+  const nonLus = activites.filter((a) => new Date(a.quand).getTime() > dernierVu).length;
+  const fournisseursAttente = fournisseurs.filter((f) => !f.actif).length;
+
+  function marquerFluxLu() {
+    try {
+      localStorage.setItem(CLE_ACT_LUE, String(Date.now()));
+    } catch {}
+    router.push("/admin/activite");
+  }
 
   if (!pret) {
     return (
@@ -137,12 +129,15 @@ export default function TableauAdmin() {
     );
   }
 
-  // Statistiques du jour
-  const aujourd = new Date().toDateString();
-  const commandesJour = commandes.filter((c) => new Date(c.createdLe).toDateString() === aujourd);
-  const caJour = commandesJour.reduce((s, c) => s + commandeMontantAPayer(c), 0);
-  const commandesTerminees = commandes.filter((c) => c.statut === StatutCommande.recue);
-  const caTotal = commandesTerminees.reduce((s, c) => s + commandeMontantAPayer(c), 0);
+  // Alerte globale : quelque chose attend une action ou est non lu.
+  const aTraiter = [
+    devisNouveaux > 0 ? `${devisNouveaux} ${t("adm.devis")}` : null,
+    achats.length > 0 ? `${achats.length} ${t("adm.recoltes")}` : null,
+    aPointer > 0 ? `${aPointer} ${t("adm.aSigner")}` : null,
+    fournisseursAttente > 0 ? `${fournisseursAttente} ${t("adm.fourn.enAttente")}` : null,
+    opsAttente > 0 ? `${opsAttente} ${t("adm.sync.attenteCourt")}` : null,
+    nonLus > 0 ? `${nonLus} ${t("adm.act.nonLus")}` : null,
+  ].filter(Boolean);
 
   return (
     <FondMboa>
@@ -233,63 +228,27 @@ export default function TableauAdmin() {
         </div>
       )}
 
-      {/* Statistiques du jour */}
-      <div className="px-4">
-        <h2 className="text-titre titre-section mb-2">{t("adm.aujourdhui")}</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <CarteMboa className="text-center">
-            <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.commandes")}</p>
-            <p className="text-chiffre text-[var(--mboa-primary)]">{commandesJour.length}</p>
-          </CarteMboa>
-          <CarteMboa className="text-center">
-            <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.caJour")}</p>
-            <p className="text-chiffre text-[var(--mboa-primary)]">{formaterFcfa(caJour)}</p>
-          </CarteMboa>
-        </div>
-      </div>
-
-      {/* Vue d'ensemble */}
-      <div className="p-4">
-        <h2 className="text-titre titre-section mb-2">{t("adm.vue")}</h2>
-        <CarteMboa className="space-y-1">
-          <div className="flex justify-between text-corps">
-            <span className="text-[var(--mboa-text-doux)]">{t("adm.caTotal")}</span>
-            <span className="font-bold text-[var(--mboa-primary)]">{formaterFcfa(caTotal)}</span>
-          </div>
-          <div className="flex justify-between text-corps">
-            <span className="text-[var(--mboa-text-doux)]">{t("adm.valeurStock")}</span>
-            <span className="font-bold">{formaterFcfa(valeurStock)}</span>
-          </div>
-          <div className="flex justify-between text-corps">
-            <span className="text-[var(--mboa-text-doux)]">{t("adm.coutStock")}</span>
-            <span className="font-bold">{formaterFcfa(coutStock)}</span>
-          </div>
-          <div className="flex justify-between text-corps border-t border-[var(--mboa-trait)] pt-1">
-            <span className="text-[var(--mboa-text-doux)]">{t("adm.marge")}</span>
-            <span className="font-bold text-[var(--mboa-primary)]">{formaterFcfa(margePotentielle)}</span>
-          </div>
-          <div className="flex justify-between text-corps">
-            <span className="text-[var(--mboa-text-doux)]">{t("adm.enRoute")}</span>
-            <span className="font-bold text-[var(--mboa-secondary)]">{enLivraison}</span>
-          </div>
-        </CarteMboa>
-      </div>
-
-      {/* Top produits */}
-      {topProduits.length > 0 && (
-        <div className="px-4">
-          <h2 className="text-titre titre-section mb-2">{t("adm.topProduits")}</h2>
-          <CarteMboa className="space-y-1">
-            {topProduits.map((tp, i) => (
-              <div key={i} className="flex justify-between items-center text-corps">
-                <span className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-[var(--mboa-secondary-doux)] text-[var(--mboa-primary)] text-aide font-bold flex items-center justify-center">{i + 1}</span>
-                  {tp.nom}
-                </span>
-                <span className="font-bold text-[var(--mboa-primary)]">×{tp.qte}</span>
-              </div>
-            ))}
-          </CarteMboa>
+      {/* Alerte : éléments à traiter ou non lus */}
+      {aTraiter.length > 0 && (
+        <div className="px-4 pb-2">
+          <button
+            onClick={() => {
+              if (devisNouveaux > 0) router.push("/admin/devis");
+              else if (achats.length > 0) router.push("/admin/achats");
+              else if (aPointer > 0) router.push("/admin/livraisons");
+              else if (fournisseursAttente > 0) router.push("/admin/fournisseurs");
+              else if (opsAttente > 0) void synchroniserMaintenant();
+              else marquerFluxLu();
+            }}
+            className="w-full text-left"
+          >
+            <CarteMboa className="bg-[var(--mboa-error-doux)] anim-secousse">
+              <p className="text-corps font-bold text-[var(--mboa-error)]">
+                🔔 {t("adm.attention")} : {aTraiter.join(" · ")}
+              </p>
+              <p className="text-aide text-[var(--mboa-error)] mt-1">{t("adm.attentionTexte")}</p>
+            </CarteMboa>
+          </button>
         </div>
       )}
 
@@ -320,47 +279,40 @@ export default function TableauAdmin() {
         </div>
       )}
 
-      {/* Activité des autres admins + notifications */}
+      {/* Flux d'activité : un bouton, le détail vit sur /admin/activite */}
       <div className="px-4 pb-2">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-titre titre-section">{t("adm.act.titre")}</h2>
-          {!notifOk && typeof Notification !== "undefined" && Notification.permission !== "denied" && (
-            <button
-              onClick={demanderNotif}
-              className="text-aide text-[var(--mboa-primary)] font-bold"
-            >
-              {t("adm.act.activerNotif")}
-            </button>
-          )}
-          {notifOk && <span className="text-aide text-[var(--mboa-text-doux)]">{t("adm.act.notifOk")}</span>}
-          <SonToggle />
-          <button
-            onClick={() => router.push("/admin/activite")}
-            className="text-aide font-bold"
-            style={{ color: "var(--mboa-primary)" }}
-          >
-            {t("adm.act.voirTout")} →
-          </button>
-        </div>
-        {activites.length === 0 ? (
-          <CarteMboa>
-            <p className="text-corps text-[var(--mboa-text-doux)] text-center">{t("adm.act.vide")}</p>
-          </CarteMboa>
-        ) : (
-          <CarteMboa className="space-y-1">
-            {activites.slice(0, 6).map((a) => (
-              <div key={a.id} className="flex justify-between text-corps">
-                <span>
-                  <strong>{a.auteur}</strong> {t(a.action)}
-                  {a.detail ? ` · ${a.detail}` : ""}
+        <button
+          onClick={marquerFluxLu}
+          className="w-full text-left relative"
+        >
+          <CarteMboa className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-corps font-bold">
+              📰 {t("adm.act.titre")}
+              {!notifOk && typeof Notification !== "undefined" && Notification.permission !== "denied" && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); void demanderNotif(); }}
+                  className="text-aide font-bold"
+                  style={{ color: "var(--mboa-primary)" }}
+                >
+                  {t("adm.act.activerNotif")}
                 </span>
-                <span className="text-aide text-[var(--mboa-text-doux)] whitespace-nowrap ml-2">
-                  {formaterDateHeure(a.quand)}
+              )}
+            </span>
+            <span className="flex items-center gap-2">
+              {nonLus > 0 && (
+                <span className="bg-[var(--mboa-error)] text-white text-aide font-bold px-2 py-0.5 rounded-full anim-pulsation">
+                  {nonLus}
                 </span>
-              </div>
-            ))}
+              )}
+              <SonToggle />
+              <span className="text-aide font-bold" style={{ color: "var(--mboa-primary)" }}>
+                →
+              </span>
+            </span>
           </CarteMboa>
-        )}
+        </button>
       </div>
 
       {/* Raccourcis - tuiles icônes */}

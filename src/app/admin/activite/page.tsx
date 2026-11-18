@@ -18,7 +18,12 @@ export default function ActiviteAdminPage() {
   const [chargement, setChargement] = useState(true);
 
   async function charger() {
-    setActivites(await activitesAdmin());
+    const acts = await activitesAdmin();
+    setActivites(acts);
+    // Marque le flux comme lu : le badge du dashboard se vide.
+    try {
+      localStorage.setItem("mboa_act_lue_le", String(Date.now()));
+    } catch {}
     setChargement(false);
   }
 
