@@ -157,7 +157,7 @@ export default function RejoindrePage() {
     return (
       <FondMboa className="items-center justify-center">
       <div className="flex-1 flex flex-col items-center justify-center min-h-screen">
-        <div className="text-6xl mb-4">✅</div>
+        <div className="text-6xl mb-4 anim-apparition-zoom" aria-hidden>✅</div>
         <h1 className="text-ecran text-[var(--mboa-primary)]">{t("rej.succes.titre")}</h1>
         <p className="text-corps text-[var(--mboa-text-doux)] mt-2 text-center px-6 italic">
           {t("rej.succes.texte")}

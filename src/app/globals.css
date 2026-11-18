@@ -941,6 +941,7 @@ input, select, textarea, button {
   letter-spacing: 6px;
   opacity: 0.25;
   pointer-events: none;
+  animation: flotte 7s ease-in-out infinite;
 }
 
 /* État vide illustré */

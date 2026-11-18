@@ -28,6 +28,7 @@ export default function PanierPage() {
 
   const panier = usePanier();
   const [enCours, setEnCours] = useState(false);
+  const [envoye, setEnvoye] = useState(false);
   const [modePaiement, setModePaiement] = useState<ModePaiement>(ModePaiement.especes);
   const [menuExport, setMenuExport] = useState(false);
   const [appelSouhaite, setAppelSouhaite] = useState(false);
@@ -99,7 +100,8 @@ export default function PanierPage() {
         fraisLivraison: fraisLivraison > 0 ? fraisLivraison : null,
       });
       panier.vider();
-      router.push("/consommateur/suivi");
+      setEnvoye(true);
+      setTimeout(() => router.push("/consommateur/suivi"), 1100);
     } catch (e) {
       console.error("Order error:", e);
     } finally {
@@ -367,6 +369,16 @@ export default function PanierPage() {
           </>
         )}
       </div>
+
+      {/* Overlay de succès - bref avant le suivi */}
+      {envoye && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(14,21,16,0.55)", backdropFilter: "blur(3px)" }}>
+          <div className="card-mboa text-center px-8 py-6 anim-apparition-zoom !shadow-[0_24px_60px_-12px_rgba(0,0,0,0.4)]" style={{ border: "2px solid var(--mboa-primary)" }}>
+            <div className="text-6xl mb-2" aria-hidden>✅</div>
+            <p className="text-titre text-[var(--mboa-primary)]">{t("panier.envoye")}</p>
+          </div>
+        </div>
+      )}
     </FondMboa>
   );
 }

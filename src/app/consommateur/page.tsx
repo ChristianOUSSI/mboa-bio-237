@@ -104,7 +104,7 @@ export default function MarchePage() {
               🛒
             </button>
             {panier.compte() > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[var(--mboa-error)] text-white rounded-full w-6 h-6 flex items-center justify-center text-aide font-bold">
+              <span key={panier.compte()} className="absolute -top-1 -right-1 bg-[var(--mboa-error)] text-white rounded-full w-6 h-6 flex items-center justify-center text-aide font-bold anim-apparition-zoom">
                 {panier.compte()}
               </span>
             )}

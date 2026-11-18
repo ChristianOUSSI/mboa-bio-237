@@ -89,8 +89,9 @@ export function BadgeStatut({ statut, libelle }: { statut: string; libelle: stri
     annule: "bg-[var(--mboa-error-doux)] text-[var(--mboa-error)]",
   };
   const couleur = couleurs[statut] ?? "bg-gray-200 text-gray-800";
+  const pulse = statut === "en_livraison" ? " anim-pulsation" : "";
   return (
-    <span className={`pastille-mboa ${couleur}`}>
+    <span className={`pastille-mboa ${couleur}${pulse}`}>
       {libelle}
     </span>
   );

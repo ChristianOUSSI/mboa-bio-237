@@ -203,6 +203,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "panier.gpsErreur": "Position indisponible",
     "panier.export": "Exporter mon devis",
     "panier.copieOk": "✅ Devis copié dans le presse-papiers",
+    "panier.envoye": "Commande envoyée ! Le livreur arrive bientôt.",
     "panier.vider": "Vider le panier",
     "panier.titreDoc": "Mon devis MBOA BIO 237",
 
@@ -772,6 +773,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "panier.gpsErreur": "Position unavailable",
     "panier.export": "Export my quote",
     "panier.copieOk": "✅ Quote copied to clipboard",
+    "panier.envoye": "Order sent! The courier will arrive soon.",
     "panier.vider": "Empty the cart",
     "panier.titreDoc": "My MBOA BIO 237 quote",
 
