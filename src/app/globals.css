@@ -1093,3 +1093,19 @@ input, select, textarea {
 @media (prefers-reduced-motion: reduce) {
   .toast-mboa { animation: none; }
 }
+
+/* ============================================================
+   Mode « grand texte » - accessibilité personnes âgées
+   Activé via localStorage(mboa-texte-grand) + classe sur <html>
+   ============================================================ */
+
+.texte-grand body { font-size: 18px; }
+.texte-grand .text-corps { font-size: 23px; }
+.texte-grand .text-aide { font-size: 21px; }
+.texte-grand .text-titre { font-size: 27px; }
+.texte-grand .text-ecran { font-size: 32px; }
+.texte-grand .text-chiffre { font-size: 38px; }
+.texte-grand .text-chiffre-geant { font-size: 54px; }
+.texte-grand .champ-mboa { font-size: 19px; padding: 16px 18px; }
+.texte-grand .btn-mboa { font-size: 18px; }
+.texte-grand .selecteur-langue button { font-size: 16px; }

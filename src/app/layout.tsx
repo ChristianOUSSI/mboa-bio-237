@@ -39,7 +39,7 @@ export default function RootLayout({
         {/* Applique le thème avant le premier rendu pour éviter le flash. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem("mboa-theme");if(t==="sombre"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.theme="sombre";}catch(e){}`,
+            __html: `try{var t=localStorage.getItem("mboa-theme");if(t==="sombre"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.theme="sombre";if(localStorage.getItem("mboa-texte-grand")==="1")document.documentElement.classList.add("texte-grand");}catch(e){}`,
           }}
         />
         <link rel="manifest" href="/manifest.json" />

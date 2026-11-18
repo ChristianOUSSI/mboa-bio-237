@@ -230,6 +230,21 @@ export default function PageConnexion() {
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
   const [roleChoisi, setRoleChoisi] = useState<AppRole>("consommateur");
+  const [grandTexte, setGrandTexte] = useState(false);
+
+  // Mode grand texte : synchronisé avec la classe posée avant le 1er rendu.
+  useEffect(() => {
+    setGrandTexte(document.documentElement.classList.contains("texte-grand"));
+  }, []);
+
+  function basculerTexteGrand() {
+    const actif = !grandTexte;
+    setGrandTexte(actif);
+    document.documentElement.classList.toggle("texte-grand", actif);
+    try {
+      localStorage.setItem("mboa-texte-grand", actif ? "1" : "0");
+    } catch {}
+  }
   const [modeInscription, setModeInscription] = useState<"telephone" | "email">("telephone");
   const [mdpParDefaut, setMdpParDefaut] = useState(false);
   const [compteOublie, setCompteOublie] = useState<CompteAuth | null>(null);
@@ -650,7 +665,7 @@ export default function PageConnexion() {
         {/* Sélecteur de langue */}
         {/* z-30 : le sélecteur de langue reste au-dessus des aliments
             flottants (z-20), même déplaçables. */}
-        <div className="absolute top-4 right-4 z-30">
+        <div className="absolute top-4 right-4 z-30 flex flex-col items-end gap-2">
           <div className="selecteur-langue" role="group" aria-label={t("a11y.langue")}>
             {(["fr", "en"] as Lang[]).map((l) => (
               <button
@@ -662,6 +677,27 @@ export default function PageConnexion() {
               </button>
             ))}
           </div>
+          {/* Mode « grand texte » pour les personnes âgées :
+              persisté en localStorage, appliqué avant le 1er rendu. */}
+          <button
+            type="button"
+            aria-label={t("a11y.texteGrand")}
+            aria-pressed={grandTexte}
+            onClick={basculerTexteGrand}
+            style={{
+              borderRadius: 999,
+              padding: "8px 14px",
+              fontWeight: 800,
+              fontSize: 15,
+              border: "1.5px solid rgba(255,255,255,0.35)",
+              background: grandTexte ? "#7BC47F" : "rgba(255,255,255,0.16)",
+              color: grandTexte ? "#1E5128" : "rgba(255,255,255,0.85)",
+              cursor: "pointer",
+              backdropFilter: "blur(6px)",
+            }}
+          >
+            {grandTexte ? "A+ ✓" : "A+"}
+          </button>
         </div>
       </div>
 

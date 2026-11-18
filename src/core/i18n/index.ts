@@ -672,6 +672,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "a11y.deconnexion": "Déconnexion",
     "a11y.ecouter": "Écouter",
     "a11y.langue": "Langue",
+    "a11y.texteGrand": "Agrandir le texte",
     "a11y.voirMdp": "Afficher le mot de passe",
     "a11y.masquerMdp": "Masquer le mot de passe",
 
@@ -1330,6 +1331,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "a11y.deconnexion": "Sign out",
     "a11y.ecouter": "Listen",
     "a11y.langue": "Language",
+    "a11y.texteGrand": "Enlarge text",
     "a11y.voirMdp": "Show password",
     "a11y.masquerMdp": "Hide password",
 
