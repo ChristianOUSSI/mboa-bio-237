@@ -189,9 +189,14 @@ export default function SuiviPage() {
                   {/* Détail des articles commandés */}
                   <div className="bg-[var(--mboa-background)] rounded-xl p-2 mt-1">
                     {c.lignes.map((l, i) => (
-                      <div key={i} className="flex justify-between text-aide py-0.5">
-                        <span>{l.quantite} × {l.nom}</span>
-                        <span className="text-[var(--mboa-text-doux)]">{formaterFcfa(Math.round(l.quantite * l.prix))}</span>
+                      <div key={i} className="flex justify-between items-center text-aide py-0.5 gap-2">
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span className="w-7 h-7 rounded-lg overflow-hidden bg-[var(--mboa-secondary-doux)] flex items-center justify-center shrink-0 text-sm">
+                            {l.photo ? <img src={l.photo} alt="" className="w-full h-full object-cover" /> : "🥬"}
+                          </span>
+                          <span className="truncate">{l.quantite} × {l.nom}</span>
+                        </span>
+                        <span className="text-[var(--mboa-text-doux)] shrink-0">{formaterFcfa(Math.round(l.quantite * l.prix))}</span>
                       </div>
                     ))}
                   </div>

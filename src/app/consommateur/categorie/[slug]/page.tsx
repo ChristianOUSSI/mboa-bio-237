@@ -9,10 +9,11 @@ import { Annonce } from "@/core/types/annonce";
 import { annoncePromoPct, annonceExpiree } from "@/core/utils/promos";
 import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
 import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstVitrine, produitEstPack } from "@/core/types/produit";
-import { usePanier } from "@/core/etat/store";
+import { usePanier, toast } from "@/core/etat/store";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
+import { vibrer } from "@/core/utils/son";
 
 /** Page d'une catégorie : tous les produits qu'elle contient, prix et photos. */
 export default function PageCategorie() {
@@ -86,6 +87,8 @@ function PageCategorieInterne() {
       unite: u,
       composants: produit.composants,
     });
+    vibrer();
+    toast(`${produit.nom} ${t("toast.ajoute")}`);
   }
 
   return (

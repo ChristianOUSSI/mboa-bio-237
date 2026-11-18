@@ -191,6 +191,38 @@ export const useListe = create<ListeState>()(
 );
 
 // ============================================================
+// Toast (petites confirmations globales)
+// ============================================================
+
+interface ToastState {
+  message: string;
+  visible: boolean;
+  montrer: (message: string) => void;
+  cacher: () => void;
+}
+
+let toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+export const useToast = create<ToastState>()((set) => ({
+  message: "",
+  visible: false,
+  montrer: (message) => {
+    if (toastTimer) clearTimeout(toastTimer);
+    set(() => ({ message, visible: true }));
+    toastTimer = setTimeout(() => set(() => ({ visible: false })), 2600);
+  },
+  cacher: () => {
+    if (toastTimer) clearTimeout(toastTimer);
+    set(() => ({ visible: false }));
+  },
+}));
+
+/** Raccourci : affiche une confirmation éphémère en bas d'écran. */
+export function toast(message: string): void {
+  useToast.getState().montrer(message);
+}
+
+// ============================================================
 // Réseau (online/offline)
 // ============================================================
 

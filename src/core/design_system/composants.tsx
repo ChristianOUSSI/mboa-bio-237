@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useTr } from "../i18n";
 import { basculerTheme, themeActuel, Theme } from "../utils/theme";
-import { useReseau } from "../etat/store";
+import { useReseau, useToast } from "../etat/store";
 
 /** Bouton MBOA - cible tactile minimale 72px, coins arrondis 20px. */
 export function BoutonMboa({
@@ -255,6 +255,22 @@ export function BoutonVoix({ texte, label = "🔊" }: { texte: string; label?: s
   );
 }
 
+/** Toast de confirmation éphémère — monté dans FondMboa sur toutes les pages. */
+export function ToastMboa() {
+  const { message, visible, cacher } = useToast();
+  if (!visible) return null;
+  return (
+    <button
+      onClick={cacher}
+      className="toast-mboa"
+      role="status"
+      aria-live="polite"
+    >
+      ✅ {message}
+    </button>
+  );
+}
+
 /** Fond vivant - halos animés et filigrane logo. */
 export function FondMboa({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
@@ -263,6 +279,7 @@ export function FondMboa({ children, className = "" }: { children: ReactNode; cl
       <div className="halo-mboa" style={{ width: 220, height: 220, top: -60, right: -70, background: "rgba(139,195,74,0.35)" }} aria-hidden />
       <div className="halo-mboa" style={{ width: 180, height: 180, bottom: 40, left: -80, background: "rgba(46,125,50,0.22)", animationDelay: "-7s" }} aria-hidden />
       <div className="above-filigrane flex-1 flex flex-col">{children}</div>
+      <ToastMboa />
     </div>
   );
 }

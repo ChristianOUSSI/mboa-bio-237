@@ -26,6 +26,7 @@ export default function LivraisonsPage() {
   const [payes, setPayes] = useState<Set<string>>(new Set());
   const [enCours, setEnCours] = useState<string | null>(null);
   const [fraisSaisie, setFraisSaisie] = useState("");
+  const [recherche, setRecherche] = useState("");
   const [fraisSauve, setFraisSauve] = useState(false);
 
   async function charger() {
@@ -72,11 +73,21 @@ export default function LivraisonsPage() {
   }
 
   // Réception confirmée par la cliente, livreur pas encore payé
+  // Recherche : client, produits, quartier, livreur.
+  const norm = (x: string) => x.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const correspondent = (c: Commande) => {
+    const q = norm(recherche.trim());
+    if (!q) return true;
+    return norm(
+      [c.clientNom, c.clientVillage, c.livraisonQuartier, c.livraisonDetail, c.livreurNom,
+        ...c.lignes.map((l) => l.nom)].filter(Boolean).join(" "),
+    ).includes(q);
+  };
   const aPayer = commandes.filter(
-    (c) => c.statut === StatutCommande.recue && !payes.has(c.id),
+    (c) => c.statut === StatutCommande.recue && !payes.has(c.id) && correspondent(c),
   );
   const enCours2 = commandes.filter(
-    (c) => c.statut === StatutCommande.enLivraison || c.statut === StatutCommande.valideeAdmin,
+    (c) => (c.statut === StatutCommande.enLivraison || c.statut === StatutCommande.valideeAdmin) && correspondent(c),
   );
 
   if (!pret) {
@@ -92,6 +103,18 @@ export default function LivraisonsPage() {
     <FondMboa>
       <EnTetePage titre={t("adm.liv.titre")} sousTitre={t("adm.liv.sousTitre")} onRetour={() => router.back()} />
       <div className="flex-1 p-4 space-y-3">
+        <div className="champ-recherche">
+          <span aria-hidden>🔍</span>
+          <input
+            type="text"
+            placeholder={t("adm.recherchePh")}
+            value={recherche}
+            onChange={(e) => setRecherche(e.target.value)}
+          />
+          {recherche && (
+            <button onClick={() => setRecherche("")} aria-label="Effacer" className="px-2">✕</button>
+          )}
+        </div>
         {/* Tarif de livraison : fixé par l'admin, lu par le panier client */}
         <CarteMboa>
           <p className="text-corps font-bold mb-2">🛵 {t("adm.liv.frais")}</p>

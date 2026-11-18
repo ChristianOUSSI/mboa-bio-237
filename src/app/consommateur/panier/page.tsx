@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { usePanier } from "@/core/etat/store";
-import { CarteMboa, BoutonMboa, EnTetePage, BoutonVoix, FondMboa, SkeletonMboa, ChargementMboa } from "@/core/design_system/composants";
+import { usePanier, toast } from "@/core/etat/store";
+import { CarteMboa, BoutonMboa, EnTetePage, BoutonVoix, FondMboa, ChargementMboa } from "@/core/design_system/composants";
 import { formaterFcfa, formaterFcfaCourt } from "@/core/utils/format_monnaie";
 import { commander, chargerVitrine, toutesAnnonces } from "@/core/data/depots";
 import { Annonce } from "@/core/types/annonce";
@@ -18,6 +18,7 @@ import {
 } from "@/core/utils/export_document";
 import { useEffect, useState } from "react";
 import { useGuardRole } from "@/core/auth/use_guard_role";
+import { vibrer } from "@/core/utils/son";
 import { useTr } from "@/core/i18n";
 import { lireParametre } from "@/core/data/parametres";
 
@@ -31,7 +32,11 @@ export default function PanierPage() {
 
   const panier = usePanier();
   const [enCours, setEnCours] = useState(false);
-  const [envoye, setEnvoye] = useState(false);
+  const [recap, setRecap] = useState<{
+    lignes: typeof panier.lignes;
+    quartier: string;
+    total: number;
+  } | null>(null);
   const [modePaiement, setModePaiement] = useState<ModePaiement>(ModePaiement.especes);
   const [menuExport, setMenuExport] = useState(false);
   const [appelSouhaite, setAppelSouhaite] = useState(false);
@@ -75,6 +80,8 @@ export default function PanierPage() {
       unite: produitUniteReelle(produit),
       composants: produit.composants,
     });
+    vibrer();
+    toast(`${produit.nom} ${t("toast.ajoute")}`);
   }
 
   const montantProduits = panier.montantTotal();
@@ -143,9 +150,14 @@ export default function PanierPage() {
         fraisLivraison: fraisLivraison > 0 ? fraisLivraison : null,
         modePaiement,
       });
+      // Instantané AVANT de vider le panier : sert à l'écran récap.
+      setRecap({
+        lignes: panier.lignes.map((l) => ({ ...l })),
+        quartier: livraisonQuartier.trim(),
+        total: montantTotal,
+      });
       panier.vider();
-      setEnvoye(true);
-      setTimeout(() => router.push("/consommateur/suivi"), 1100);
+      vibrer([30, 60, 30]);
     } catch (e) {
       console.error("Order error:", e);
     } finally {
@@ -169,6 +181,20 @@ export default function PanierPage() {
     setTimeout(() => setCopieOk(false), 2200);
   }
 
+  /** Partage le récap de la commande envoyée (instantané, panier déjà vidé). */
+  function partagerRecap() {
+    if (!recap) return;
+    partagerWhatsApp({
+      type: "devis",
+      titre: t("panier.titreDoc"),
+      lignes: recap.lignes,
+      telephone: profil?.telephone ?? null,
+      destinataire: profil?.nom ?? null,
+      code: null,
+      fraisLivraison,
+    });
+  }
+
   if (!pret) {
     return (
       <FondMboa>
@@ -178,6 +204,60 @@ export default function PanierPage() {
       </FondMboa>
     );
   }
+
+  // Écran de confirmation : récap complet de la commande envoyée.
+  if (recap) {
+    return (
+      <FondMboa>
+        <EnTetePage titre={t("panier.envoye")} onRetour={() => router.push("/consommateur")} />
+        <div className="flex-1 p-4">
+          <div className="etat-vide anim-apparition">
+            <span className="emoji-vide" style={{ fontSize: 72 }}>✅</span>
+            <p className="text-corps font-bold">{t("panier.envoyeTexte")}</p>
+            <p className="text-aide mt-1">🚴 {t("panier.delai")}</p>
+          </div>
+
+          <CarteMboa className="mt-4">
+            <p className="text-corps font-bold mb-2">{t("panier.adresse")}</p>
+            <p className="text-aide">📍 {recap.quartier}</p>
+          </CarteMboa>
+
+          <CarteMboa className="mt-3">
+            <div className="space-y-1">
+              {recap.lignes.map((l, i) => (
+                <div key={i} className="flex justify-between items-center text-aide">
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="w-8 h-8 rounded-lg overflow-hidden bg-[var(--mboa-secondary-doux)] flex items-center justify-center shrink-0 text-base">
+                      {l.photo ? <img src={l.photo} alt="" className="w-full h-full object-cover" /> : "🥬"}
+                    </span>
+                    <span className="truncate">{l.quantite} × {l.nom}</span>
+                  </span>
+                  <span className="text-[var(--mboa-text-doux)] shrink-0">{formaterFcfa(Math.round(l.quantite * l.prix))}</span>
+                </div>
+              ))}
+              <div className="border-t border-[var(--mboa-trait)] pt-2 mt-2 flex justify-between items-center">
+                <span className="text-corps font-bold">{t("panier.total")}</span>
+                <span className="text-chiffre text-[var(--mboa-primary)]">{formaterFcfa(recap.total)}</span>
+              </div>
+            </div>
+          </CarteMboa>
+
+          <div className="mt-4 space-y-2">
+            <BoutonMboa onClick={() => router.push("/consommateur/suivi")} className="w-full">
+              {t("panier.voirSuivi")}
+            </BoutonMboa>
+            <BoutonMboa variant="surface" onClick={partagerRecap} className="w-full">
+              {t("panier.partager")}
+            </BoutonMboa>
+            <BoutonMboa variant="surface" onClick={() => router.push("/consommateur")} className="w-full">
+              {t("panier.retourMarche")}
+            </BoutonMboa>
+          </div>
+        </div>
+      </FondMboa>
+    );
+  }
+
   return (
     <FondMboa>
       <EnTetePage titre={t("panier.titre")} sousTitre={t("panier.sousTitre")} onRetour={() => router.back()} />
@@ -385,6 +465,7 @@ export default function PanierPage() {
                   <span>{t("panier.livraison")}</span>
                   <span>{formaterFcfa(fraisLivraison)}</span>
                 </div>
+                <p className="text-aide text-[var(--mboa-text-doux)] -mt-1">🚴 {t("panier.delai")}</p>
                 <div className="border-t border-[var(--mboa-trait)] pt-1 flex justify-between items-center">
                   <span className="text-titre">{t("panier.total")}</span>
                   <span className="text-chiffre-geant text-[var(--mboa-primary)]">
@@ -469,16 +550,6 @@ export default function PanierPage() {
           </>
         )}
       </div>
-
-      {/* Overlay de succès - bref avant le suivi */}
-      {envoye && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(14,21,16,0.55)", backdropFilter: "blur(3px)" }}>
-          <div className="card-mboa text-center px-8 py-6 anim-apparition-zoom !shadow-[0_24px_60px_-12px_rgba(0,0,0,0.4)]" style={{ border: "2px solid var(--mboa-primary)" }}>
-            <div className="text-6xl mb-2" aria-hidden>✅</div>
-            <p className="text-titre text-[var(--mboa-primary)]">{t("panier.envoye")}</p>
-          </div>
-        </div>
-      )}
     </FondMboa>
   );
 }

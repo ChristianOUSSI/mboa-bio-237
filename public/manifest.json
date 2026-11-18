@@ -1,9 +1,12 @@
 ﻿{
   "name": "MBOA BIO 237",
   "short_name": "MBOA BIO",
+  "id": "/",
+  "scope": "/",
   "description": "Comptoir du marché frais ultra accessible pour le Cameroun",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#F8F9E9",
   "theme_color": "#1E5128",
   "orientation": "portrait",

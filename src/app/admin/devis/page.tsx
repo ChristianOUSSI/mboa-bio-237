@@ -51,6 +51,8 @@ export default function DevisAdminPage() {
   const [livreurs, setLivreurs] = useState<Livreur[]>([]);
   const [livreurChoisi, setLivreurChoisi] = useState<Record<string, string>>({});
   const [enCours, setEnCours] = useState<string | null>(null);
+  const [recherche, setRecherche] = useState("");
+  const [filtreStatut, setFiltreStatut] = useState<string>("tous");
 
   async function charger() {
     const [c, l] = await Promise.all([toutesCommandes(), chargerLivreurs()]);
@@ -87,6 +89,21 @@ export default function DevisAdminPage() {
     }
   }
 
+  // Filtres : recherche texte (client, produits, quartier) + statut.
+  const norm = (x: string) => x.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const commandesFiltrees = commandes.filter((c) => {
+    if (filtreStatut === "nouvelles" && c.statut !== StatutCommande.nouvelle) return false;
+    if (filtreStatut === "encours" && c.statut !== StatutCommande.valideeAdmin && c.statut !== StatutCommande.enLivraison) return false;
+    if (filtreStatut === "finies" && c.statut !== StatutCommande.livree && c.statut !== StatutCommande.recue && !c.clos) return false;
+    const q = norm(recherche.trim());
+    if (!q) return true;
+    const hay = norm(
+      [c.clientNom, c.clientVillage, c.livraisonQuartier, c.livraisonDetail, c.livreurNom,
+        ...c.lignes.map((l) => l.nom)].filter(Boolean).join(" "),
+    );
+    return hay.includes(q);
+  });
+
   if (!pret) {
     return (
       <FondMboa>
@@ -99,19 +116,47 @@ export default function DevisAdminPage() {
   return (
     <FondMboa>
       <EnTetePage titre={t("adm.dev.titre")} sousTitre={t("adm.dev.sousTitre")} onRetour={() => router.back()} />
-      <div className="px-4 pt-2">
-        <BoutonMboa variant="surface" className="w-full !min-h-[44px]" onClick={() => exporterCsv(commandes)} disabled={commandes.length === 0}>
+      <div className="px-4 pt-2 space-y-2">
+        <div className="champ-recherche">
+          <span aria-hidden>🔍</span>
+          <input
+            type="text"
+            placeholder={t("adm.recherchePh")}
+            value={recherche}
+            onChange={(e) => setRecherche(e.target.value)}
+          />
+          {recherche && (
+            <button onClick={() => setRecherche("")} aria-label="Effacer" className="px-2">✕</button>
+          )}
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+          {([["tous", t("adm.filtreTous")], ["nouvelles", t("adm.filtreNouvelles")], ["encours", t("adm.filtreEncours")], ["finies", t("adm.filtreFinies")]] as const).map(([v, label]) => (
+            <button
+              key={v}
+              onClick={() => setFiltreStatut(v)}
+              className="px-4 py-2 rounded-full text-aide font-bold whitespace-nowrap transition-all"
+              style={{
+                background: filtreStatut === v ? "var(--mboa-primary)" : "var(--mboa-surface)",
+                color: filtreStatut === v ? "#fff" : "var(--mboa-text)",
+                border: "1px solid var(--mboa-border)",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <BoutonMboa variant="surface" className="w-full !min-h-[44px]" onClick={() => exporterCsv(commandesFiltrees)} disabled={commandesFiltrees.length === 0}>
           📊 {t("adm.dev.exporter")}
         </BoutonMboa>
       </div>
       <div className="flex-1 p-4 space-y-2">
-        {commandes.length === 0 && (
+        {commandesFiltrees.length === 0 && (
           <div className="etat-vide">
             <span className="emoji-vide">📝</span>
             <p className="text-corps text-[var(--mboa-text-doux)]">{t("adm.dev.vide")}</p>
           </div>
         )}
-        {commandes.map((c) => {
+        {commandesFiltrees.map((c) => {
           const info = STATUT_COMMANDE_INFO[c.statut];
           const estNouveau = c.statut === StatutCommande.nouvelle;
           const livreurSelectionne = livreurChoisi[c.id] ?? livreurs[0]?.id ?? "";

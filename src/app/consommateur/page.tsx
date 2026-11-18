@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession, usePanier, useData, useReseau } from "@/core/etat/store";
+import { useSession, usePanier, useData, useReseau, toast } from "@/core/etat/store";
 import { chargerVitrine, chargerCatalogue, commandesCliente, compterFile } from "@/core/data/depots";
 import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa, ChargementMboa } from "@/core/design_system/composants";
 import { CATEGORIES_ORDREES } from "@/core/types/categorie";
@@ -18,6 +18,7 @@ import { toutesAnnonces } from "@/core/data/depots";
 import { TYPE_ANNONCE_INFO, Annonce } from "@/core/types/annonce";
 import { annonceEstPhare, annoncePromoPct, annonceExpiree } from "@/core/utils/promos";
 import { notifierNouvellesAnnonces } from "@/core/utils/annonces_notif";
+import { vibrer } from "@/core/utils/son";
 
 export default function MarchePage() {
   const router = useRouter();
@@ -32,6 +33,7 @@ export default function MarchePage() {
   const [tri, setTri] = useState<"nom" | "prix_asc" | "prix_desc">("nom");
   const [annonces, setAnnonces] = useState<Annonce[]>([]);
   const [annonceFermee, setAnnonceFermee] = useState("");
+  const [filtreCat, setFiltreCat] = useState("");
   const t = useTr();
 
   async function charger() {
@@ -86,7 +88,8 @@ export default function MarchePage() {
     !!p.createdLe && Date.now() - new Date(p.createdLe).getTime() < 7 * 24 * 3600 * 1000;
 
   const produitsFiltres = vitrine.filter((p) =>
-    !recherche.trim() || p.nom.toLowerCase().includes(recherche.toLowerCase())
+    (!filtreCat || p.categorie === filtreCat) &&
+    (!recherche.trim() || p.nom.toLowerCase().includes(recherche.toLowerCase()))
   ).sort((a, b) => {
     if (tri === "prix_asc") return a.prix - b.prix;
     if (tri === "prix_desc") return b.prix - a.prix;
@@ -111,6 +114,8 @@ export default function MarchePage() {
       unite: u,
       composants: produit.composants,
     });
+    vibrer();
+    toast(`${produit.nom} ${t("toast.ajoute")}`);
   }
 
   return (
@@ -218,6 +223,39 @@ export default function MarchePage() {
             <button onClick={() => setRecherche("")} aria-label="Effacer" className="text-aide font-bold opacity-70">✕</button>
           )}
         </div>
+        {/* Filtre rapide par catégorie — ne montre que les catégories
+            réellement présentes dans le stock affiché. */}
+        {(() => {
+          const presentes = [...new Set(vitrine.map((p) => p.categorie))];
+          if (presentes.length < 2) return null;
+          return (
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4" style={{ scrollbarWidth: "none" }}>
+              <button
+                onClick={() => setFiltreCat("")}
+                className="px-3 py-1.5 rounded-full text-aide shrink-0 font-bold"
+                style={{
+                  background: filtreCat === "" ? "var(--mboa-primary)" : "var(--mboa-surface)",
+                  color: filtreCat === "" ? "#fff" : "var(--mboa-text)",
+                }}
+              >
+                {t("march.tous")}
+              </button>
+              {presentes.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setFiltreCat(filtreCat === cat ? "" : cat)}
+                  className="px-3 py-1.5 rounded-full text-aide shrink-0 font-bold"
+                  style={{
+                    background: filtreCat === cat ? "var(--mboa-primary)" : "var(--mboa-surface)",
+                    color: filtreCat === cat ? "#fff" : "var(--mboa-text)",
+                  }}
+                >
+                  {emojiCategorie(cat, persos) ? `${emojiCategorie(cat, persos)} ` : ""}{libelleCategorie(cat, persos)}
+                </button>
+              ))}
+            </div>
+          );
+        })()}
         <div className="flex gap-2">
           {([["nom", "A-Z"], ["prix_asc", t("march.prixAsc")], ["prix_desc", t("march.prixDesc")]] as const).map(([v, label]) => (
             <button
