@@ -8,6 +8,7 @@ import {
   motDePasseAdminInitial,
   EMAIL_ADMIN_INITIAL,
   EMAIL_ADMIN_INITIAL_ANTERIEUR,
+  ID_COMPTE_ADMIN_BOOTSTRAP,
   type CompteAuth,
 } from "./auth_local";
 
@@ -239,6 +240,34 @@ export async function synchroniserComptesAdmin(): Promise<number> {
       if (maj.email) await cacheEcrire("compte", `mail:${maj.email}`, maj);
       publierCompteAdmin(maj);
     }
+  }
+
+  // --- Purge complète (une seule fois par appareil) ---
+  // On ne conserve que l'admin par défaut (admin123@test.com) et le
+  // super admin (CADC). Tout autre compte — clients, fournisseurs,
+  // livreurs, admins créés, doublons bootstrap — est supprimé
+  // définitivement : local + table distante + tombstone, pour que
+  // chaque appareil fasse le même nettoyage à sa prochaine synchro.
+  // Le flag evite de rejouer la purge à chaque synchro : sinon les
+  // comptes clients recréés après coup seraient effacés sans fin.
+  const { etatLire, etatEcrire } = await import("../data/base_locale");
+  if (!(await etatLire<boolean>("comptes_purge_effectuee"))) {
+    // cacheTout retourne aussi les index tel:/mail: : on déduplique par id.
+    const parId = new Map<string, CompteAuth>();
+    for (const c of (await cacheTout<CompteAuth | null>("compte")).filter(
+      (x): x is CompteAuth => x != null && !!x.id && !x.supprime,
+    )) {
+      if (!parId.has(c.id)) parId.set(c.id, c);
+    }
+    const aConserver = (c: CompteAuth) =>
+      c.role === "superadmin" ||
+      (c.role === "admin" &&
+        (c.email === EMAIL_ADMIN_INITIAL || c.id === ID_COMPTE_ADMIN_BOOTSTRAP));
+    for (const c of parId.values()) {
+      if (aConserver(c) || supprimesConnus?.has(c.id)) continue;
+      await supprimerCompteDefinitif(c);
+    }
+    await etatEcrire("comptes_purge_effectuee", true);
   }
 
   return fusionnes;

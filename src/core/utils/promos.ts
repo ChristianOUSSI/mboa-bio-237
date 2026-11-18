@@ -1,14 +1,19 @@
 import { Annonce } from "../types/annonce";
 import { Produit } from "../types/produit";
 
+/** Une annonce dont la date d'expiration est dépassée est ignorée partout. */
+export function annonceExpiree(a: Annonce): boolean {
+  return !!a.expireLe && new Date(a.expireLe).getTime() < Date.now();
+}
+
 const norm = (x: string) =>
   x.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 
 /** Le produit est-il mis en avant par une annonce « phare » ? */
 export function annonceEstPhare(annonces: Annonce[], produit: Produit): boolean {
   // Lien explicite prioritaire : produit choisi dans l'admin.
-  if (annonces.some((a) => a.actif && a.type === "phare" && a.produitSlug === produit.slug)) return true;
-  const titres = annonces.filter((a) => a.actif && a.type === "phare" && !a.produitSlug).map((a) => norm(a.titre));
+  if (annonces.some((a) => a.actif && !annonceExpiree(a) && a.type === "phare" && a.produitSlug === produit.slug)) return true;
+  const titres = annonces.filter((a) => a.actif && !annonceExpiree(a) && a.type === "phare" && !a.produitSlug).map((a) => norm(a.titre));
   const nom = norm(produit.nom);
   return titres.some((t) => t.includes(nom) || nom.includes(t));
 }
@@ -21,7 +26,7 @@ export function annonceEstPhare(annonces: Annonce[], produit: Produit): boolean 
 export function annoncePromoPct(annonces: Annonce[], produit: Produit): number | null {
   const nom = norm(produit.nom);
   for (const a of annonces) {
-    if (!a.actif || a.type !== "promo") continue;
+    if (!a.actif || annonceExpiree(a) || a.type !== "promo") continue;
     // Lien explicite prioritaire : slug produit choisi dans l'admin.
     if (a.produitSlug) {
       if (a.produitSlug !== produit.slug) continue;

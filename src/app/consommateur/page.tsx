@@ -15,7 +15,7 @@ import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 import { toutesAnnonces } from "@/core/data/depots";
 import { TYPE_ANNONCE_INFO, Annonce } from "@/core/types/annonce";
-import { annonceEstPhare, annoncePromoPct } from "@/core/utils/promos";
+import { annonceEstPhare, annoncePromoPct, annonceExpiree } from "@/core/utils/promos";
 
 export default function MarchePage() {
   const router = useRouter();
@@ -34,7 +34,7 @@ export default function MarchePage() {
 
   async function charger() {
     const [v, c, p, a] = await Promise.all([chargerVitrine(), chargerCatalogue(), categoriesPerso(), toutesAnnonces()]);
-    setAnnonces(a.filter((x) => x.actif));
+    setAnnonces(a.filter((x) => x.actif && !annonceExpiree(x)));
     // The customer only sees real stock: active and quantity > 0
     setVitrine(v.filter(produitEstVitrine));
     setCatalogue(c);
@@ -179,6 +179,7 @@ export default function MarchePage() {
                 <p className="text-aide font-bold" style={{ color: "var(--mboa-primary)" }}>{info.libelle}</p>
                 <p className="text-corps font-bold mt-0.5">{a.titre}</p>
                 {a.texte ? <p className="text-aide mt-0.5">{a.texte}</p> : null}
+                {a.expireLe ? <p className="text-aide mt-0.5 font-bold">⏳ {new Date(a.expireLe).toLocaleDateString()}</p> : null}
               </div>
               <button
                 onClick={() => setAnnonceFermee(a.id)}

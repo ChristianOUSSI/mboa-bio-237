@@ -22,3 +22,6 @@ create index if not exists annonces_actif_idx on public.annonces (actif, created
 
 -- Lien optionnel annonce → produit (rend la promo déterministe).
 alter table public.annonces add column if not exists produit_slug text;
+
+-- Date d'expiration optionnelle (promos flash).
+alter table public.annonces add column if not exists expire_le timestamptz;

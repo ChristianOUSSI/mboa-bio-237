@@ -17,6 +17,7 @@ export default function PageAnnonces() {
   const [titre, setTitre] = useState("");
   const [texte, setTexte] = useState("");
   const [produitSlug, setProduitSlug] = useState("");
+  const [expireLe, setExpireLe] = useState("");
   const [produits, setProduits] = useState<Produit[]>([]);
   const [enCours, setEnCours] = useState(false);
 
@@ -31,10 +32,15 @@ export default function PageAnnonces() {
     if (!titre.trim()) return;
     setEnCours(true);
     try {
-      await sauverAnnonce({ type, titre, texte, produitSlug: produitSlug || null });
+      await sauverAnnonce({
+        type, titre, texte,
+        produitSlug: produitSlug || null,
+        expireLe: expireLe ? new Date(expireLe).toISOString() : null,
+      });
       setTitre("");
       setTexte("");
       setProduitSlug("");
+      setExpireLe("");
       setType("promo");
       await charger();
     } finally {
@@ -94,6 +100,13 @@ export default function PageAnnonces() {
             rows={2}
             className="champ-mboa w-full resize-none"
           />
+          <label className="text-aide block mt-2 mb-1 font-bold">{t("ann.expirePh")}</label>
+          <input
+            type="datetime-local"
+            value={expireLe}
+            onChange={(e) => setExpireLe(e.target.value)}
+            className="champ-mboa w-full"
+          />
           <BoutonMboa onClick={publier} disabled={enCours || !titre.trim()} className="w-full mt-3">
             {enCours ? t("ann.envoi") : `📢 ${t("ann.publier")}`}
           </BoutonMboa>
@@ -128,7 +141,7 @@ export default function PageAnnonces() {
                     {a.produitSlug ? <p className="text-aide mt-1">🎯 {produits.find((p) => p.slug === a.produitSlug)?.nom ?? a.produitSlug}</p> : null}
                     {a.texte ? <p className="text-aide mt-1">{a.texte}</p> : null}
                     <p className="text-aide mt-1">
-                      {t(`ann.type.${a.type}`)} · {new Date(a.createdLe).toLocaleDateString()}
+                      {t(`ann.type.${a.type}`)} · {new Date(a.createdLe).toLocaleDateString()}{a.expireLe ? ` · ⏳ ${new Date(a.expireLe).toLocaleDateString()}` : ""}
                     </p>
                   </div>
                 </div>

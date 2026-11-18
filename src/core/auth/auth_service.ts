@@ -8,9 +8,11 @@ export type { CompteAuth, RoleAuth };
 /** Entité de cache qui porte les comptes. */
 const ENTITE = "compte";
 
-/** Tous les comptes enregistrés. */
+/** Tous les comptes enregistrés (les entrées purgées à `null` sont ignorées). */
 export async function tousComptes(): Promise<CompteAuth[]> {
-  return cacheTout<CompteAuth>(ENTITE);
+  return (await cacheTout<CompteAuth | null>(ENTITE)).filter(
+    (c): c is CompteAuth => c != null,
+  );
 }
 
 /** Lit un compte par son identifiant. */
