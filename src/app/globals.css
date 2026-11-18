@@ -1047,3 +1047,19 @@ html {
 input, select, textarea {
   caret-color: var(--mboa-primary-vif);
 }
+
+/* Spinner circulaire de chargement */
+.spinner-mboa {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 4px solid var(--mboa-surface-doux);
+  border-top-color: var(--mboa-primary-vif);
+  animation: spinner-tour 0.8s linear infinite;
+}
+@keyframes spinner-tour {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner-mboa { animation-duration: 1.6s; }
+}

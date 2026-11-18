@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useListe, usePanier } from "@/core/etat/store";
-import { CarteMboa, BoutonMboa, EnTetePage, BoutonVoix, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { CarteMboa, BoutonMboa, EnTetePage, BoutonVoix, FondMboa, SkeletonMboa, ChargementMboa } from "@/core/design_system/composants";
 import { formaterFcfa, formaterFcfaCourt } from "@/core/utils/format_monnaie";
 import { CATEGORIES_ORDREES, Categorie } from "@/core/types/categorie";
 import { Unite, UNITE_INFO } from "@/core/types/unite";
@@ -79,7 +79,7 @@ export default function ListePage() {
     return (
       <FondMboa>
         <div className="flex-1 p-4">
-          <SkeletonMboa lignes={6} />
+          <ChargementMboa />
         </div>
       </FondMboa>
     );

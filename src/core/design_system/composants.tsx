@@ -313,3 +313,26 @@ export function SkeletonMboa({ lignes = 3, hauteur = 80 }: { lignes?: number; ha
     </div>
   );
 }
+
+/** Indicateur de chargement circulaire + message, avec alerte « réseau lent » après 4 s. */
+export function ChargementMboa({ message, sousMessage }: { message?: string; sousMessage?: string }) {
+  const t = useTr();
+  const [lent, setLent] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setLent(true), 4000);
+    return () => clearTimeout(id);
+  }, []);
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+      <div className="spinner-mboa" aria-hidden />
+      <p className="text-corps font-bold mt-5">{message ?? t("app.chargement")}</p>
+      {sousMessage ? <p className="text-aide mt-1">{sousMessage}</p> : null}
+      {lent && (
+        <p className="text-aide mt-3 px-4 py-2 rounded-xl anim-apparition"
+           style={{ background: "var(--mboa-accent-doux)", color: "var(--mboa-primary)" }}>
+          🐌 {t("app.reseauLent")}
+        </p>
+      )}
+    </div>
+  );
+}

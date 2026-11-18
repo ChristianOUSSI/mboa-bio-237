@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, usePanier, useData, useReseau } from "@/core/etat/store";
 import { chargerVitrine, chargerCatalogue, commandesCliente, compterFile } from "@/core/data/depots";
-import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa, ChargementMboa } from "@/core/design_system/composants";
 import { CATEGORIES_ORDREES } from "@/core/types/categorie";
 import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
 import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstVitrine, produitEstPack } from "@/core/types/produit";
@@ -64,7 +64,7 @@ export default function MarchePage() {
     return (
       <FondMboa>
         <div className="flex-1 p-4">
-          <SkeletonMboa lignes={6} />
+          <ChargementMboa />
         </div>
       </FondMboa>
     );

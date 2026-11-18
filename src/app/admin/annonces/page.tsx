@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { EnTetePage, CarteMboa, BoutonMboa, BadgeStatut } from "@/core/design_system/composants";
+import { EnTetePage, CarteMboa, BoutonMboa } from "@/core/design_system/composants";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
@@ -99,7 +99,15 @@ export default function PageAnnonces() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-corps font-bold">{a.titre}</p>
-                      <BadgeStatut statut={a.actif ? "actif" : "inactif"} />
+                      <span
+                        className="text-aide px-2 py-0.5 rounded-full font-bold"
+                        style={{
+                          background: a.actif ? "var(--mboa-secondary-doux)" : "var(--mboa-error-doux)",
+                          color: a.actif ? "var(--mboa-primary)" : "var(--mboa-error)",
+                        }}
+                      >
+                        {a.actif ? t("ann.actives") : t("ann.inactive")}
+                      </span>
                     </div>
                     {a.texte ? <p className="text-aide mt-1">{a.texte}</p> : null}
                     <p className="text-aide mt-1">

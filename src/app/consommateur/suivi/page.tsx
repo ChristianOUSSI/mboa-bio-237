@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { commandesCliente, confirmerReception, suiviCommande, partagerPositionGps } from "@/core/data/depots";
 import { cacheEcrire } from "@/core/data/base_locale";
 import { CarteColis } from "@/core/design_system/carte_colis";
-import { CarteMboa, BoutonMboa, EnTetePage, BadgeStatut, BoutonVoix, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { CarteMboa, BoutonMboa, EnTetePage, BadgeStatut, BoutonVoix, FondMboa, SkeletonMboa, ChargementMboa } from "@/core/design_system/composants";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { Commande, commandeMontantAPayer, commandeAttendConfirmation, commandeEstAnnule } from "@/core/types/commande_full";
 import { STATUT_COMMANDE_INFO, StatutCommande, Satisfaction, SATISFACTION_INFO, MotifReception, MOTIF_RECEPTION_INFO } from "@/core/types/statuts";
@@ -126,7 +126,7 @@ export default function SuiviPage() {
     return (
       <FondMboa>
         <div className="flex-1 p-4">
-          <SkeletonMboa lignes={6} />
+          <ChargementMboa />
         </div>
       </FondMboa>
     );
