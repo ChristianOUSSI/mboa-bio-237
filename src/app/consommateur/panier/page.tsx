@@ -55,6 +55,8 @@ export default function PanierPage() {
   const [codeSaisi, setCodeSaisi] = useState("");
   const [codePct, setCodePct] = useState<number | null>(null);
   const [codeErreur, setCodeErreur] = useState(false);
+  // Assistant en 3 étapes : 1 panier, 2 livraison, 3 paiement + validation.
+  const [etape, setEtape] = useState<1 | 2 | 3>(1);
 
   useEffect(() => {
     void lireParametre<number>(CLE_FRAIS, FRAIS_LIVRAISON_DEFAUT).then((f) => {
@@ -117,6 +119,16 @@ export default function PanierPage() {
       () => setGpsEtat("erreur"),
       { enableHighAccuracy: true, timeout: 10000 },
     );
+  }
+
+  function passerEtapeSuivante() {
+    if (etape === 2 && !livraisonQuartier.trim()) {
+      setErreurAdresse(true);
+      return;
+    }
+    setErreurAdresse(false);
+    setEtape((e) => (e < 3 ? ((e + 1) as 1 | 2 | 3) : e));
+    if (typeof window !== "undefined") window.scrollTo({ top: 0 });
   }
 
   async function validerCommande() {
@@ -293,6 +305,31 @@ export default function PanierPage() {
           </div>
         ) : (
           <>
+            {/* Indicateur d'étapes */}
+            <div className="flex items-center gap-2 mb-4">
+              {([1, 2, 3] as const).map((n) => (
+                <div key={n} className="flex items-center gap-2 flex-1">
+                  <span
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-aide font-bold shrink-0"
+                    style={{
+                      background: etape >= n ? "var(--mboa-primary)" : "var(--mboa-trait)",
+                      color: etape >= n ? "#fff" : "var(--mboa-text-doux)",
+                    }}
+                  >
+                    {n}
+                  </span>
+                  <span
+                    className="text-aide font-bold hidden sm:inline"
+                    style={{ color: etape === n ? "var(--mboa-primary)" : "var(--mboa-text-doux)" }}
+                  >
+                    {n === 1 ? t("panier.etapePanier") : n === 2 ? t("panier.etapeLivraison") : t("panier.etapePaiement")}
+                  </span>
+                  {n < 3 && <span className="flex-1 h-px" style={{ background: "var(--mboa-trait)" }} />}
+                </div>
+              ))}
+            </div>
+
+            {etape === 1 && (<>
             {/* Suggestions : produits du marché absents du panier */}
             {suggestions.length > 0 && (
               <div className="mb-4 anim-apparition">
@@ -373,36 +410,18 @@ export default function PanierPage() {
               ))}
             </div>
 
-            {/* Payment method choice */}
-            <CarteMboa className="mt-4 anim-apparition">
-              <p className="text-corps font-bold mb-2">{t("panier.paiement")}</p>
-              <div className="grid grid-cols-3 gap-2">
-                {(Object.values(ModePaiement) as string[]).map((m) => {
-                  const info = MODE_PAIEMENT_INFO[m as ModePaiement];
-                  const selected = modePaiement === m;
-                  const marque = m === ModePaiement.momo ? "🟡" : m === ModePaiement.orangeMoney ? "🟠" : "💵";
-                  return (
-                    <button
-                      key={m}
-                      onClick={() => setModePaiement(m as ModePaiement)}
-                      className="p-3 rounded-xl flex flex-col items-center gap-1 transition-transform active:scale-95"
-                      style={{
-                        background: selected ? "var(--mboa-secondary-doux)" : "var(--mboa-background)",
-                        border: `2px solid ${selected ? "var(--mboa-primary)" : "transparent"}`,
-                      }}
-                    >
-                      <span style={{ fontSize: 26 }}>{marque}</span>
-                      <span className="text-aide text-center" style={{ fontSize: 15, fontWeight: 700 }}>
-                        {info.libelle}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </CarteMboa>
+            {/* Vider le panier - étape 1 seulement */}
+            <button
+              onClick={() => panier.vider()}
+              className="text-aide text-[var(--mboa-error)] mt-3 underline text-center w-full no-print"
+            >
+              {t("panier.vider")}
+            </button>
+            </>)}
 
-            {/* Adresse de livraison - obligatoire : sans quartier, le
-                livreur ne sait pas où se rendre. */}
+            {/* Étape 2 : adresse de livraison - obligatoire : sans quartier,
+                le livreur ne sait pas où se rendre. */}
+            {etape === 2 && (
             <CarteMboa className="mt-4 anim-apparition">
               <p className="text-corps font-bold mb-2">📍 {t("panier.adresse")}</p>
               <label className="text-aide block mb-1 font-bold">{t("panier.quartier")}</label>
@@ -442,6 +461,37 @@ export default function PanierPage() {
                   {t("panier.quartierRequis")}
                 </p>
               )}
+            </CarteMboa>
+            )}
+
+            {/* Étape 3 : paiement + code promo + validation */}
+            {etape === 3 && (<>
+            {/* Payment method choice */}
+            <CarteMboa className="mt-4 anim-apparition">
+              <p className="text-corps font-bold mb-2">{t("panier.paiement")}</p>
+              <div className="grid grid-cols-3 gap-2">
+                {(Object.values(ModePaiement) as string[]).map((m) => {
+                  const info = MODE_PAIEMENT_INFO[m as ModePaiement];
+                  const selected = modePaiement === m;
+                  const marque = m === ModePaiement.momo ? "🟡" : m === ModePaiement.orangeMoney ? "🟠" : "💵";
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => setModePaiement(m as ModePaiement)}
+                      className="p-3 rounded-xl flex flex-col items-center gap-1 transition-transform active:scale-95"
+                      style={{
+                        background: selected ? "var(--mboa-secondary-doux)" : "var(--mboa-background)",
+                        border: `2px solid ${selected ? "var(--mboa-primary)" : "transparent"}`,
+                      }}
+                    >
+                      <span style={{ fontSize: 26 }}>{marque}</span>
+                      <span className="text-aide text-center" style={{ fontSize: 15, fontWeight: 700 }}>
+                        {info.libelle}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </CarteMboa>
 
             {/* Code promo */}
@@ -524,9 +574,39 @@ export default function PanierPage() {
               <BoutonMboa onClick={validerCommande} disabled={enCours} className="w-full !text-titre">
                 {enCours ? t("rej.envoi") : t("liste.commander")}
               </BoutonMboa>
+              <button
+                onClick={() => setEtape(2)}
+                className="text-aide text-[var(--mboa-text-doux)] mt-3 underline text-center w-full"
+              >
+                {t("panier.retourEtape")}
+              </button>
             </CarteMboa>
+            </>)}
 
-            {/* Quote export */}
+            {/* Navigation entre étapes : total visible + Continuer / Retour */}
+            {etape < 3 && (
+              <CarteMboa className="mt-3 anim-apparition sticky bottom-4 z-30 !shadow-[0_16px_40px_-10px_rgba(30,81,40,0.4)]" style={{ border: "2px solid var(--mboa-primary)" }}>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-aide text-[var(--mboa-text-doux)]">{t("panier.total")}</p>
+                    <p className="text-chiffre text-[var(--mboa-primary)]">{formaterFcfa(montantTotal)}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    {etape === 2 && (
+                      <BoutonMboa variant="surface" onClick={() => { setErreurAdresse(false); setEtape(1); }} className="!min-h-[52px]">
+                        {t("panier.retourEtape")}
+                      </BoutonMboa>
+                    )}
+                    <BoutonMboa onClick={passerEtapeSuivante} className="!text-titre !min-h-[52px]">
+                      {t("panier.continuer")} →
+                    </BoutonMboa>
+                  </div>
+                </div>
+              </CarteMboa>
+            )}
+
+            {/* Quote export - étape 3 */}
+            {etape === 3 && (
             <CarteMboa className="mt-3 no-print">
               <button
                 onClick={() => setMenuExport(!menuExport)}
@@ -562,13 +642,7 @@ export default function PanierPage() {
                 </p>
               )}
             </CarteMboa>
-
-            <button
-              onClick={() => panier.vider()}
-              className="text-aide text-[var(--mboa-error)] mt-3 underline text-center w-full no-print"
-            >
-              {t("panier.vider")}
-            </button>
+            )}
           </>
         )}
       </div>
