@@ -242,5 +242,22 @@ export async function synchroniserComptesAdmin(): Promise<number> {
     }
   }
 
+  // L'admin par défaut (admin123@test.com) est le compte maître du
+  // comptoir : tout nouvel admin passe par lui. Il ne doit JAMAIS être
+  // révoqué — sinon plus personne ne peut créer les autres admins.
+  // On force actif:true sur toutes les copies et on republie.
+  const adminMaitre = tous.find(
+    (c) =>
+      c.role === "admin" &&
+      (c.email === EMAIL_ADMIN_INITIAL || c.id === ID_COMPTE_ADMIN_BOOTSTRAP),
+  );
+  if (adminMaitre && !adminMaitre.actif) {
+    const maj: CompteAuth = { ...adminMaitre, actif: true };
+    await cacheEcrire("compte", maj.id, maj);
+    if (maj.telephone) await cacheEcrire("compte", `tel:${maj.telephone}`, maj);
+    if (maj.email) await cacheEcrire("compte", `mail:${maj.email}`, maj);
+    publierCompteAdmin(maj);
+  }
+
   return fusionnes;
 }
