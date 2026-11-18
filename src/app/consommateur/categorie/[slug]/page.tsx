@@ -126,7 +126,7 @@ function PageCategorieInterne() {
                   {p.emoji ? (
                     <span style={{ fontSize: 64 }} aria-hidden>{p.emoji}</span>
                   ) : p.photoReelle ? (
-                    <img src={p.photoReelle} alt={p.nom} className="w-full h-full object-cover rounded-xl" />
+                    <img src={p.photoReelle} alt={p.nom} loading="lazy" decoding="async" className="w-full h-full object-cover rounded-xl" />
                   ) : (
                     <PictoCategorie categorie={p.categorie} size={64} />
                   )}

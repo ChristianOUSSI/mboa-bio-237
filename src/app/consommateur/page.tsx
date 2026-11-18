@@ -329,7 +329,7 @@ export default function MarchePage() {
                       <span style={{ fontSize: 48 }} aria-hidden>{p.emoji}</span>
                     ) : p.photoReelle ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.photoReelle} alt={p.nom} className="w-full h-full object-cover" />
+                      <img src={p.photoReelle} alt={p.nom} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     ) : (
                       <PictoCategorie categorie={p.categorie} size={48} />
                     )}
@@ -387,7 +387,7 @@ export default function MarchePage() {
                   {p.emoji ? (
                     <span style={{ fontSize: 64 }} aria-hidden>{p.emoji}</span>
                   ) : p.photoReelle ? (
-                    <img src={p.photoReelle} alt={p.nom} className="w-full h-full object-cover rounded-xl" />
+                    <img src={p.photoReelle} alt={p.nom} loading="lazy" decoding="async" className="w-full h-full object-cover rounded-xl" />
                   ) : (
                     <PictoCategorie categorie={p.categorie} size={64} />
                   )}
