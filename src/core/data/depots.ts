@@ -1491,7 +1491,7 @@ export async function synchroniserFileAttente(): Promise<number> {
   let faites = 0;
   for (const op of ops) {
     try {
-      const ok = await rejouerOperation(client, op.entite, op.id);
+      const ok = await rejouerOperation(client, op.entite, op.id, op.operation);
       if (ok && op.cle != null) {
         await fileSupprimer(op.cle);
         faites++;
@@ -1503,7 +1503,7 @@ export async function synchroniserFileAttente(): Promise<number> {
   return faites;
 }
 
-async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau>>, entite: string, id: string): Promise<boolean> {
+async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau>>, entite: string, id: string, operation?: string): Promise<boolean> {
   switch (entite) {
     case "produit": {
       const p = await cacheLire<Produit>("produit", id);
@@ -1600,6 +1600,19 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
       });
       return !error;
     }
+    case "annonce": {
+      if (operation === "delete:annonce") {
+        const { error } = await client.from("annonces").delete().eq("id", id);
+        return !error;
+      }
+      const a = await cacheLire<import("../types/annonce").Annonce>("annonce", id);
+      if (!a) return true;
+      const { error } = await client.from("annonces").upsert({
+        id: a.id, type: a.type, titre: a.titre, texte: a.texte ?? "",
+        actif: a.actif, created_le: a.createdLe,
+      });
+      return !error;
+    }
     case "categorie": {
       const cat = await cacheLire<CategoriePerso>("categorie", id);
       if (!cat) return true;
@@ -1619,6 +1632,7 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
 
 export async function toutesAnnonces(): Promise<import("../types/annonce").Annonce[]> {
   const { annonceFromMap } = await import("../types/annonce");
+  const locales = await cacheTout<import("../types/annonce").Annonce>("annonce");
   const client = mboaReseau();
   if (client) {
     const { data, error } = await client
@@ -1626,10 +1640,13 @@ export async function toutesAnnonces(): Promise<import("../types/annonce").Annon
       .select("*")
       .order("created_le", { ascending: false });
     if (!error && data) {
-      return data.map((d) => annonceFromMap(d as unknown as Record<string, unknown>));
+      const distantes = data.map((d) => annonceFromMap(d as unknown as Record<string, unknown>));
+      const ids = new Set(distantes.map((a) => a.id));
+      for (const a of distantes) await cacheEcrire("annonce", a.id, a);
+      return [...distantes, ...locales.filter((a) => !ids.has(a.id))];
     }
   }
-  return cacheTout<import("../types/annonce").Annonce>("annonce");
+  return locales;
 }
 
 export async function sauverAnnonce(params: {
@@ -1673,5 +1690,7 @@ export async function supprimerAnnonce(annonceId: string): Promise<void> {
   if (client) {
     await client.from("annonces").delete().eq("id", annonceId);
   }
+  const { cacheSupprimer } = await import("./base_locale");
+  await cacheSupprimer("annonce", annonceId);
   await fileAjouter("annonce", annonceId, "delete:annonce", {});
 }

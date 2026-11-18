@@ -4,7 +4,9 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
-import { chargerVitrine } from "@/core/data/depots";
+import { chargerVitrine, toutesAnnonces } from "@/core/data/depots";
+import { Annonce } from "@/core/types/annonce";
+import { annoncePromoPct } from "@/core/utils/promos";
 import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
 import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstVitrine, produitEstPack } from "@/core/types/produit";
 import { usePanier } from "@/core/etat/store";
@@ -39,9 +41,11 @@ function PageCategorieInterne() {
   const [produits, setProduits] = useState<Produit[]>([]);
   const [persos, setPersos] = useState<CategoriePerso[]>([]);
   const [chargement, setChargement] = useState(true);
+  const [annonces, setAnnonces] = useState<Annonce[]>([]);
 
   async function charger() {
-    const [v, p] = await Promise.all([chargerVitrine(), categoriesPerso()]);
+    const [v, p, a] = await Promise.all([chargerVitrine(), categoriesPerso(), toutesAnnonces()]);
+    setAnnonces(a.filter((x) => x.actif));
     setProduits(v.filter((x) => produitEstVitrine(x) && x.categorie === slug));
     setPersos(p);
     setChargement(false);
@@ -63,15 +67,18 @@ function PageCategorieInterne() {
   const titre = libelleCategorie(slug, persos);
   const emoji = emojiCategorie(slug, persos);
 
+  const promoPct = (p: Produit) => annoncePromoPct(annonces, p);
+
   function poserAuPanier(produit: Produit) {
     const u = produitUniteReelle(produit);
+    const pct = promoPct(produit);
     panier.poser({
       produitId: produit.id,
       slug: produit.slug,
       nom: produit.nom,
       categorie: produit.categorie,
       quantite: 1,
-      prix: produit.prix,
+      prix: pct ? Math.round(produit.prix * (1 - pct / 100)) : produit.prix,
       coutAchat: produit.prixAchat ?? 0,
       photo: produit.photoReelle,
       unite: u,
@@ -121,9 +128,17 @@ function PageCategorieInterne() {
                 <JaugeMboa valeur={produitJauge(p)} />
 
                 <div className="flex justify-between items-center mt-2">
-                  <span className="puce-prix">
-                    {produitPrixLabel(p)}
-                  </span>
+                  {(() => {
+                    const pct = promoPct(p);
+                    return pct ? (
+                      <span className="flex flex-col items-end">
+                        <span className="text-aide line-through" style={{ color: "var(--mboa-text-doux)" }}>{p.prix} F</span>
+                        <span className="puce-prix" style={{ background: "var(--mboa-error)" }}>{Math.round(p.prix * (1 - pct / 100))} F -{pct} %</span>
+                      </span>
+                    ) : (
+                      <span className="puce-prix">{produitPrixLabel(p)}</span>
+                    );
+                  })()}
                   {!produitEstRupture(p) && (
                     <button
                       onClick={() => poserAuPanier(p)}

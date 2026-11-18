@@ -15,6 +15,7 @@ import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 import { toutesAnnonces } from "@/core/data/depots";
 import { TYPE_ANNONCE_INFO, Annonce } from "@/core/types/annonce";
+import { annonceEstPhare, annoncePromoPct } from "@/core/utils/promos";
 
 export default function MarchePage() {
   const router = useRouter();
@@ -71,10 +72,8 @@ export default function MarchePage() {
   }
 
   // Produits phares : les annonces « phare » nomment un produit du marché.
-  const norm = (x: string) => x.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
-  const titresPhares = annonces.filter((a) => a.type === "phare").map((a) => norm(a.titre));
-  const estPhare = (p: Produit) => titresPhares.some((t) => t.includes(norm(p.nom)) || norm(p.nom).includes(t));
-  const produitsPhares = vitrine.filter(estPhare);
+  const produitsPhares = vitrine.filter((p) => annonceEstPhare(annonces, p));
+  const promoPct = (p: Produit) => annoncePromoPct(annonces, p);
 
   const produitsFiltres = vitrine.filter((p) =>
     !recherche.trim() || p.nom.toLowerCase().includes(recherche.toLowerCase())
@@ -86,13 +85,17 @@ export default function MarchePage() {
 
   function poserAuPanier(produit: Produit) {
     const u = produitUniteReelle(produit);
+    // Si une annonce promo accorde un % sur ce produit, le panier applique
+    // le prix réduit — l'affichage et le montant restent cohérents.
+    const pct = promoPct(produit);
+    const prix = pct ? Math.round(produit.prix * (1 - pct / 100)) : produit.prix;
     panier.poser({
       produitId: produit.id,
       slug: produit.slug,
       nom: produit.nom,
       categorie: produit.categorie,
       quantite: 1,
-      prix: produit.prix,
+      prix,
       coutAchat: produit.prixAchat ?? 0,
       photo: produit.photoReelle,
       unite: u,
@@ -263,7 +266,17 @@ export default function MarchePage() {
                     )}
                   </div>
                   <h3 className="text-corps font-bold truncate">{p.nom}</h3>
-                  <p className="puce-prix mt-1 inline-block">{produitPrixLabel(p)}</p>
+                  {(() => {
+                    const pct = promoPct(p);
+                    return pct ? (
+                      <p className="mt-1">
+                        <span className="text-aide line-through mr-1" style={{ color: "var(--mboa-text-doux)" }}>{p.prix} F</span>
+                        <span className="puce-prix" style={{ background: "var(--mboa-error)" }}>{Math.round(p.prix * (1 - pct / 100))} F -{pct} %</span>
+                      </p>
+                    ) : (
+                      <p className="puce-prix mt-1 inline-block">{produitPrixLabel(p)}</p>
+                    );
+                  })()}
                   {!produitEstRupture(p) && (
                     <button
                       onClick={() => poserAuPanier(p)}
@@ -314,9 +327,21 @@ export default function MarchePage() {
 
                 {/* Price + button */}
                 <div className="flex justify-between items-center mt-2">
-                  <span className="puce-prix">
-                    {produitPrixLabel(p)}
-                  </span>
+                  {(() => {
+                    const pct = promoPct(p);
+                    return pct ? (
+                      <span className="flex flex-col items-end">
+                        <span className="text-aide line-through" style={{ color: "var(--mboa-text-doux)" }}>
+                          {p.prix} F
+                        </span>
+                        <span className="puce-prix" style={{ background: "var(--mboa-error)" }}>
+                          {Math.round(p.prix * (1 - pct / 100))} F -{pct} %
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="puce-prix">{produitPrixLabel(p)}</span>
+                    );
+                  })()}
                   {!produitEstRupture(p) && (
                     <button
                       onClick={() => poserAuPanier(p)}

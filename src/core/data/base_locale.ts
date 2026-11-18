@@ -185,6 +185,22 @@ export async function cacheTout<T = unknown>(entite: string): Promise<T[]> {
   }
 }
 
+/** Supprime une entité du cache. */
+export async function cacheSupprimer(entite: string, id: string): Promise<void> {
+  try {
+    const db = await ouvrirDb();
+    const tx = db.transaction("cache", "readwrite");
+    const store = tx.objectStore("cache");
+    store.delete([entite, id]);
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    // Le cache est best-effort.
+  }
+}
+
 /** Ajoute une opération à la file d'envoi. */
 export async function fileAjouter(entite: string, id: string, operation: string, payload: unknown): Promise<void> {
   try {
