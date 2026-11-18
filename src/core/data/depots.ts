@@ -136,9 +136,12 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
     const { data, error } = await mboaReseau()!.rpc("creer_devis", {
       p_lignes: produitsJson,
       p_montant: montantTotal,
+      p_consommateur_id: consommateurId,
     });
     if (!error && data) {
-      const commande = commandeFromMap(data as unknown as Record<string, unknown>);
+      // Selon la version de la fonction, PostgREST renvoie un objet ou un tableau.
+      const brut = Array.isArray(data) ? data[0] : data;
+      const commande = commandeFromMap(brut as unknown as Record<string, unknown>);
       // Le RPC ne connaît pas les champs contact : on les pose en update direct.
       const patch = {
         appel_souhaite: contact?.appelSouhaite ?? false,
