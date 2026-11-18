@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { usePanier } from "@/core/etat/store";
 import { CarteMboa, BoutonMboa, EnTetePage, BoutonVoix, FondMboa, SkeletonMboa, ChargementMboa } from "@/core/design_system/composants";
 import { formaterFcfa, formaterFcfaCourt } from "@/core/utils/format_monnaie";
-import { commander, chargerVitrine } from "@/core/data/depots";
+import { commander, chargerVitrine, toutesAnnonces } from "@/core/data/depots";
+import { Annonce } from "@/core/types/annonce";
+import { codePromoPct } from "@/core/utils/promos";
 import { Produit, produitEstRupture, produitPrixLabel, produitUniteReelle } from "@/core/types/produit";
 import { resumerQuantites } from "@/core/types/commande";
 import { ModePaiement, MODE_PAIEMENT_INFO } from "@/core/types/statuts";
@@ -42,6 +44,10 @@ export default function PanierPage() {
   const [gpsEtat, setGpsEtat] = useState<"repos" | "charge" | "ok" | "erreur">("repos");
   const [fraisLivraisonCfg, setFraisLivraisonCfg] = useState(FRAIS_LIVRAISON_DEFAUT);
   const [suggestions, setSuggestions] = useState<Produit[]>([]);
+  const [annonces, setAnnonces] = useState<Annonce[]>([]);
+  const [codeSaisi, setCodeSaisi] = useState("");
+  const [codePct, setCodePct] = useState<number | null>(null);
+  const [codeErreur, setCodeErreur] = useState(false);
 
   useEffect(() => {
     void lireParametre<number>(CLE_FRAIS, FRAIS_LIVRAISON_DEFAUT).then((f) => {
@@ -52,6 +58,7 @@ export default function PanierPage() {
       const ids = new Set(panier.lignes.map((l) => l.produitId));
       setSuggestions(v.filter((p) => p.actif && p.quantite > 0 && !ids.has(p.id)).slice(0, 8));
     });
+    void toutesAnnonces().then((a) => setAnnonces(a.filter((x) => x.actif)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -72,7 +79,20 @@ export default function PanierPage() {
 
   const montantProduits = panier.montantTotal();
   const fraisLivraison = montantProduits > 0 ? fraisLivraisonCfg : 0;
-  const montantTotal = montantProduits + fraisLivraison;
+  // Code promo : % global sur le total produits.
+  const remiseCode = codePct ? Math.round(montantProduits * codePct / 100) : 0;
+  const montantTotal = montantProduits - remiseCode + fraisLivraison;
+
+  function appliquerCode() {
+    const pct = codePromoPct(annonces, codeSaisi);
+    if (pct) {
+      setCodePct(pct);
+      setCodeErreur(false);
+    } else {
+      setCodePct(null);
+      setCodeErreur(codeSaisi.trim().length > 0);
+    }
+  }
 
   function capturerPosition() {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -105,7 +125,7 @@ export default function PanierPage() {
         nom: l.nom,
         categorie: l.categorie,
         quantite: l.quantite,
-        prix: l.prix,
+        prix: codePct ? Math.round(l.prix * (1 - codePct / 100)) : l.prix,
         unite: String(l.unite ?? "kg"),
         photo: l.photo,
         composants: l.composants,
@@ -321,6 +341,32 @@ export default function PanierPage() {
               )}
             </CarteMboa>
 
+            {/* Code promo */}
+            <CarteMboa className="mt-4 anim-apparition">
+              <p className="text-corps font-bold mb-2">🎟️ {t("panier.codePromo")}</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder={t("panier.codePh")}
+                  value={codeSaisi}
+                  onChange={(e) => { setCodeSaisi(e.target.value.toUpperCase()); setCodePct(null); setCodeErreur(false); }}
+                  className="champ-mboa flex-1"
+                />
+                <BoutonMboa variant="surface" onClick={appliquerCode} className="!min-h-[48px]">
+                  {t("panier.appliquer")}
+                </BoutonMboa>
+              </div>
+              {codePct ? (
+                <p className="text-aide mt-2 font-bold" style={{ color: "var(--mboa-primary)" }}>
+                  ✅ -{codePct} % {t("panier.applique")}
+                </p>
+              ) : codeErreur ? (
+                <p className="text-aide mt-2 font-bold" style={{ color: "var(--mboa-error)" }}>
+                  ❌ {t("panier.codeInvalide")}
+                </p>
+              ) : null}
+            </CarteMboa>
+
             {/* Cost summary - bloqué en bas : total et validation toujours visibles */}
             <CarteMboa className="mt-3 anim-apparition sticky bottom-4 z-30 !shadow-[0_16px_40px_-10px_rgba(30,81,40,0.4)]" style={{ border: "2px solid var(--mboa-primary)" }}>
               <div className="space-y-1 mb-3">
@@ -328,6 +374,12 @@ export default function PanierPage() {
                   <span>{t("panier.produits")}</span>
                   <span>{formaterFcfa(montantProduits)}</span>
                 </div>
+                {remiseCode > 0 && (
+                  <div className="flex justify-between text-corps font-bold" style={{ color: "var(--mboa-primary)" }}>
+                    <span>🎟️ {t("panier.remise")} (-{codePct} %)</span>
+                    <span>-{formaterFcfa(remiseCode)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-corps">
                   <span>{t("panier.livraison")}</span>
                   <span>{formaterFcfa(fraisLivraison)}</span>

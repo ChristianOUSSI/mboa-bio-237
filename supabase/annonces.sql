@@ -25,3 +25,6 @@ alter table public.annonces add column if not exists produit_slug text;
 
 -- Date d'expiration optionnelle (promos flash).
 alter table public.annonces add column if not exists expire_le timestamptz;
+
+-- Code promo saisissable par le client au checkout (optionnel).
+alter table public.annonces add column if not exists code text;

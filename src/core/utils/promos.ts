@@ -48,3 +48,23 @@ export function annoncePromoPct(annonces: Annonce[], produit: Produit): number |
   }
   return null;
 }
+
+/**
+ * Code promo : annonce « promo » active non expirée portant ce code.
+ * Retourne le % de réduction globale, ou null.
+ */
+export function codePromoPct(annonces: Annonce[], code: string): number | null {
+  const c = code.trim().toLowerCase();
+  if (!c) return null;
+  for (const a of annonces) {
+    if (!a.actif || annonceExpiree(a) || a.type !== "promo" || !a.code) continue;
+    if (a.code.trim().toLowerCase() !== c) continue;
+    const m = norm(a.titre + " " + a.texte).match(/(\d{1,2})\s*%/);
+    if (m) {
+      const pct = parseInt(m[1], 10);
+      if (pct > 0 && pct < 90) return pct;
+    }
+    return 10; // code valide sans % explicite → 10 % par défaut
+  }
+  return null;
+}

@@ -18,6 +18,7 @@ export default function PageAnnonces() {
   const [texte, setTexte] = useState("");
   const [produitSlug, setProduitSlug] = useState("");
   const [expireLe, setExpireLe] = useState("");
+  const [code, setCode] = useState("");
   const [produits, setProduits] = useState<Produit[]>([]);
   const [enCours, setEnCours] = useState(false);
 
@@ -36,11 +37,13 @@ export default function PageAnnonces() {
         type, titre, texte,
         produitSlug: produitSlug || null,
         expireLe: expireLe ? new Date(expireLe).toISOString() : null,
+        code: code.trim() || null,
       });
       setTitre("");
       setTexte("");
       setProduitSlug("");
       setExpireLe("");
+      setCode("");
       setType("promo");
       await charger();
     } finally {
@@ -100,6 +103,14 @@ export default function PageAnnonces() {
             rows={2}
             className="champ-mboa w-full resize-none"
           />
+          <label className="text-aide block mt-2 mb-1 font-bold">{t("ann.codePh")}</label>
+          <input
+            type="text"
+            placeholder="Ex : FETE20"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            className="champ-mboa w-full mb-2"
+          />
           <label className="text-aide block mt-2 mb-1 font-bold">{t("ann.expirePh")}</label>
           <input
             type="datetime-local"
@@ -138,6 +149,7 @@ export default function PageAnnonces() {
                         {a.actif ? t("ann.actives") : t("ann.inactive")}
                       </span>
                     </div>
+                    {a.code ? <p className="text-aide mt-1 font-bold">🔑 {a.code}</p> : null}
                     {a.produitSlug ? <p className="text-aide mt-1">🎯 {produits.find((p) => p.slug === a.produitSlug)?.nom ?? a.produitSlug}</p> : null}
                     {a.texte ? <p className="text-aide mt-1">{a.texte}</p> : null}
                     <p className="text-aide mt-1">

@@ -16,6 +16,7 @@ import { useTr } from "@/core/i18n";
 import { toutesAnnonces } from "@/core/data/depots";
 import { TYPE_ANNONCE_INFO, Annonce } from "@/core/types/annonce";
 import { annonceEstPhare, annoncePromoPct, annonceExpiree } from "@/core/utils/promos";
+import { notifierNouvellesAnnonces } from "@/core/utils/annonces_notif";
 
 export default function MarchePage() {
   const router = useRouter();
@@ -35,6 +36,7 @@ export default function MarchePage() {
   async function charger() {
     const [v, c, p, a] = await Promise.all([chargerVitrine(), chargerCatalogue(), categoriesPerso(), toutesAnnonces()]);
     setAnnonces(a.filter((x) => x.actif && !annonceExpiree(x)));
+    void notifierNouvellesAnnonces(a.filter((x) => x.actif));
     // The customer only sees real stock: active and quantity > 0
     setVitrine(v.filter(produitEstVitrine));
     setCatalogue(c);
@@ -52,6 +54,10 @@ export default function MarchePage() {
   useActualisation(charger, 60000);
 
   useEffect(() => {
+    // Notifications promos : demande la permission une fois (silencieuse si refusée).
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      void Notification.requestPermission().catch(() => {});
+    }
     const handler = () => setEnLigne(navigator.onLine);
     window.addEventListener("online", handler);
     window.addEventListener("offline", handler);

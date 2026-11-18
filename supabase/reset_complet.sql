@@ -433,6 +433,7 @@ create table if not exists public.annonces (
   texte text not null default '',
   produit_slug text,
   expire_le timestamptz,
+  code text,
   actif boolean not null default true,
   created_le timestamptz not null default now()
 );
