@@ -18,6 +18,7 @@ import { toutesAnnonces } from "@/core/data/depots";
 import { TYPE_ANNONCE_INFO, Annonce } from "@/core/types/annonce";
 import { annonceEstPhare, annoncePromoPct, annonceExpiree } from "@/core/utils/promos";
 import { notifierNouvellesAnnonces } from "@/core/utils/annonces_notif";
+import { OnboardingMboa, estOnboardingVu } from "@/core/design_system/onboarding";
 import { vibrer } from "@/core/utils/son";
 
 export default function MarchePage() {
@@ -33,6 +34,7 @@ export default function MarchePage() {
   const [tri, setTri] = useState<"nom" | "prix_asc" | "prix_desc">("nom");
   const [annonces, setAnnonces] = useState<Annonce[]>([]);
   const [annonceFermee, setAnnonceFermee] = useState("");
+  const [onboarding, setOnboarding] = useState(false);
   const [filtreCat, setFiltreCat] = useState("");
   const t = useTr();
 
@@ -57,6 +59,8 @@ export default function MarchePage() {
   useActualisation(charger, 60000);
 
   useEffect(() => {
+    // Visite guidée : une seule fois, après hydratation des données.
+    if (!estOnboardingVu()) setOnboarding(true);
     // Notifications promos : demande la permission une fois (silencieuse si refusée).
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
       void Notification.requestPermission().catch(() => {});
@@ -176,6 +180,22 @@ export default function MarchePage() {
             {profil?.nom ? `${t("march.heroSalut")}, ${profil.nom.split(" ")[0]} !` : t("march.heroSalut")}
           </h1>
           <p className="text-corps opacity-95 mt-1">{t("march.heroTexte")}</p>
+          {/* Stats vivantes : produits, promos actives, commandes */}
+          <div className="flex gap-2 mt-3 flex-wrap">
+            {[
+              ["🥬", vitrine.length, t("march.statProduits")],
+              ["🏷️", annonces.filter((a) => a.type === "promo").length, t("march.statPromos")],
+              ["📦", commandes.filter((c) => !c.clos).length, t("march.statCommandes")],
+            ].map(([emoji, n, label]) => (
+              <span
+                key={label as string}
+                className="px-3 py-1.5 rounded-full text-aide font-bold inline-flex items-center gap-1.5"
+                style={{ background: "rgba(255,255,255,0.18)", backdropFilter: "blur(4px)" }}
+              >
+                {emoji} {n} {label}
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* Annonces du comptoir : promo / info / produit phare */}
@@ -429,6 +449,7 @@ export default function MarchePage() {
           <BoutonMboa variant="surface" className="w-full">📦 {t("march.mesCommandes")}</BoutonMboa>
         </Link>
       </div>
+      {onboarding && <OnboardingMboa onTermine={() => setOnboarding(false)} />}
     </FondMboa>
   );
 }

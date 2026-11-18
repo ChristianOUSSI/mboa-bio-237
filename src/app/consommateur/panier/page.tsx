@@ -36,6 +36,8 @@ export default function PanierPage() {
     lignes: typeof panier.lignes;
     quartier: string;
     total: number;
+    remise: number;
+    codePct: number | null;
   } | null>(null);
   const [modePaiement, setModePaiement] = useState<ModePaiement>(ModePaiement.especes);
   const [menuExport, setMenuExport] = useState(false);
@@ -155,6 +157,8 @@ export default function PanierPage() {
         lignes: panier.lignes.map((l) => ({ ...l })),
         quartier: livraisonQuartier.trim(),
         total: montantTotal,
+        remise: remiseCode,
+        codePct,
       });
       panier.vider();
       vibrer([30, 60, 30]);
@@ -184,10 +188,14 @@ export default function PanierPage() {
   /** Partage le récap de la commande envoyée (instantané, panier déjà vidé). */
   function partagerRecap() {
     if (!recap) return;
+    // Prix unitaire déjà remisé par le code promo, comme à la commande.
+    const lignes = recap.codePct
+      ? recap.lignes.map((l) => ({ ...l, prix: Math.round(l.prix * (1 - recap.codePct! / 100)) }))
+      : recap.lignes;
     partagerWhatsApp({
       type: "devis",
       titre: t("panier.titreDoc"),
-      lignes: recap.lignes,
+      lignes,
       telephone: profil?.telephone ?? null,
       destinataire: profil?.nom ?? null,
       code: null,
@@ -235,6 +243,12 @@ export default function PanierPage() {
                   <span className="text-[var(--mboa-text-doux)] shrink-0">{formaterFcfa(Math.round(l.quantite * l.prix))}</span>
                 </div>
               ))}
+              {recap.remise > 0 && (
+                <div className="flex justify-between text-aide font-bold" style={{ color: "var(--mboa-primary)" }}>
+                  <span>🎟️ {t("panier.remise")} (-{recap.codePct} %)</span>
+                  <span>-{formaterFcfa(recap.remise)}</span>
+                </div>
+              )}
               <div className="border-t border-[var(--mboa-trait)] pt-2 mt-2 flex justify-between items-center">
                 <span className="text-corps font-bold">{t("panier.total")}</span>
                 <span className="text-chiffre text-[var(--mboa-primary)]">{formaterFcfa(recap.total)}</span>

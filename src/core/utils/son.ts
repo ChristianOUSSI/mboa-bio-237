@@ -23,7 +23,8 @@ export function basculerSonNotification(): boolean {
 }
 
 /** Retour haptique discret (Android) — silencieux si non supporté. */
-export function vibrer(ms = 15): void {
+export function vibrer(pattern: number | number[] = 15): void {
+  const ms = pattern;
   try {
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
       navigator.vibrate(ms);
