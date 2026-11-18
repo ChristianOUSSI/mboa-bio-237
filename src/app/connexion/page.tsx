@@ -216,7 +216,7 @@ const ROLE_DECOR: Record<AppRole, { emoji: string; top: string; left?: string; r
 
 export default function PageConnexion() {
   const router = useRouter();
-  const { setSession } = useSession();
+  const { setSession, profil, role } = useSession();
   const { langue, setLangue } = useLangue();
   const t = useTr();
   const [etape, setEtape] = useState<Etape>("choix");
@@ -233,6 +233,12 @@ export default function PageConnexion() {
   const [modeInscription, setModeInscription] = useState<"telephone" | "email">("telephone");
   const [mdpParDefaut, setMdpParDefaut] = useState(false);
   const [compteOublie, setCompteOublie] = useState<CompteAuth | null>(null);
+
+  // Déjà connecté : le proxy peut renvoyer ici quand le cookie a sauté
+  // alors que localStorage garde la session — on retourne à l'espace.
+  useEffect(() => {
+    if (profil) router.replace(`/${role}`);
+  }, [profil, role, router]);
 
   // Bootstrap : sur une première installation (base vide), crée le compte admin
   // et le compte super admin caché.
