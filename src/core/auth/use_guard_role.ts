@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/core/etat/store";
 import { AppRole } from "@/core/config/app_env";
@@ -22,12 +22,23 @@ import { Profil } from "@/core/types/profil";
 export function useGuardRole(roleAttendu: AppRole): { pret: boolean; profil: Profil | null } {
   const router = useRouter();
   const { profil, role } = useSession();
-  // `persist` peut être absent pendant le prerender SSR : on considère
-  // alors la session comme hydratée (le client réhydraté take le relais).
-  const hydrate =
+  // `hasHydrated()` n'est pas réactif : on le suit via onFinishHydration
+  // pour que `pret` passe à true dès que le store est restauré.
+  const [hydrate, setHydrate] = useState(() =>
     typeof useSession.persist?.hasHydrated === "function"
       ? useSession.persist.hasHydrated()
-      : true;
+      : true,
+  );
+
+  useEffect(() => {
+    if (hydrate) return;
+    if (typeof useSession.persist?.hasHydrated === "function" && useSession.persist.hasHydrated()) {
+      setHydrate(true);
+      return;
+    }
+    const off = useSession.persist?.onFinishHydration?.(() => setHydrate(true));
+    return () => off?.();
+  }, [hydrate]);
 
   useEffect(() => {
     if (!hydrate) return; // Attend la restauration de la session persistée.

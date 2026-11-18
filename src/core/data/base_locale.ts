@@ -6,7 +6,7 @@
  */
 
 const DB_NAME = "mboa_bio";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 /** Garde-fou : si IndexedDB ne répond pas (onglet bloquant, stockage capricieux), on abandonne au lieu de geler l'app. */
 const DB_TIMEOUT_MS = 8000;
 
@@ -80,6 +80,12 @@ function ouvrirDb(dejaRepare = false): Promise<IDBDatabase> {
       const db = req.result;
       if (!db.objectStoreNames.contains("cache")) {
         db.createObjectStore("cache", { keyPath: ["entite", "id"] });
+      }
+      // Index "entite" : cacheTout() lit une entite sans scanner tout le store
+      // (les photos base64 des produits rendaient chaque scan tres lourd).
+      const storeCache = db.transaction("cache", "versionchange").objectStore("cache");
+      if (!storeCache.indexNames.contains("entite")) {
+        storeCache.createIndex("entite", "entite");
       }
       if (!db.objectStoreNames.contains("file")) {
         db.createObjectStore("file", { keyPath: "cle", autoIncrement: true });

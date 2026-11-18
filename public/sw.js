@@ -1,5 +1,5 @@
 // Service Worker MBOA BIO 237 - cache offline-first
-const CACHE_NAME = "mboa-bio-v12";
+const CACHE_NAME = "mboa-bio-v13";
 const ASSETS = [
   "/",
   "/connexion",
@@ -44,6 +44,19 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method === "GET") {
     const memeOrigine = new URL(event.request.url).origin === self.location.origin;
     if (!memeOrigine) return; // laisse le navigateur gérer les requêtes externes
+    const url = new URL(event.request.url);
+    // JAMAIS cacher les payloads RSC / prefetch de Next.js : après un
+    // déploiement ils référencent d'anciens chunks → erreurs de chunk
+    // et rechargements forcés (flash de page).
+    if (
+      url.searchParams.has("_rsc") ||
+      event.request.headers.get("RSC") === "1" ||
+      event.request.headers.get("Next-Router-Prefetch") ||
+      event.request.headers.get("Next-Router-Segment-Prefetch") ||
+      url.pathname.startsWith("/_next/data/")
+    ) {
+      return;
+    }
     event.respondWith(
       caches.match(event.request).then((cached) => {
         if (cached) return cached;
