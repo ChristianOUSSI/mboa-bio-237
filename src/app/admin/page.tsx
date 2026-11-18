@@ -372,6 +372,7 @@ export default function TableauAdmin() {
             { href: "/admin/livraisons", emoji: "🏍️", label: t("adm.livraisons"), badge: aPointer },
             { href: "/admin/stock", emoji: "📦", label: t("adm.stock"), badge: stock.length },
             { href: "/admin/categories", emoji: "🏷️", label: t("adm.categories"), badge: null },
+            { href: "/admin/annonces", emoji: "📣", label: t("ann.titre"), badge: null },
             { href: "/admin/packs", emoji: "🍲", label: t("adm.packs"), badge: null },
             {
               href: "/admin/fournisseurs", emoji: "👨‍🌾", label: t("adm.fournisseurs"),

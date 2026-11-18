@@ -755,12 +755,14 @@ export default function PageConnexion() {
               <BoutonMboa variant="surface" onClick={allerConnexion} className="w-full mt-6">
                 {t("choix.continuer")} →
               </BoutonMboa>
-              <button
-                onClick={() => setEtape("choix")}
-                className="text-aide text-white/80 underline text-center w-full mt-3"
-              >
-                ← {t("connex.switch")}
-              </button>
+              {roleChoisi !== "consommateur" && (
+                <button
+                  onClick={() => setEtape("choix")}
+                  className="text-aide text-white/80 underline text-center w-full mt-3"
+                >
+                  ← {t("connex.switch")}
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -821,12 +823,14 @@ export default function PageConnexion() {
               🔑 {t("reset.lien")}
             </button>
 
-            <button
-              onClick={() => setEtape("choix")}
-              className="text-aide text-[var(--mboa-text-doux)] underline text-center w-full mt-2"
-            >
-              ← {t("connex.switch")}
-            </button>
+            {roleChoisi !== "consommateur" && (
+              <button
+                onClick={() => setEtape("choix")}
+                className="text-aide text-[var(--mboa-text-doux)] underline text-center w-full mt-2"
+              >
+                ← {t("connex.switch")}
+              </button>
+            )}
           </CarteMboa>
         )}
 

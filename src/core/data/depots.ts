@@ -608,6 +608,7 @@ export async function sauverFournisseur(params: {
   id?: string;
   nom: string;
   telephone: string;
+  whatsapp?: string | null;
   village: string;
   productionCategorie?: string | null;
   productionLibre?: string;
@@ -618,11 +619,13 @@ export async function sauverFournisseur(params: {
 }): Promise<Fournisseur | null> {
   const id = params.id ?? `tel_${params.telephone.replace(/\D/g, "")}`;
   const actif = params.actif ?? true;
+  const whatsapp = params.whatsapp?.replace(/\D/g, "") || null;
   const fournisseur: Fournisseur = {
     id,
     profilId: null,
     nom: params.nom,
     telephone: params.telephone,
+    whatsapp,
     village: params.village,
     photo: params.photo ?? null,
     productionCategorie: (params.productionCategorie as never) ?? null,
@@ -637,6 +640,7 @@ export async function sauverFournisseur(params: {
         id,
         nom: params.nom,
         telephone_237: params.telephone,
+        whatsapp,
         village: params.village,
         photo: params.photo ?? null,
         production_categorie: params.productionCategorie ?? null,
@@ -653,7 +657,7 @@ export async function sauverFournisseur(params: {
     }
   }
   await cacheEcrire("fournisseur", id, fournisseur);
-  await fileAjouter("fournisseur", id, "upsert:fournisseur", params);
+  await fileAjouter("fournisseur", id, "upsert:fournisseur", { ...params, whatsapp });
   return fournisseur;
 }
 
@@ -668,6 +672,23 @@ export async function basculerFournisseurActif(fournisseurId: string, actif: boo
   }
   await fileAjouter("fournisseur", fournisseurId, "update:actif", { actif });
   void notifierActiviteAdmin(actif ? "act.fournisseurValide" : "act.fournisseurSuspendu", f?.nom);
+}
+
+/** L'admin refuse définitivement la candidature : fiche inactive + horodatée. */
+export async function refuserFournisseur(fournisseurId: string): Promise<void> {
+  const f = await cacheLire<Fournisseur>("fournisseur", fournisseurId);
+  const refuseLe = new Date().toISOString();
+  if (mboaReseau()) {
+    await mboaReseau()!
+      .from("fournisseurs")
+      .update({ actif: false, refuse_le: refuseLe })
+      .eq("id", fournisseurId);
+  }
+  if (f) {
+    await cacheEcrire("fournisseur", f.id, { ...f, actif: false, refuseLe });
+  }
+  await fileAjouter("fournisseur", fournisseurId, "update:refus", { refuseLe });
+  void notifierActiviteAdmin("act.fournisseurRefuse", f?.nom);
 }
 
 /** L'admin crée ou met à jour une fiche livreur. */
@@ -1551,6 +1572,7 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
       if (!f) return true;
       const { error } = await client.from("fournisseurs").upsert({
         id: f.id, profil_id: f.profilId, nom: f.nom, telephone_237: f.telephone,
+        whatsapp: f.whatsapp ?? null, refuse_le: f.refuseLe ?? null,
         village: f.village, photo: f.photo, production_categorie: f.productionCategorie,
         production_libre: f.productionLibre, unite: f.unite, actif: f.actif,
       });
@@ -1589,4 +1611,67 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
     default:
       return true; // entité non synchronisable : on vide la file
   }
+}
+
+// ============================================================
+// Annonces du comptoir (promo / info / produit phare)
+// ============================================================
+
+export async function toutesAnnonces(): Promise<import("../types/annonce").Annonce[]> {
+  const { annonceFromMap } = await import("../types/annonce");
+  const client = mboaReseau();
+  if (client) {
+    const { data, error } = await client
+      .from("annonces")
+      .select("*")
+      .order("created_le", { ascending: false });
+    if (!error && data) {
+      return data.map((d) => annonceFromMap(d as unknown as Record<string, unknown>));
+    }
+  }
+  return cacheTout<import("../types/annonce").Annonce>("annonce");
+}
+
+export async function sauverAnnonce(params: {
+  id?: string;
+  type: "promo" | "info" | "phare";
+  titre: string;
+  texte?: string;
+}): Promise<void> {
+  const { annonceFromMap } = await import("../types/annonce");
+  const id = params.id ?? uuidV4();
+  const client = mboaReseau();
+  if (client) {
+    const { error } = await client.from("annonces").upsert({
+      id,
+      type: params.type,
+      titre: params.titre.trim(),
+      texte: params.texte?.trim() ?? "",
+      actif: true,
+    });
+    if (!error) {
+      void notifierActiviteAdmin("act.annonceCreee", params.titre.trim());
+      return;
+    }
+  }
+  await fileAjouter("annonce", id, "upsert:annonce", params);
+  void notifierActiviteAdmin("act.annonceCreee", params.titre.trim());
+}
+
+export async function basculerAnnonceActive(annonceId: string, actif: boolean): Promise<void> {
+  const client = mboaReseau();
+  if (client) {
+    await client.from("annonces").update({ actif }).eq("id", annonceId);
+  }
+  const a = await cacheLire<import("../types/annonce").Annonce>("annonce", annonceId);
+  if (a) await cacheEcrire("annonce", a.id, { ...a, actif });
+  await fileAjouter("annonce", annonceId, "update:actif", { actif });
+}
+
+export async function supprimerAnnonce(annonceId: string): Promise<void> {
+  const client = mboaReseau();
+  if (client) {
+    await client.from("annonces").delete().eq("id", annonceId);
+  }
+  await fileAjouter("annonce", annonceId, "delete:annonce", {});
 }

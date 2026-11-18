@@ -13,6 +13,8 @@ import { Commande } from "@/core/types/commande_full";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
+import { toutesAnnonces } from "@/core/data/depots";
+import { TYPE_ANNONCE_INFO, Annonce } from "@/core/types/annonce";
 
 export default function MarchePage() {
   const router = useRouter();
@@ -25,10 +27,13 @@ export default function MarchePage() {
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [recherche, setRecherche] = useState("");
   const [tri, setTri] = useState<"nom" | "prix_asc" | "prix_desc">("nom");
+  const [annonces, setAnnonces] = useState<Annonce[]>([]);
+  const [annonceFermee, setAnnonceFermee] = useState("");
   const t = useTr();
 
   async function charger() {
-    const [v, c, p] = await Promise.all([chargerVitrine(), chargerCatalogue(), categoriesPerso()]);
+    const [v, c, p, a] = await Promise.all([chargerVitrine(), chargerCatalogue(), categoriesPerso(), toutesAnnonces()]);
+    setAnnonces(a.filter((x) => x.actif));
     // The customer only sees real stock: active and quantity > 0
     setVitrine(v.filter(produitEstVitrine));
     setCatalogue(c);
@@ -148,6 +153,35 @@ export default function MarchePage() {
           </h1>
           <p className="text-corps opacity-95 mt-1">{t("march.heroTexte")}</p>
         </div>
+
+        {/* Annonces du comptoir : promo / info / produit phare */}
+        {annonces.filter((a) => a.id !== annonceFermee).map((a) => {
+          const info = TYPE_ANNONCE_INFO[a.type] ?? TYPE_ANNONCE_INFO.info;
+          const fond =
+            a.type === "promo" ? "var(--mboa-accent-doux)" : a.type === "phare" ? "var(--mboa-secondary-doux)" : "var(--mboa-info-doux, rgba(59,130,246,0.12))";
+          return (
+            <div
+              key={a.id}
+              className="mt-3 rounded-2xl p-4 relative anim-apparition flex items-start gap-3"
+              style={{ background: fond, border: "1px solid var(--mboa-border)" }}
+            >
+              <span className="text-3xl" aria-hidden>{info.emoji}</span>
+              <div className="min-w-0">
+                <p className="text-aide font-bold" style={{ color: "var(--mboa-primary)" }}>{info.libelle}</p>
+                <p className="text-corps font-bold mt-0.5">{a.titre}</p>
+                {a.texte ? <p className="text-aide mt-0.5">{a.texte}</p> : null}
+              </div>
+              <button
+                onClick={() => setAnnonceFermee(a.id)}
+                aria-label="Fermer"
+                className="ml-auto shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-aide"
+                style={{ background: "rgba(255,255,255,0.6)" }}
+              >
+                ✕
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       {/* Search + sort */}

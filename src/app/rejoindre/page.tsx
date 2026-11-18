@@ -47,7 +47,12 @@ export default function RejoindrePage() {
   const [persos, setPersos] = useState<CategoriePerso[]>([]);
   const [nom, setNom] = useState("");
   const [telephone, setTelephone] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [village, setVillage] = useState("");
+  const [villageAutre, setVillageAutre] = useState("");
+
+  // « Autre » : la zone est saisie librement (village ou ville).
+  const villageEffectif = () => (village === "Other" ? villageAutre.trim() : village.trim());
   const [note, setNote] = useState("");
   const [produits, setProduits] = useState<ProduitDraft[]>([
     { nom: "", categorie: Categorie.fruit, unite: Unite.kg, quantite: 1, prix: "", photoUrl: "" },
@@ -104,7 +109,7 @@ export default function RejoindrePage() {
     if (nom.trim().length === 0) errs.push(t("rej.erreur.nom"));
     const tel = telephone.replace(/\D/g, "");
     if (tel.length < 9) errs.push(t("rej.erreur.tel"));
-    if (village.trim().length === 0) errs.push(t("rej.erreur.village"));
+    if (villageEffectif().length === 0) errs.push(t("rej.erreur.village"));
     produits.forEach((p, i) => {
       if (p.nom.trim().length === 0) errs.push(`Produit ${i + 1}: ${t("rej.erreur.produitNom")}`);
       const prixNum = parseInt(p.prix) || 0;
@@ -124,7 +129,10 @@ export default function RejoindrePage() {
       await sauverFournisseur({
         nom: nom.trim(),
         telephone: tel,
-        village: village.trim(),
+        // Numéro WhatsApp dédié à la notification de candidature ;
+        // vide = on écrira au numéro de téléphone principal.
+        whatsapp: whatsapp.replace(/\D/g, "") || null,
+        village: villageEffectif(),
         productionLibre: produits.map((p) => p.nom).join(", "),
         unite: produits[0]?.unite ?? "kg",
         // Candidature : la fiche reste inactive tant que l'admin ne l'a pas validée.
@@ -212,6 +220,18 @@ export default function RejoindrePage() {
             className="champ-mboa w-full mb-2"
             style={{ fontSize: 20 }}
           />
+          <input
+            type="tel"
+            inputMode="numeric"
+            placeholder={t("rej.whatsappPh")}
+            value={whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+            className="champ-mboa w-full mb-2"
+            style={{ fontSize: 20 }}
+          />
+          <p className="text-aide text-[var(--mboa-text-doux)] -mt-1 mb-2 italic">
+            {t("rej.whatsappHint")}
+          </p>
           <select
             value={village}
             onChange={(e) => setVillage(e.target.value)}
@@ -223,6 +243,16 @@ export default function RejoindrePage() {
               <option key={v} value={v}>{v === "Other" ? t("rej.villageAutre") : v}</option>
             ))}
           </select>
+          {village === "Other" && (
+            <input
+              type="text"
+              placeholder={t("rej.zonePh")}
+              value={villageAutre}
+              onChange={(e) => setVillageAutre(e.target.value)}
+              className="champ-mboa w-full mt-2"
+              style={{ fontSize: 18 }}
+            />
+          )}
         </CarteMboa>
 
         {/* Declared products */}
