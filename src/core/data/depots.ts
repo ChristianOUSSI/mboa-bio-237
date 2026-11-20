@@ -1502,6 +1502,7 @@ export interface ActiviteAdmin {
   /** Clé i18n de l'action (ex. "act.achatValide"). */
   action: string;
   detail?: string;
+  archive?: boolean;
 }
 
 const CLE_ACTIVITE_ADMIN = "admin_activite";
@@ -1572,6 +1573,28 @@ async function _activitesAdmin(): Promise<ActiviteAdmin[]> {
     .sort((a, b) => (a.quand < b.quand ? 1 : -1))
     .slice(0, 50);
 }
+
+export async function supprimerActivite(id: string): Promise<void> {
+  const client = mboaReseau();
+  if (client) await client.from("admin_activite").delete().eq("id", id);
+  const liste = (await etatLire<ActiviteAdmin[]>(CLE_ACTIVITE_ADMIN)) ?? [];
+  await etatEcrire(CLE_ACTIVITE_ADMIN, liste.filter((a) => a.id !== id));
+}
+
+export async function archiverActivite(id: string): Promise<void> {
+  const client = mboaReseau();
+  if (client) await client.from("admin_activite").update({ archive: true }).eq("id", id);
+  const liste = (await etatLire<ActiviteAdmin[]>(CLE_ACTIVITE_ADMIN)) ?? [];
+  const maj = liste.map((a) => (a.id === id ? { ...a, archive: true } : a));
+  await etatEcrire(CLE_ACTIVITE_ADMIN, maj);
+}
+
+export async function viderActivites(): Promise<void> {
+  const client = mboaReseau();
+  if (client) await client.from("admin_activite").delete().neq("archive", true);
+  await etatEcrire(CLE_ACTIVITE_ADMIN, []);
+}
+
 
 /** Publie une position GPS (livreur ou client) pour le suivi cross-device. */
 export function partagerPositionGps(type: "livreur" | "client", commandeId: string, pos: PositionGps): void {

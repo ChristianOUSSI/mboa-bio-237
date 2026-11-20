@@ -615,6 +615,11 @@ const DICT: Record<Lang, Record<string, string>> = {
     "act.compteBloque": "a bloqué un compte",
     "act.compteReactive": "a réactivé un compte",
     "adm.act.voirTout": "Voir tout le journal",
+    "adm.act.archiver": "Archiver",
+    "adm.act.supprimer": "Supprimer",
+    "adm.act.vider": "Vider tout",
+    "adm.act.modeArchive": "Voir archivées",
+    "adm.act.modeRecent": "Voir récentes",
 
     // Multi-admin
     "adm.cpt.admins": "Comptes administrateurs",
@@ -1294,6 +1299,11 @@ const DICT: Record<Lang, Record<string, string>> = {
     "act.compteBloque": "blocked an account",
     "act.compteReactive": "reactivated an account",
     "adm.act.voirTout": "View full log",
+    "adm.act.archiver": "Archive",
+    "adm.act.supprimer": "Delete",
+    "adm.act.vider": "Clear all",
+    "adm.act.modeArchive": "View archived",
+    "adm.act.modeRecent": "View recent",
 
     // Multi-admin
     "adm.cpt.admins": "Admin accounts",

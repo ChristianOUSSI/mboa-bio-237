@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { activitesAdmin, ActiviteAdmin } from "@/core/data/depots";
+import { activitesAdmin, supprimerActivite, archiverActivite, viderActivites, ActiviteAdmin } from "@/core/data/depots";
 import { CarteMboa, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
@@ -16,6 +16,7 @@ export default function ActiviteAdminPage() {
   const t = useTr();
   const [activites, setActivites] = useState<ActiviteAdmin[]>([]);
   const [chargement, setChargement] = useState(true);
+  const [modeArchive, setModeArchive] = useState(false);
 
   async function charger() {
     const acts = await activitesAdmin();
@@ -49,19 +50,51 @@ export default function ActiviteAdminPage() {
             <p className="text-corps text-[var(--mboa-text-doux)]">{t("adm.act.vide")}</p>
           </div>
         ) : (
-          activites.map((a) => (
-            <CarteMboa key={a.id}>
-              <div className="flex justify-between items-start gap-2">
-                <p className="text-corps">
-                  <strong>{a.auteur}</strong> {t(a.action)}
-                  {a.detail ? <span className="text-[var(--mboa-text-doux)]"> · {a.detail}</span> : null}
-                </p>
-                <span className="text-aide text-[var(--mboa-text-doux)] whitespace-nowrap shrink-0">
-                  {formaterDateHeure(a.quand)}
-                </span>
-              </div>
-            </CarteMboa>
-          ))
+          <>
+            <div className="flex justify-between items-center mb-2">
+              <button
+                onClick={() => setModeArchive(!modeArchive)}
+                className="text-aide font-bold underline"
+              >
+                {modeArchive ? t("adm.act.modeRecent") : t("adm.act.modeArchive")}
+              </button>
+              <button
+                onClick={async () => { await viderActivites(); await charger(); }}
+                className="text-aide text-[var(--mboa-error)] font-bold underline"
+              >
+                {t("adm.act.vider")}
+              </button>
+            </div>
+            {activites.map((a) => (
+              <CarteMboa key={a.id} className={a.archive ? "opacity-50" : ""}>
+                <div className="flex justify-between items-start gap-2">
+                  <p className="text-corps">
+                    <strong>{a.auteur}</strong> {t(a.action)}
+                    {a.detail ? <span className="text-[var(--mboa-text-doux)]"> · {a.detail}</span> : null}
+                  </p>
+                  <span className="text-aide text-[var(--mboa-text-doux)] whitespace-nowrap shrink-0">
+                    {formaterDateHeure(a.quand)}
+                  </span>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  {!a.archive && (
+                    <button
+                      onClick={async () => { await archiverActivite(a.id); await charger(); }}
+                      className="text-aide text-[var(--mboa-primary)] font-bold underline"
+                    >
+                      {t("adm.act.archiver")}
+                    </button>
+                  )}
+                  <button
+                    onClick={async () => { await supprimerActivite(a.id); await charger(); }}
+                    className="text-aide text-[var(--mboa-error)] font-bold underline"
+                  >
+                    {t("adm.act.supprimer")}
+                  </button>
+                </div>
+              </CarteMboa>
+            ))}
+          </>
         )}
       </div>
     </FondMboa>
