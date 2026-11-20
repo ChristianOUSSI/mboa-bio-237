@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { toutesAchats, validerAchat, refuserAchat, payerAchat, profilParId, chargerFournisseurs, sauverFournisseur } from "@/core/data/depots";
+import { toutesAchats, validerAchat, refuserAchat, payerAchat, profilParId, chargerFournisseurs, sauverFournisseur, envoyerMessageChat } from "@/core/data/depots";
 import { creerCompte, compteParIdentifiant, changerMotDePasse, majCompte, validerMotDePasse } from "@/core/auth/auth_service";
 import { toast } from "@/core/etat/store";
 import { Profil } from "@/core/types/profil";
@@ -156,6 +156,16 @@ export default function AchatsAdminPage() {
       });
       setAccesFaits((s) => new Set(s).add(f.id).add(`profil:${compte.id}`));
       setAccesCree({ nom: f.nom, identifiant, mdp, tel: f.whatsapp || f.telephone });
+      // Envoie aussi les identifiants par le chat intégré : le fournisseur
+      // les retrouvera dans /messages dès sa première connexion.
+      if (profil) {
+        void envoyerMessageChat({
+          expediteur: profil,
+          destinataireId: compte.id,
+          destinataireRole: "fournisseur",
+          texte: `Bonjour ${f.nom}, votre espace fournisseur MBOA BIO 237 est prêt ! Identifiant : ${identifiant} — Mot de passe provisoire : ${mdp} (vous devrez en choisir un nouveau à la première connexion). À bientôt !`,
+        }).catch(() => {});
+      }
       toast(t("adm.ach.accesCree"));
     } catch (e) {
       console.error("création accès fournisseur", e);

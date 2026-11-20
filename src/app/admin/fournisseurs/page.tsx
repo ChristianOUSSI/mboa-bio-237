@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { chargerFournisseurs, basculerFournisseurActif, supprimerFournisseur, refuserFournisseur, sauverFournisseur } from "@/core/data/depots";
+import { chargerFournisseurs, basculerFournisseurActif, supprimerFournisseur, refuserFournisseur, sauverFournisseur, envoyerMessageChat } from "@/core/data/depots";
 import { creerCompte, compteParIdentifiant, changerMotDePasse, majCompte } from "@/core/auth/auth_service";
 import { validerMotDePasse } from "@/core/auth/auth_local";
 import { CarteMboa, EnTetePage, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
@@ -70,6 +70,16 @@ export default function FournisseursAdminPage() {
         actif: true,
         lienCompteId: compte.id,
       });
+      // Identifiants aussi envoyés par le chat : visibles dans /messages
+      // dès la première connexion du fournisseur.
+      if (profil) {
+        void envoyerMessageChat({
+          expediteur: profil,
+          destinataireId: compte.id,
+          destinataireRole: "fournisseur",
+          texte: `Bonjour ${f.nom}, votre espace fournisseur MBOA BIO 237 est prêt ! Identifiant : ${identifiant} — Mot de passe provisoire : ${mdp} (vous devrez en choisir un nouveau à la première connexion). À bientôt !`,
+        }).catch(() => {});
+      }
       return { identifiant, mdp };
     } catch (e) {
       console.error("création accès fournisseur", e);
