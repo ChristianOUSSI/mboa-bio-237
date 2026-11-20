@@ -173,7 +173,7 @@ export default function PanierPage() {
         livraisonDetail: livraisonDetail.trim() || null,
         livraisonLat: gps?.lat ?? null,
         livraisonLng: gps?.lng ?? null,
-        fraisLivraison: fraisLivraison > 0 ? fraisLivraison : null,
+        fraisLivraison: fraisLivraisonCfg > 0 ? fraisLivraisonCfg : null,
         modePaiement,
       });
       // Instantané AVANT de vider le panier : sert à l'écran récap.

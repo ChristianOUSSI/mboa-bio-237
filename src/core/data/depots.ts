@@ -1724,6 +1724,18 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
       });
       return !error;
     }
+    case "zone_livraison": {
+      if (operation === "delete:zone") {
+        const { error } = await client.from("zones_livraison").delete().eq("id", id);
+        return !error;
+      }
+      const z = await cacheLire<ZoneLivraison>("zone_livraison", id);
+      if (!z) return true;
+      const { error } = await client.from("zones_livraison").upsert({
+        id: z.id, nom: z.nom, prix: z.prix, actif: z.actif, created_le: z.createdLe,
+      });
+      return !error;
+    }
     case "categorie": {
       const cat = await cacheLire<CategoriePerso>("categorie", id);
       if (!cat) return true;
