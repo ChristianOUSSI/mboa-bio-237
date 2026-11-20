@@ -136,6 +136,14 @@ export async function changerMotDePasse(compte: CompteAuth, nouveau: string): Pr
   return maj;
 }
 
+/** Valide la solidité d'un mot de passe (minimum 6 caractères). */
+export function validerMotDePasse(mdp: string): { ok: boolean; erreur?: string } {
+  if (!mdp || mdp.length < 6) {
+    return { ok: false, erreur: "Le mot de passe doit contenir au moins 6 caractères" };
+  }
+  return { ok: true };
+}
+
 /** Met à jour un compte (profil, village, etc.). */
 export async function majCompte(compte: CompteAuth, maj: Partial<CompteAuth>): Promise<CompteAuth> {
   const nouveau: CompteAuth = { ...compte, ...maj };
