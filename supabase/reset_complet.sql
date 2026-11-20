@@ -80,7 +80,7 @@ create table if not exists public.produits (
 -- se propagent à `produits`. La cliente ne voit que ce que l'admin
 -- laisse actif (filtre complémentaire côté app : quantite > 0).
 drop view if exists public.vitrine;
-create view public.vitrine as select * from public.produits;
+create view public.vitrine with (security_invoker = true) as select * from public.produits;
 
 -- ---------- Commandes (devis → livraison → paiement) ----------
 create table if not exists public.commandes (
@@ -133,7 +133,8 @@ create table if not exists public.commandes (
 -- interroge désormais `commandes` directement.
 drop view if exists public.commandes_clientes;
 
--- (vitrine_livreurs est créée à la fin du script, après `profiles`.)
+-- (vitrine_livreurs et commandes_clientes sont supprimées : inutilisées
+-- par le code et signalées SECURITY DEFINER par Supabase.)
 
 -- ---------- Profils utilisateurs ----------
 create table if not exists public.profiles (
@@ -274,17 +275,11 @@ begin
   end loop;
 end $$;
 
--- Vue « courses livreur » : commandes + identité client en colonnes.
--- Créée ici : `profiles` doit exister avant.
+-- La vue vitrine_livreurs (jointure commandes+profiles) n'est plus
+-- utilisée par le code : les courses livreur passent par `commandes`
+-- et les instantanés client_* déjà stockés. Supprimée pour lever le
+-- lint SECURITY DEFINER.
 drop view if exists public.vitrine_livreurs;
-create view public.vitrine_livreurs as
-  select
-    c.*,
-    coalesce(c.client_nom, p.nom) as cliente_nom,
-    coalesce(c.client_village, p.village) as cliente_village,
-    coalesce(c.client_tel, p.telephone_237) as cliente_tel
-  from public.commandes c
-  left join public.profiles p on p.id::text = c.consommateur_id;
 
 -- ============================================================
 -- Seed minimal du catalogue (prix de tendance) — optionnel.

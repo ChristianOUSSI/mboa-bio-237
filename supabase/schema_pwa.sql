@@ -229,17 +229,10 @@ begin
   end loop;
 end $$;
 
--- Vue « courses livreur » : commandes + identité client en colonnes.
--- Créée ici : `profiles` doit exister avant.
+-- La vue vitrine_livreurs n'est plus utilisée par le code (courses
+-- livreur via `commandes` + instantanés client_*) : supprimée pour
+-- lever le lint SECURITY DEFINER.
 drop view if exists public.vitrine_livreurs;
-create view public.vitrine_livreurs as
-  select
-    c.*,
-    coalesce(c.client_nom, p.nom) as cliente_nom,
-    coalesce(c.client_village, p.village) as cliente_village,
-    coalesce(c.client_tel, p.telephone_237) as cliente_tel
-  from public.commandes c
-  left join public.profiles p on p.id::text = c.consommateur_id;
 
 -- ============================================================
 -- Seed minimal du catalogue (prix de tendance) — optionnel.
