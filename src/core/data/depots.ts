@@ -1768,7 +1768,6 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
       const { error } = await client.from("zones_livraison").upsert({
         id: z.id, nom: z.nom, prix: z.prix, tarif_course: z.tarifCourse ?? null, actif: z.actif, created_le: z.createdLe,
       });
-      });
       return !error;
     }
     case "categorie": {
