@@ -15,7 +15,7 @@ export default function ZonesLivraisonPage() {
   const t = useTr();
   const [zones, setZones] = useState<ZoneLivraison[]>([]);
   const [enCours, setEnCours] = useState(false);
-  const [nouvelle, setNouvelle] = useState<{ nom: string; prix: string }>({ nom: "", prix: "1000" });
+  const [nouvelle, setNouvelle] = useState<{ nom: string; prix: string; tarifCourse: string }>({ nom: "", prix: "1000", tarifCourse: "800" });
 
   async function charger() {
     setZones(await chargerZonesLivraison());
@@ -23,22 +23,24 @@ export default function ZonesLivraisonPage() {
 
   async function ajouter() {
     const prix = parseInt(nouvelle.prix) || 0;
-    if (!nouvelle.nom.trim() || prix < 0) return;
+    const tarif = parseInt(nouvelle.tarifCourse) || 0;
+    if (!nouvelle.nom.trim() || prix < 0 || tarif < 0) return;
     setEnCours(true);
     try {
       const id = `zone_${Date.now()}`;
-      await sauverZoneLivraison({ id, nom: nouvelle.nom.trim(), prix, actif: true });
-      setNouvelle({ nom: "", prix: "1000" });
+      await sauverZoneLivraison({ id, nom: nouvelle.nom.trim(), prix, tarifCourse: tarif, actif: true });
+      setNouvelle({ nom: "", prix: "1000", tarifCourse: "800" });
       await charger();
     } finally {
       setEnCours(false);
     }
   }
 
-  async function majPrix(zone: ZoneLivraison, nouveauPrix: string) {
+  async function majPrix(zone: ZoneLivraison, nouveauPrix: string, nouveauTarif?: string) {
     const prix = parseInt(nouveauPrix) || 0;
-    if (prix < 0) return;
-    await sauverZoneLivraison({ ...zone, prix });
+    const tarif = nouveauTarif ? parseInt(nouveauTarif) : zone.tarifCourse;
+    if (prix < 0 || (tarif != null && tarif < 0)) return;
+    await sauverZoneLivraison({ ...zone, prix, tarifCourse: tarif });
     await charger();
   }
 
@@ -98,6 +100,14 @@ export default function ZonesLivraisonPage() {
               onChange={(e) => setNouvelle({ ...nouvelle, prix: e.target.value })}
               className="champ-mboa !w-24 text-chiffre"
             />
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Tarif livreur"
+              value={nouvelle.tarifCourse}
+              onChange={(e) => setNouvelle({ ...nouvelle, tarifCourse: e.target.value })}
+              className="champ-mboa !w-24 text-chiffre"
+            />
           </div>
           <BoutonMboa onClick={ajouter} disabled={enCours} className="w-full">
             {t("adm.zones.ajouterBtn")}
@@ -111,6 +121,24 @@ export default function ZonesLivraisonPage() {
               <span className="text-corps font-bold">{z.nom}</span>
               <span className="text-chiffre text-[var(--mboa-primary)]">{formaterFcfa(z.prix)}</span>
             </div>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="number"
+                inputMode="numeric"
+                value={z.prix}
+                onChange={(e) => majPrix(z, e.target.value, String(z.tarifCourse ?? ""))}
+                className="champ-mboa flex-1 text-chiffre"
+                placeholder="Prix"
+              />
+              <input
+                type="number"
+                inputMode="numeric"
+                value={z.tarifCourse ?? ""}
+                onChange={(e) => majPrix(z, String(z.prix), e.target.value)}
+                className="champ-mboa flex-1 text-chiffre"
+                placeholder="Tarif livreur"
+              />
+            </div>
             <div className="flex items-center gap-2 mb-2">
               <label className="text-aide flex items-center gap-1">
                 <input
@@ -123,13 +151,6 @@ export default function ZonesLivraisonPage() {
               </label>
             </div>
             <div className="flex gap-2">
-              <input
-                type="number"
-                inputMode="numeric"
-                value={z.prix}
-                onChange={(e) => majPrix(z, e.target.value)}
-                className="champ-mboa flex-1 text-chiffre"
-              />
               <button
                 onClick={() => supprimer(z)}
                 className="text-aide text-[var(--mboa-error)] font-bold"

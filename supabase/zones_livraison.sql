@@ -6,26 +6,28 @@ CREATE TABLE IF NOT EXISTS public.zones_livraison (
   id TEXT PRIMARY KEY,
   nom TEXT NOT NULL,
   prix INTEGER NOT NULL DEFAULT 1000,
+  tarif_course INTEGER, -- Tarif par course pour le livreur (optionnel)
   actif BOOLEAN NOT NULL DEFAULT true,
   created_le TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Insérer les zones par défaut si la table est vide
-INSERT INTO public.zones_livraison (id, nom, prix, actif)
+INSERT INTO public.zones_livraison (id, nom, prix, tarif_course, actif)
 SELECT
   'akwa' AS id,
   'Akwa' AS nom,
   1000 AS prix,
+  800 AS tarif_course,
   true AS actif
 WHERE NOT EXISTS (SELECT 1 FROM public.zones_livraison WHERE id = 'akwa')
 
-UNION ALL SELECT 'bali', 'Bali', 1000, true WHERE NOT EXISTS (SELECT 1 FROM public.zones_livraison WHERE id = 'bali')
-UNION ALL SELECT 'bepanda', 'Bépanda', 1000, true WHERE NOT EXISTS (SELECT 1 FROM public.zones_livraison WHERE id = 'bepanda')
-UNION ALL SELECT 'bonaberi', 'Bonabéri', 1000, true WHERE NOT EXISTS (SELECT 1 FROM public.zones_livraison WHERE id = 'bonaberi')
-UNION ALL SELECT 'bonamoussadi', 'Bonamoussadi', 1000, true WHERE NOT EXISTS (SELECT 1 FROM public.zones_livraison WHERE id = 'bonamoussadi')
-UNION ALL SELECT 'bonanjo', 'Bonanjo', 1000, true WHERE NOT EXISTS (SELECT 1 FROM public.zones_livraison WHERE id = 'bonanjo')
-UNION ALL SELECT 'bonapriso', 'Bonapriso', 1000, true WHERE NOT EXISTS (SELECT 1 FROM public.zones_livraison WHERE id = 'bonapriso')
-UNION ALL SELECT 'deido', 'Deïdo', 1000, true WHERE NOT EXISTS (SELECT 1 FROM public.zones_livraison WHERE id = 'deido');
+UNION ALL SELECT 'bali', 'Bali', 1000, 800, true WHERE NOT EXISTS (SELECT 1 FROM public.zones_livraison WHERE id = 'bali')
+UNION ALL SELECT 'bepanda', 'Bépanda', 1000, 800, true WHERE NOT EXISTS (SELECT 1 FROM public.zones_livraison WHERE id = 'bepanda')
+UNION ALL SELECT 'bonaberi', 'Bonabéri', 1000, 800, true WHERE NOT EXISTS (SELECT 1 FROM public.zones_livraison WHERE id = 'bonaberi')
+UNION ALL SELECT 'bonamoussadi', 'Bonamoussadi', 1000, 800, true WHERE NOT EXISTS (SELECT 1 FROM public.zones_livraison WHERE id = 'bonamoussadi')
+UNION ALL SELECT 'bonanjo', 'Bonanjo', 1000, 800, true WHERE NOT EXISTS (SELECT 1 FROM public.zones_livraison WHERE id = 'bonanjo')
+UNION ALL SELECT 'bonapriso', 'Bonapriso', 1000, 800, true WHERE NOT EXISTS (SELECT 1 FROM public.zones_livraison WHERE id = 'bonapriso')
+UNION ALL SELECT 'deido', 'Deïdo', 1000, 800, true WHERE NOT EXISTS (SELECT 1 FROM public.zones_livraison WHERE id = 'deido');
 
 -- Activer RLS (Row Level Security)
 ALTER TABLE public.zones_livraison ENABLE ROW LEVEL SECURITY;

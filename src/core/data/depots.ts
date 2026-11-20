@@ -374,6 +374,17 @@ export async function validerDevis(commande: Commande): Promise<void> {
 
 /** L'admin assigne un livreur au devis validé. */
 export async function assignerLivreur(commandeId: string, livreurId: string, tarifCourse: number): Promise<void> {
+  // Si la commande a un quartier, on utilise le tarif de la zone si disponible.
+  const client = mboaReseau();
+  if (client) {
+    const { data: cmd } = await client.from("commandes").select("livraison_quartier").eq("id", commandeId).maybeSingle();
+    if (cmd?.livraison_quartier) {
+      const zones = await chargerZonesLivraison();
+      const actives = zones.filter((z) => z.actif);
+      const trouve = actives.find((z) => cmd.livraison_quartier.toLowerCase().includes(z.nom.toLowerCase()) || z.nom.toLowerCase().includes(cmd.livraison_quartier.toLowerCase()));
+      if (trouve?.tarifCourse) tarifCourse = trouve.tarifCourse;
+    }
+  }
   if (mboaReseau()) {
     const { error } = await mboaReseau()!
       .from("commandes")
@@ -1732,7 +1743,8 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
       const z = await cacheLire<ZoneLivraison>("zone_livraison", id);
       if (!z) return true;
       const { error } = await client.from("zones_livraison").upsert({
-        id: z.id, nom: z.nom, prix: z.prix, actif: z.actif, created_le: z.createdLe,
+        id: z.id, nom: z.nom, prix: z.prix, tarif_course: z.tarifCourse ?? null, actif: z.actif, created_le: z.createdLe,
+      });
       });
       return !error;
     }
@@ -1941,6 +1953,7 @@ export async function sauverZoneLivraison(zone: ZoneLivraison): Promise<ZoneLivr
         id: zone.id,
         nom: zone.nom,
         prix: zone.prix,
+        tarif_course: zone.tarifCourse ?? null,
         actif: zone.actif,
         created_le: zone.createdLe ?? new Date().toISOString(),
       })
