@@ -12,6 +12,7 @@ import { EntreeCatalogue } from "../types/catalogue";
 import { Categorie } from "../types/categorie";
 import { Commande, commandeFromMap } from "../types/commande_full";
 import { StatutCommande } from "../types/statuts";
+import { MessageChat, messageFromMap, RoleMessage } from "../types/message";
 import { LigneCommande, ligneUniteReelle } from "../types/commande";
 import { Achat, StatutAchat, achatFromMap, achatMontant } from "../types/achat";
 import { Profil, profilFromMap } from "../types/profil";
@@ -1770,6 +1771,12 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
       });
       return !error;
     }
+    case "message": {
+      const m = await cacheLire<MessageChat>("message", id);
+      if (!m) return true;
+      const { error } = await client.from("messages").upsert(mapMessage(m));
+      return !error;
+    }
     case "categorie": {
       const cat = await cacheLire<CategoriePerso>("categorie", id);
       if (!cat) return true;
@@ -2008,3 +2015,117 @@ export async function fraisLivraisonPourQuartier(quartier: string): Promise<numb
   return trouve?.prix ?? 0;
 }
 
+
+// ============================================================
+// Messagerie intégré : client/fournisseur/livreur ↔ admins
+// ============================================================
+
+const estRoleAdminMessage = (r: RoleMessage) => r === "admin" || r === "superadmin";
+
+const mapMessage = (m: MessageChat) => ({
+  id: m.id,
+  expediteur_id: m.expediteurId,
+  expediteur_role: m.expediteurRole,
+  expediteur_nom: m.expediteurNom,
+  destinataire_id: m.destinataireId,
+  destinataire_role: m.destinataireRole,
+  texte: m.texte,
+  audio: m.audio,
+  lu: m.lu,
+  created_le: m.createdLe,
+});
+
+/**
+ * Envoie un message. `destinataireId` null = « tous les admins »
+ * (cas des messages coming des clients/fournisseurs/livreurs).
+ * `audio` = data URL d'un message vocal (webm/mp4).
+ */
+export async function envoyerMessageChat(params: {
+  expediteur: Profil;
+  destinataireId?: string | null;
+  destinataireRole?: RoleMessage | null;
+  texte?: string;
+  audio?: string | null;
+}): Promise<MessageChat> {
+  const message: MessageChat = {
+    id: uuidV4(),
+    expediteurId: params.expediteur.id,
+    expediteurRole: params.expediteur.role as RoleMessage,
+    expediteurNom: params.expediteur.nom,
+    destinataireId: params.destinataireId ?? null,
+    destinataireRole: params.destinataireRole ?? null,
+    texte: params.texte?.trim() ?? "",
+    audio: params.audio ?? null,
+    lu: false,
+    createdLe: new Date().toISOString(),
+  };
+  await cacheEcrire("message", message.id, message);
+  if (mboaReseau()) {
+    const { error } = await mboaReseau()!.from("messages").upsert(mapMessage(message));
+    if (!error) return message;
+  }
+  await fileAjouter("message", message.id, "upsert:message", {});
+  return message;
+}
+
+/**
+ * Messages visibles par le profil :
+ * - utilisateur : ceux qu'il a envoyés + ceux qui lui sont adressés ;
+ * - admin/superadmin : tous les messages des non-admins + ceux qui
+ *   leur sont adressés (les admins se partagent la boîte de réception).
+ */
+export async function messagesPour(profil: Profil): Promise<MessageChat[]> {
+  let distants: MessageChat[] = [];
+  if (mboaReseau()) {
+    const { data, error } = await mboaReseau()!.from("messages").select("*").order("created_le", { ascending: true }).limit(500);
+    if (!error && data) {
+      distants = (data as Record<string, unknown>[]).map(messageFromMap);
+      for (const m of distants) await cacheEcrire("message", m.id, m);
+    }
+  }
+  const tous = await cacheTout<MessageChat>("message");
+  const fusion = new Map<string, MessageChat>();
+  for (const m of [...tous, ...distants]) fusion.set(m.id, m);
+  const liste = [...fusion.values()];
+  const estAdmin = profil.role === "admin" || profil.role === "superadmin";
+  const visibles = liste.filter((m) => {
+    if (!estAdmin) {
+      return m.expediteurId === profil.id || m.destinataireId === profil.id;
+    }
+    // Admin : tout ce qui vient des utilisateurs, ce qui lui est
+    // adressé (y compris ses propres réponses), et les diffusions
+    // d'équipe (destinataire null). On exclut seulement les messages
+    // admin → un AUTRE utilisateur.
+    const nonAdmin = !estRoleAdminMessage(m.expediteurRole);
+    const pourMoi = m.expediteurId === profil.id || m.destinataireId === profil.id;
+    return nonAdmin || pourMoi || m.destinataireId == null;
+  });
+  return visibles.sort((a, b) => a.createdLe.localeCompare(b.createdLe));
+}
+
+/** Nombre de messages non lus pour le profil (badge du bouton flottant). */
+export async function messagesNonLus(profil: Profil): Promise<number> {
+  const messages = await messagesPour(profil);
+  const estAdmin = profil.role === "admin" || profil.role === "superadmin";
+  return messages.filter(
+    (m) =>
+      !m.lu &&
+      m.expediteurId !== profil.id &&
+      // Pour un admin, seuls les messages des utilisateurs comptent :
+      // les réponses d'un autre admin ne sont pas « non lues » pour lui.
+      (!estAdmin || !estRoleAdminMessage(m.expediteurRole)),
+  ).length;
+}
+
+/** Marque comme lus les messages reçus par le profil. */
+export async function marquerMessagesLus(profil: Profil): Promise<void> {
+  const messages = await messagesPour(profil);
+  const aLire = messages.filter((m) => !m.lu && m.expediteurId !== profil.id);
+  for (const m of aLire) {
+    const maj = { ...m, lu: true };
+    await cacheEcrire("message", m.id, maj);
+    if (mboaReseau()) {
+      void mboaReseau()!.from("messages").update({ lu: true }).eq("id", m.id);
+    }
+  }
+}

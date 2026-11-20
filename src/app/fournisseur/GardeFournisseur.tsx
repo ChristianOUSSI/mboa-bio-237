@@ -51,6 +51,10 @@ export function GardeFournisseur({ children }: { children: React.ReactNode }) {
           <p className="text-corps text-[var(--mboa-text-doux)] mt-3 italic">
             {t("four.attente.texte")}
           </p>
+          {/* Le candidat peut échanger avec l'admin pendant l'attente. */}
+          <a href="/messages" className="btn-mboa btn-primary mt-6 inline-block">
+            💬 {t("rej.succes.chat")}
+          </a>
         </div>
       </div>
     );

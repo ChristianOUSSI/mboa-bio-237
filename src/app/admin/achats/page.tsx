@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { toutesAchats, validerAchat, refuserAchat, payerAchat, profilParId } from "@/core/data/depots";
+import { toutesAchats, validerAchat, refuserAchat, payerAchat, profilParId, chargerFournisseurs, sauverFournisseur } from "@/core/data/depots";
+import { creerCompte, compteParIdentifiant, changerMotDePasse, majCompte, validerMotDePasse } from "@/core/auth/auth_service";
+import { toast } from "@/core/etat/store";
 import { Profil } from "@/core/types/profil";
 import { CarteMboa, EnTetePage, BadgeStatut, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { Achat, achatMontant, achatResume, achatEstPrise } from "@/core/types/achat";
@@ -20,6 +22,25 @@ export default function AchatsAdminPage() {
   const [profils, setProfils] = useState<Map<string, Profil>>(new Map());
   const [prixConvenance, setPrixConvenance] = useState<Record<string, string>>({});
   const [enCours, setEnCours] = useState<string | null>(null);
+  // Compte fournisseur créé depuis un achat : identifiants à communiquer.
+  const [accesCree, setAccesCree] = useState<{ nom: string; identifiant: string; mdp: string; tel: string } | null>(null);
+  const [accesFaits, setAccesFaits] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    // Pré-calcule quels achats ont déjà un accès fournisseur.
+    chargerFournisseurs()
+      .then((fs) => {
+        const faits = new Set<string>();
+        for (const f of fs) {
+          if (!f.profilId) continue;
+          faits.add(f.id);
+          // Les achats référencent la fiche par son id (tel_...) ou par profilId.
+          faits.add(`profil:${f.profilId}`);
+        }
+        setAccesFaits(faits);
+      })
+      .catch(() => {});
+  }, [achats]);
 
   async function charger() {
     const liste = await toutesAchats();
@@ -48,6 +69,66 @@ export default function AchatsAdminPage() {
     try {
       await validerAchat(a.id, prix);
       await charger();
+    } finally {
+      setEnCours(null);
+    }
+  }
+
+  /** Crée (ou réactive) le compte fournisseur lié à cet achat :
+   *  identifiant = téléphone de la fiche, mot de passe provisoire
+   *  communiqué ensuite via WhatsApp ou le chat intégré. */
+  async function creerAccesDepuisAchat(a: Achat) {
+    setEnCours(a.id);
+    try {
+      const fiches = await chargerFournisseurs();
+      const f = fiches.find(
+        (x) => x.id === a.fournisseurId || x.profilId === a.fournisseurId,
+      );
+      if (!f) {
+        toast(t("adm.ach.accesIntrouvable"));
+        return;
+      }
+      if (f.profilId) {
+        toast(t("adm.ach.accesExistant"));
+        return;
+      }
+      const mdp = `mboa${Math.floor(1000 + Math.random() * 9000)}`;
+      if (!validerMotDePasse(mdp).ok) return;
+      const identifiant = f.telephone.replace(/\D/g, "");
+      let compte = await compteParIdentifiant(identifiant);
+      if (compte) {
+        await changerMotDePasse(compte, mdp);
+        compte = await majCompte(compte, { role: "fournisseur", motDePasseParDefaut: true });
+      } else {
+        compte = await creerCompte({
+          role: "fournisseur",
+          nom: f.nom,
+          telephone: identifiant,
+          email: null,
+          village: f.village,
+          motDePasse: mdp,
+          motDePasseParDefaut: true,
+        });
+      }
+      await sauverFournisseur({
+        id: f.id,
+        nom: f.nom,
+        telephone: f.telephone,
+        whatsapp: f.whatsapp ?? null,
+        village: f.village,
+        productionCategorie: f.productionCategorie ?? null,
+        productionLibre: f.productionLibre,
+        unite: f.unite,
+        photo: f.photo ?? null,
+        actif: true,
+        lienCompteId: compte.id,
+      });
+      setAccesFaits((s) => new Set(s).add(f.id).add(`profil:${compte.id}`));
+      setAccesCree({ nom: f.nom, identifiant, mdp, tel: f.whatsapp || f.telephone });
+      toast(t("adm.ach.accesCree"));
+    } catch (e) {
+      console.error("création accès fournisseur", e);
+      toast(t("adm.ach.accesErreur"));
     } finally {
       setEnCours(null);
     }
@@ -97,6 +178,29 @@ export default function AchatsAdminPage() {
     <FondMboa>
       <EnTetePage titre={t("adm.ach.titre")} sousTitre={t("adm.ach.sousTitre")} onRetour={() => router.back()} />
       <div className="flex-1 p-4 space-y-4">
+        {/* Identifiants du compte fournisseur qui vient d'être créé :
+            à communiquer au vendeur (WhatsApp ou chat intégré). */}
+        {accesCree && (
+          <CarteMboa className="border-2" style={{ borderColor: "var(--mboa-primary)" }}>
+            <p className="text-corps font-bold">✅ {t("adm.ach.accesCreeTitre")} — {accesCree.nom}</p>
+            <p className="text-aide mt-1">
+              {t("adm.ach.identifiant")} : <b>{accesCree.identifiant}</b><br />
+              {t("adm.ach.mdpProvisoire")} : <b>{accesCree.mdp}</b>
+            </p>
+            <a
+              className="btn-mboa btn-secondary mt-2 inline-block"
+              href={`https://wa.me/${accesCree.tel.replace(/\D/g, "").replace(/^237/, "237")}?text=${encodeURIComponent(`Bonjour ${accesCree.nom}, votre espace fournisseur MBOA BIO 237 est prêt ! Identifiant : ${accesCree.identifiant} — Mot de passe provisoire : ${accesCree.mdp} (à changer à la première connexion).`)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              📲 {t("adm.ach.envoyerWhatsapp")}
+            </a>
+            <button className="text-aide underline ml-3" onClick={() => setAccesCree(null)}>
+              {t("adm.ach.fermer")}
+            </button>
+          </CarteMboa>
+        )}
+
         {/* Propositions en attente */}
         <h2 className="text-titre titre-section">{t("adm.ach.enAttente")} ({enAttente.length})</h2>
         {enAttente.length === 0 && (
@@ -155,6 +259,18 @@ export default function AchatsAdminPage() {
                 {t("adm.ach.refuser")}
               </BoutonMboa>
             </div>
+            {/* Accès fournisseur : crée le compte de connexion du
+                vendeur une fois la marchandise achetée. */}
+            {!accesFaits.has(a.fournisseurId) && !accesFaits.has(`profil:${a.fournisseurId}`) && (
+              <BoutonMboa
+                variant="surface"
+                className="w-full mt-2"
+                disabled={enCours === a.id}
+                onClick={() => void creerAccesDepuisAchat(a)}
+              >
+                🔑 {t("adm.ach.creerAcces")}
+              </BoutonMboa>
+            )}
           </CarteMboa>
         ))}
 

@@ -20,11 +20,25 @@ export interface Produit {
   perissable: boolean;
   actif: boolean;
   composants: PackComposant[];
+  /** Type de pack : plat (ingredients), bundle (produits du stock), theme (collection). */
+  typePack?: "plat" | "bundle" | "theme" | null;
+  /** Pour les bundles : liste des produits du stock avec quantites. */
+  bundleProduits?: { slug: string; quantite: number }[] | null;
+  /** Pour les packs thematiques : theme (ex. "fruits_rouges", "saint_valentin", "noel"). */
+  theme?: string | null;
   createdLe?: string | null;
 }
 
 export function produitEstPack(p: Produit): boolean {
-  return p.composants.length > 0;
+  return p.composants.length > 0 || (p.typePack === "bundle" && (p.bundleProduits?.length ?? 0) > 0) || (p.typePack === "theme" && !!p.theme);
+}
+
+export function produitEstBundle(p: Produit): boolean {
+  return p.typePack === "bundle" && (p.bundleProduits?.length ?? 0) > 0;
+}
+
+export function produitEstTheme(p: Produit): boolean {
+  return p.typePack === "theme" && !!p.theme;
 }
 
 export function produitUniteReelle(p: Produit): Unite {
@@ -104,6 +118,14 @@ export function produitFromMap(map: Record<string, unknown>): Produit {
     perissable: (map.perissable as boolean) ?? true,
     actif: (map.actif as boolean) ?? true,
     composants: packComposantDepuisJson(map.pack_composants),
+    typePack: (map.type_pack as "plat" | "bundle" | "theme") ?? "plat",
+    bundleProduits: Array.isArray(map.bundle_produits)
+      ? (map.bundle_produits as { slug: string; quantite: number }[]).map((b) => ({
+          slug: (b.slug as string) ?? "",
+          quantite: Number(b.quantite ?? 1),
+        }))
+      : null,
+    theme: (map.theme as string) ?? null,
     createdLe: (map.created_at as string) ?? null,
   };
 }

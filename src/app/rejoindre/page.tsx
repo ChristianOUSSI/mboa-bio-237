@@ -170,7 +170,17 @@ export default function RejoindrePage() {
         <p className="text-corps text-[var(--mboa-text-doux)] mt-2 text-center px-6 italic">
           {t("rej.succes.texte")}
         </p>
-        <BoutonMboa variant="primary" className="mt-6" onClick={() => router.push("/")}>
+        {/* Statut de la candidature : en attente de décision admin. */}
+        <div
+          className="mt-4 px-5 py-3 rounded-2xl text-corps font-bold text-center"
+          style={{ background: "rgba(255,193,7,0.15)", border: "2px solid rgba(255,193,7,0.5)" }}
+        >
+          ⏳ {t("rej.succes.statut")}
+        </div>
+        <BoutonMboa variant="primary" className="mt-4" onClick={() => router.push("/messages")}>
+          💬 {t("rej.succes.chat")}
+        </BoutonMboa>
+        <BoutonMboa variant="surface" className="mt-2" onClick={() => router.push("/")}>
           {t("rej.succes.btn")}
         </BoutonMboa>
       </div>

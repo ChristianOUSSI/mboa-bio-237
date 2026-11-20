@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { useTr } from "../i18n";
 import { basculerTheme, themeActuel, Theme } from "../utils/theme";
 import { useReseau, useToast } from "../etat/store";
+import { BoutonChatFlottant } from "./chat_flottant";
 
 /** Bouton MBOA - cible tactile minimale 72px, coins arrondis 20px. */
 export function BoutonMboa({
@@ -280,6 +281,7 @@ export function FondMboa({ children, className = "" }: { children: ReactNode; cl
       <div className="halo-mboa" style={{ width: 180, height: 180, bottom: 40, left: -80, background: "rgba(46,125,50,0.22)", animationDelay: "-7s" }} aria-hidden />
       <div className="above-filigrane flex-1 flex flex-col">{children}</div>
       <ToastMboa />
+      <BoutonChatFlottant />
     </div>
   );
 }
