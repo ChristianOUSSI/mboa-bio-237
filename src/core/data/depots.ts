@@ -135,7 +135,7 @@ async function _commandesCliente(consommateurId: string): Promise<Commande[]> {
   const client = mboaReseau();
   if (client) {
     const { data, error } = await client
-      .from("commandes_clientes")
+      .from("commandes")
       .select("*")
       .eq("consommateur_id", consommateurId)
       .order("created_at", { ascending: false });

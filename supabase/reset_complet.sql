@@ -128,10 +128,10 @@ create table if not exists public.commandes (
   client_tel text
 );
 
--- Vue « mes commandes » côté cliente : même table, filtrage fait par
--- la PWA via consommateur_id (pas de session Auth → pas de RLS fine).
+-- La vue commandes_clientes (select * sans filtre) a été supprimée :
+-- inutile et signalée SECURITY DEFINER par Supabase. Le code
+-- interroge désormais `commandes` directement.
 drop view if exists public.commandes_clientes;
-create view public.commandes_clientes as select * from public.commandes;
 
 -- (vitrine_livreurs est créée à la fin du script, après `profiles`.)
 

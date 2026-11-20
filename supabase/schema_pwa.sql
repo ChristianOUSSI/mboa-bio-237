@@ -35,7 +35,7 @@ create table if not exists public.produits (
 -- se propagent à `produits`. La cliente ne voit que ce que l'admin
 -- laisse actif (filtre complémentaire côté app : quantite > 0).
 drop view if exists public.vitrine;
-create view public.vitrine as select * from public.produits;
+create view public.vitrine with (security_invoker = true) as select * from public.produits;
 
 -- ---------- Commandes (devis → livraison → paiement) ----------
 create table if not exists public.commandes (
@@ -83,10 +83,10 @@ create table if not exists public.commandes (
   client_tel text
 );
 
--- Vue « mes commandes » côté cliente : même table, filtrage fait par
--- la PWA via consommateur_id (pas de session Auth → pas de RLS fine).
+-- La vue commandes_clientes (select * sans filtre) a été supprimée :
+-- inutile et signalée SECURITY DEFINER par Supabase. Le code
+-- interroge désormais `commandes` directement.
 drop view if exists public.commandes_clientes;
-create view public.commandes_clientes as select * from public.commandes;
 
 -- (vitrine_livreurs est créée à la fin du script, après `profiles`.)
 
