@@ -23,14 +23,14 @@ import { vibrer } from "@/core/utils/son";
 
 /** Sélecteur de quantité sur la fiche produit : on tape la quantité
  *  souhaitée (ex. 30, 20) au lieu de taper + une par une. */
-function BlocQuantite({ produit, promoPct, t }: { produit: Produit; promoPct: (p: Produit) => number; t: (k: string) => string }) {
+function BlocQuantite({ produit, promoPct, t }: { produit: Produit; promoPct: (p: Produit) => number | null; t: (k: string) => string }) {
   const panier = usePanier();
   const [qte, setQte] = useState(1);
   const enPanier = panier.lignes.find((l) => l.produitId === produit.id)?.quantite ?? 0;
 
   function ajouter() {
     const n = Math.max(1, Math.floor(qte) || 1);
-    const pct = promoPct(produit);
+    const pct = promoPct(produit) ?? 0;
     const prix = pct ? Math.round(produit.prix * (1 - pct / 100)) : produit.prix;
     panier.poser({
       produitId: produit.id,
