@@ -81,13 +81,44 @@ export default function AchatsAdminPage() {
     setEnCours(a.id);
     try {
       const fiches = await chargerFournisseurs();
-      const f = fiches.find(
-        (x) => x.id === a.fournisseurId || x.profilId === a.fournisseurId,
+      // Le fournisseurId d'un achat est `tel_<numéro>` ou un id de compte :
+      // on retrouve la fiche par id, par compte lié, ou par téléphone
+      // (9 derniers chiffres) — les formats ne sont jamais garantis.
+      const digits = a.fournisseurId.replace(/^tel_/, "").replace(/\D/g, "");
+      const fin = digits.slice(-9);
+      let f = fiches.find(
+        (x) =>
+          x.id === a.fournisseurId ||
+          x.profilId === a.fournisseurId ||
+          (fin.length >= 9 && x.telephone.replace(/\D/g, "").slice(-9) === fin),
       );
       if (!f) {
-        toast(t("adm.ach.accesIntrouvable"));
-        return;
+        // Repli : le fournisseur s'est connecté sans fiche (ou id ≠ tel_) —
+        // on résout le compte puis on crée la fiche à la volée.
+        const profilVendeur = a.fournisseurId.startsWith("tel_")
+          ? null
+          : await profilParId(a.fournisseurId);
+        const telVendeur = digits || (profilVendeur?.telephone ?? "").replace(/\D/g, "");
+        const compteExistant = telVendeur
+          ? await compteParIdentifiant(telVendeur)
+          : null;
+        const nomVendeur = profilVendeur?.nom ?? compteExistant?.nom ?? "Fournisseur";
+        if (!telVendeur && !compteExistant) {
+          toast(t("adm.ach.accesIntrouvable"));
+          return;
+        }
+        f = (await sauverFournisseur({
+          nom: nomVendeur,
+          telephone: telVendeur || digits,
+          village: profilVendeur?.village ?? compteExistant?.village ?? "",
+          actif: true,
+        })) ?? undefined;
+        if (!f) {
+          toast(t("adm.ach.accesIntrouvable"));
+          return;
+        }
       }
+      if (!f) return;
       if (f.profilId) {
         toast(t("adm.ach.accesExistant"));
         return;
