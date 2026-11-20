@@ -445,6 +445,12 @@ export default function PanierPage() {
                 className="champ-mboa mb-2"
                 style={{ fontSize: 18 }}
               />
+              {livraisonQuartier.trim() && (
+                <p className="text-aide text-[var(--mboa-primary)] font-bold mb-2">
+                  🚴 {t("panier.livraison")} : {formaterFcfa(fraisLivraisonCfg)}
+                  {calculEnCours && " …"}
+                </p>
+              )}
               <label className="text-aide block mb-1 font-bold">{t("panier.repere")}</label>
               <input
                 type="text"
