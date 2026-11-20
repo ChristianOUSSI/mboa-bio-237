@@ -9,7 +9,8 @@ import { CarteColis } from "@/core/design_system/carte_colis";
 import { CarteMboa, BoutonMboa, EnTetePage, BadgeStatut, BoutonVoix, FondMboa, SkeletonMboa, ChargementMboa } from "@/core/design_system/composants";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { Commande, commandeMontantAPayer, commandeAttendConfirmation, commandeEstAnnule } from "@/core/types/commande_full";
-import { STATUT_COMMANDE_INFO, StatutCommande, Satisfaction, SATISFACTION_INFO, MotifReception, MOTIF_RECEPTION_INFO } from "@/core/types/statuts";
+import { STATUT_COMMANDE_INFO, StatutCommande, Satisfaction, SATISFACTION_INFO, MotifReception, MOTIF_RECEPTION_INFO, statutRang } from "@/core/types/statuts";
+import { toast } from "@/core/etat/store";
 import { SuiviColis, suiviTimeline, JALON_SUIVI_INFO, PositionGps } from "@/core/types/suivi_colis";
 import { resumerQuantites } from "@/core/types/commande";
 import { useGuardRole } from "@/core/auth/use_guard_role";
@@ -73,13 +74,18 @@ export default function SuiviPage() {
     // Notification locale quand le statut change (ex. livreur arrivé).
     for (const c of cmds) {
       const avant = statutsPrec.current.get(c.id);
-      if (avant && avant !== c.statut && typeof Notification !== "undefined" && Notification.permission === "granted") {
-        const titre = c.statut === StatutCommande.livree ? "📦 MBOA BIO" : "🔔 MBOA BIO";
+      if (avant && avant !== c.statut) {
+        // Notification navigateur + toast en interne : le client voit le
+        // changement d'étape même sans permission de notification.
         const texte = STATUT_COMMANDE_INFO[c.statut]?.annonce ?? c.statut;
-        try {
-          new Notification(titre, { body: texte, icon: "/logo-mboa.jpeg" });
-        } catch {
-          /* notification indisponible */
+        toast(texte);
+        if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+          const titre = c.statut === StatutCommande.livree ? "📦 MBOA BIO" : "🔔 MBOA BIO";
+          try {
+            new Notification(titre, { body: texte, icon: "/logo-mboa.jpeg" });
+          } catch {
+            /* notification indisponible */
+          }
         }
       }
       statutsPrec.current.set(c.id, c.statut);
@@ -177,6 +183,50 @@ export default function SuiviPage() {
                     </div>
                     <BoutonVoix texte={info.annonce} />
                   </div>
+
+                  {/* Progression des statuts : chaque étape validée se voit */}
+                  {c.statut !== StatutCommande.annulee && (
+                    <div className="flex items-center gap-1 mb-2">
+                      {[
+                        StatutCommande.nouvelle,
+                        StatutCommande.valideeAdmin,
+                        StatutCommande.enLivraison,
+                        StatutCommande.livree,
+                        StatutCommande.recue,
+                      ].map((s, i, arr) => {
+                        const atteint = statutRang(c.statut) >= statutRang(s);
+                        const courant = c.statut === s;
+                        return (
+                          <div key={s} className="flex items-center flex-1 last:flex-none">
+                            <div className="flex flex-col items-center flex-1">
+                              <span
+                                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold"
+                                style={{
+                                  background: atteint ? "var(--mboa-primary)" : "var(--mboa-trait)",
+                                  color: atteint ? "#fff" : "var(--mboa-text-doux)",
+                                  boxShadow: courant ? "0 0 0 3px var(--mboa-secondary-doux)" : "none",
+                                }}
+                              >
+                                {atteint ? "✓" : i + 1}
+                              </span>
+                              <span
+                                className="text-[9px] mt-0.5 text-center leading-tight"
+                                style={{ color: courant ? "var(--mboa-primary)" : "var(--mboa-text-doux)", fontWeight: courant ? 700 : 400 }}
+                              >
+                                {STATUT_COMMANDE_INFO[s].libelle}
+                              </span>
+                            </div>
+                            {i < arr.length - 1 && (
+                              <span
+                                className="h-0.5 flex-1 -mt-3 mx-0.5 rounded"
+                                style={{ background: statutRang(c.statut) > statutRang(s) ? "var(--mboa-primary)" : "var(--mboa-trait)" }}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Summary */}
                   <div className="flex justify-between items-center mb-1">

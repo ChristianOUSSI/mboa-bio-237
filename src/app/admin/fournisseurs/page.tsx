@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { chargerFournisseurs, basculerFournisseurActif, supprimerFournisseur, refuserFournisseur } from "@/core/data/depots";
+import { chargerFournisseurs, basculerFournisseurActif, supprimerFournisseur, refuserFournisseur, sauverFournisseur } from "@/core/data/depots";
+import { creerCompte, compteParIdentifiant, changerMotDePasse, majCompte } from "@/core/auth/auth_service";
+import { validerMotDePasse } from "@/core/auth/auth_local";
 import { CarteMboa, EnTetePage, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { Fournisseur, fournisseurProduction, fournisseurLie } from "@/core/types/fournisseur";
 import { useGuardRole } from "@/core/auth/use_guard_role";
@@ -15,7 +17,7 @@ export default function FournisseursAdminPage() {
   const t = useTr();
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [confirmSuppr, setConfirmSuppr] = useState<string | null>(null);
-  const [aNotifier, setANotifier] = useState<{ f: Fournisseur; valide: boolean } | null>(null);
+  const [aNotifier, setANotifier] = useState<{ f: Fournisseur; valide: boolean; identifiant?: string; mdp?: string } | null>(null);
 
   async function charger() { setFournisseurs(await chargerFournisseurs()); }
 
@@ -28,9 +30,58 @@ export default function FournisseursAdminPage() {
     await charger();
   }
 
+  /** À l'approbation, crée (ou réinitialise) le compte fournisseur :
+   *  identifiant = téléphone, mot de passe provisoire à changer à la
+   *  première connexion. Renvoie les identifiants pour WhatsApp. */
+  async function creerAccesFournisseur(f: Fournisseur): Promise<{ identifiant: string; mdp: string } | null> {
+    try {
+      const mdp = `mboa${Math.floor(1000 + Math.random() * 9000)}`;
+      if (!validerMotDePasse(mdp).ok) return null;
+      const identifiant = f.telephone.replace(/\D/g, "");
+      let compte = await compteParIdentifiant(identifiant);
+      if (compte) {
+        // Compte existant (ex. consumer avec le même numéro) : on lui
+        // donne un mot de passe provisoire et on le passe en fournisseur.
+        await changerMotDePasse(compte, mdp);
+        compte = await majCompte(compte, { role: "fournisseur", motDePasseParDefaut: true });
+      } else {
+        compte = await creerCompte({
+          role: "fournisseur",
+          nom: f.nom,
+          telephone: identifiant,
+          email: null,
+          village: f.village,
+          motDePasse: mdp,
+          motDePasseParDefaut: true,
+        });
+      }
+      // Lie la fiche fournisseur au compte : sans ce lien, l'espace
+      // fournisseur reste bloqué même après approbation.
+      await sauverFournisseur({
+        id: f.id,
+        nom: f.nom,
+        telephone: f.telephone,
+        whatsapp: f.whatsapp ?? null,
+        village: f.village,
+        productionCategorie: f.productionCategorie ?? null,
+        productionLibre: f.productionLibre,
+        unite: f.unite,
+        photo: f.photo ?? null,
+        actif: true,
+        lienCompteId: compte.id,
+      });
+      return { identifiant, mdp };
+    } catch (e) {
+      console.error("création accès fournisseur", e);
+      return null;
+    }
+  }
+
   async function basculer(f: Fournisseur, actif: boolean) {
     await basculerFournisseurActif(f.id, actif);
-    setANotifier({ f, valide: actif });
+    let creds: { identifiant: string; mdp: string } | null = null;
+    if (actif && !f.profilId) creds = await creerAccesFournisseur(f);
+    setANotifier({ f, valide: actif, identifiant: creds?.identifiant, mdp: creds?.mdp });
     await charger();
   }
 
@@ -42,13 +93,18 @@ export default function FournisseursAdminPage() {
 
   /** Lien WhatsApp pré-rempli vers le numéro du candidat (whatsapp dédié
    *  ou téléphone principal). Format international 237 par défaut. */
-  function lienWhatsapp(f: Fournisseur, valide: boolean): string | null {
+  function lienWhatsapp(f: Fournisseur, valide: boolean, identifiant?: string, mdp?: string): string | null {
     const brut = (f.whatsapp || f.telephone || "").replace(/\D/g, "");
     if (brut.length < 9) return null;
     const inter = brut.startsWith("237") ? brut : `237${brut}`;
-    const msg = valide
-      ? `Bonjour ${f.nom}, votre candidature fournisseur MBOA BIO 237 a été validée ! Vous pouvez dès maintenant proposer vos récoltes depuis l'application. À bientôt !`
-      : `Bonjour ${f.nom}, merci pour votre candidature fournisseur MBOA BIO 237. Après examen, nous ne pouvons pas la retenir pour le moment. Merci de votre compréhension.`;
+    let msg: string;
+    if (valide && identifiant && mdp) {
+      msg = `Bonjour ${f.nom}, votre candidature fournisseur MBOA BIO 237 a été validée ! Votre espace fournisseur est prêt. Identifiant : ${identifiant} — Mot de passe provisoire : ${mdp} (à changer à la première connexion). Connectez-vous sur l'application. À bientôt !`;
+    } else if (valide) {
+      msg = `Bonjour ${f.nom}, votre candidature fournisseur MBOA BIO 237 a été validée ! Vous pouvez dès maintenant proposer vos récoltes depuis l'application. À bientôt !`;
+    } else {
+      msg = `Bonjour ${f.nom}, merci pour votre candidature fournisseur MBOA BIO 237. Après examen, nous ne pouvons pas la retenir pour le moment. Merci de votre compréhension.`;
+    }
     return `https://wa.me/${inter}?text=${encodeURIComponent(msg)}`;
   }
 
@@ -104,9 +160,9 @@ export default function FournisseursAdminPage() {
               </div>
             )}
             {/* Après validation ou refus : envoi du message WhatsApp au candidat. */}
-            {aNotifier?.f.id === f.id && lienWhatsapp(f, aNotifier.valide) && (
+            {aNotifier?.f.id === f.id && lienWhatsapp(f, aNotifier.valide, aNotifier.identifiant, aNotifier.mdp) && (
               <a
-                href={lienWhatsapp(f, aNotifier.valide)!}
+                href={lienWhatsapp(f, aNotifier.valide, aNotifier.identifiant, aNotifier.mdp)!}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-2 flex items-center justify-center gap-2 w-full p-3 rounded-xl text-corps font-bold text-white"

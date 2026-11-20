@@ -151,7 +151,9 @@ export function suiviFromMaps(commandeId: string, maps: Record<string, unknown>[
 export function etapesDepuisStatut(statut: string, depuis: string): EtapeSuivi[] {
   const base = new Date(depuis).toISOString();
   const jalons: JalonSuivi[] = [];
-  if (statut === "validee_admin") jalons.push(JalonSuivi.panierPrepare, JalonSuivi.motoPartie);
+  // Chaque statut ne coche que les jalons réellement atteints :
+  // validé = panier en préparation, la moto ne part qu'à en_livraison.
+  if (statut === "validee_admin") jalons.push(JalonSuivi.panierPrepare);
   else if (statut === "en_livraison") jalons.push(JalonSuivi.panierPrepare, JalonSuivi.motoPartie, JalonSuivi.enApproche);
   else if (statut === "livree") jalons.push(JalonSuivi.panierPrepare, JalonSuivi.motoPartie, JalonSuivi.enApproche, JalonSuivi.arrive);
   else if (statut === "recue") jalons.push(...JALON_SUIVI_ORDRE);

@@ -680,13 +680,18 @@ export async function sauverFournisseur(params: {
   photo?: string | null;
   /** false = candidature en attente de validation par l'admin. */
   actif?: boolean;
+  /** Compte de connexion lié à la fiche (créé par l'admin à l'approbation). */
+  lienCompteId?: string | null;
 }): Promise<Fournisseur | null> {
   const id = params.id ?? `tel_${params.telephone.replace(/\D/g, "")}`;
   const actif = params.actif ?? true;
   const whatsapp = params.whatsapp?.replace(/\D/g, "") || null;
+  // Sans lienCompteId explicite, on conserve le lien existant :
+  // une mise à jour de fiche ne doit pas délier le compte.
+  const existant = await cacheLire<Fournisseur>("fournisseur", id);
   const fournisseur: Fournisseur = {
     id,
-    profilId: null,
+    profilId: params.lienCompteId ?? existant?.profilId ?? null,
     nom: params.nom,
     telephone: params.telephone,
     whatsapp,
@@ -711,6 +716,9 @@ export async function sauverFournisseur(params: {
         production_libre: params.productionLibre ?? "",
         unite: params.unite ?? "kg",
         actif,
+        // Lien vers le compte de connexion : envoyé seulement s'il est
+        // fourni, sinon le cloud garde la valeur existante.
+        ...(params.lienCompteId !== undefined ? { profil_id: params.lienCompteId } : {}),
       })
       .select("*")
       .maybeSingle();

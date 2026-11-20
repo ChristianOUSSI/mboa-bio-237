@@ -193,6 +193,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "march.rupture": "Épuisé",
     "march.liste": "Liste de marché",
     "march.ajouter": "Ajouter au panier",
+    "march.quantite": "Quantité",
 
     // Liste de marché
     "liste.titre": "Ma liste de marché",
@@ -861,6 +862,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "march.rupture": "Sold out",
     "march.liste": "Market list",
     "march.ajouter": "Add to cart",
+    "march.quantite": "Quantity",
 
     // Liste de marché
     "liste.titre": "My market list",

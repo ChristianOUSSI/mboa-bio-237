@@ -21,6 +21,85 @@ import { notifierNouvellesAnnonces } from "@/core/utils/annonces_notif";
 import { OnboardingMboa, estOnboardingVu } from "@/core/design_system/onboarding";
 import { vibrer } from "@/core/utils/son";
 
+/** Sélecteur de quantité sur la fiche produit : on tape la quantité
+ *  souhaitée (ex. 30, 20) au lieu de taper + une par une. */
+function BlocQuantite({ produit, promoPct, t }: { produit: Produit; promoPct: (p: Produit) => number; t: (k: string) => string }) {
+  const panier = usePanier();
+  const [qte, setQte] = useState(1);
+  const enPanier = panier.lignes.find((l) => l.produitId === produit.id)?.quantite ?? 0;
+
+  function ajouter() {
+    const n = Math.max(1, Math.floor(qte) || 1);
+    const pct = promoPct(produit);
+    const prix = pct ? Math.round(produit.prix * (1 - pct / 100)) : produit.prix;
+    panier.poser({
+      produitId: produit.id,
+      slug: produit.slug,
+      nom: produit.nom,
+      categorie: produit.categorie,
+      quantite: n,
+      prix,
+      coutAchat: produit.prixAchat ?? 0,
+      photo: produit.photoReelle,
+      unite: produitUniteReelle(produit),
+      composants: produit.composants,
+    });
+    vibrer();
+    toast(`${produit.nom} ×${n} ${t("toast.ajoute")}`);
+    setQte(1);
+  }
+
+  if (enPanier > 0) {
+    return (
+      <div className="flex items-center justify-between gap-1 mt-2">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => panier.ajuster(produit.id, enPanier - 1)}
+            className="btn-mboa btn-surface !min-h-[40px] !min-w-[40px] !rounded-xl text-xl"
+            aria-label={`Moins de ${produit.nom}`}
+          >
+            −
+          </button>
+          <span className="text-corps font-bold min-w-[28px] text-center">{enPanier}</span>
+          <button
+            onClick={() => panier.ajuster(produit.id, enPanier + 1)}
+            className="btn-mboa btn-secondary !min-h-[40px] !min-w-[40px] !rounded-xl text-xl"
+            aria-label={`Plus de ${produit.nom}`}
+          >
+            +
+          </button>
+        </div>
+        <button
+          onClick={ajouter}
+          className="btn-mboa btn-primary !min-h-[40px] !rounded-xl px-3 text-aide font-bold"
+        >
+          +{t("march.ajouter")}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 mt-2">
+      <input
+        type="number"
+        inputMode="numeric"
+        min={1}
+        value={qte}
+        onChange={(e) => setQte(Math.max(1, parseInt(e.target.value) || 1))}
+        className="champ-mboa !min-h-[44px] !w-16 text-center text-corps font-bold"
+        aria-label={t("march.quantite")}
+      />
+      <button
+        onClick={ajouter}
+        className="btn-mboa btn-primary flex-1 !min-h-[44px] !rounded-xl text-aide font-bold"
+      >
+        + {t("march.ajouter")}
+      </button>
+    </div>
+  );
+}
+
 export default function MarchePage() {
   const router = useRouter();
   const { pret, profil } = useGuardRole("consommateur");
@@ -104,28 +183,6 @@ export default function MarchePage() {
     if (tri === "prix_desc") return b.prix - a.prix;
     return a.nom.localeCompare(b.nom);
   });
-
-  function poserAuPanier(produit: Produit) {
-    const u = produitUniteReelle(produit);
-    // Si une annonce promo accorde un % sur ce produit, le panier applique
-    // le prix réduit — l'affichage et le montant restent cohérents.
-    const pct = promoPct(produit);
-    const prix = pct ? Math.round(produit.prix * (1 - pct / 100)) : produit.prix;
-    panier.poser({
-      produitId: produit.id,
-      slug: produit.slug,
-      nom: produit.nom,
-      categorie: produit.categorie,
-      quantite: 1,
-      prix,
-      coutAchat: produit.prixAchat ?? 0,
-      photo: produit.photoReelle,
-      unite: u,
-      composants: produit.composants,
-    });
-    vibrer();
-    toast(`${produit.nom} ${t("toast.ajoute")}`);
-  }
 
   return (
     <FondMboa>
@@ -352,12 +409,7 @@ export default function MarchePage() {
                     );
                   })()}
                   {!produitEstRupture(p) && (
-                    <button
-                      onClick={() => poserAuPanier(p)}
-                      className="btn-mboa btn-primary w-full !min-h-[44px] !rounded-xl mt-2 font-bold"
-                    >
-                      + {t("march.ajouter")}
-                    </button>
+                    <BlocQuantite produit={p} promoPct={promoPct} t={t} />
                   )}
                 </CarteMboa>
               ))}
@@ -421,16 +473,10 @@ export default function MarchePage() {
                       <span className="puce-prix">{produitPrixLabel(p)}</span>
                     );
                   })()}
-                  {!produitEstRupture(p) && (
-                    <button
-                      onClick={() => poserAuPanier(p)}
-                      className="btn-mboa btn-primary !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl"
-                      aria-label={t("march.ajouter")}
-                    >
-                      +
-                    </button>
-                  )}
                 </div>
+                {!produitEstRupture(p) && (
+                  <BlocQuantite produit={p} promoPct={promoPct} t={t} />
+                )}
                 {produitEstPack(p) && (
                   <Link
                     href={`/consommateur/pack/${encodeURIComponent(p.slug)}`}
