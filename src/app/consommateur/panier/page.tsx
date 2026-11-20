@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { usePanier, toast } from "@/core/etat/store";
 import { CarteMboa, BoutonMboa, EnTetePage, BoutonVoix, FondMboa, ChargementMboa } from "@/core/design_system/composants";
 import { formaterFcfa, formaterFcfaCourt } from "@/core/utils/format_monnaie";
-import { commander, chargerVitrine, toutesAnnonces } from "@/core/data/depots";
+import { commander, chargerVitrine, toutesAnnonces, fraisLivraisonPourQuartier } from "@/core/data/depots";
 import { Annonce } from "@/core/types/annonce";
 import { codePromoPct } from "@/core/utils/promos";
 import { Produit, produitEstRupture, produitPrixLabel, produitUniteReelle } from "@/core/types/produit";
@@ -50,6 +50,7 @@ export default function PanierPage() {
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsEtat, setGpsEtat] = useState<"repos" | "charge" | "ok" | "erreur">("repos");
   const [fraisLivraisonCfg, setFraisLivraisonCfg] = useState(FRAIS_LIVRAISON_DEFAUT);
+  const [calculEnCours, setCalculEnCours] = useState(false);
   const [suggestions, setSuggestions] = useState<Produit[]>([]);
   const [annonces, setAnnonces] = useState<Annonce[]>([]);
   const [codeSaisi, setCodeSaisi] = useState("");
@@ -57,6 +58,17 @@ export default function PanierPage() {
   const [codeErreur, setCodeErreur] = useState(false);
   // Assistant en 3 étapes : 1 panier, 2 livraison, 3 paiement + validation.
   const [etape, setEtape] = useState<1 | 2 | 3>(1);
+
+  // Calcul dynamique des frais de livraison selon le quartier.
+  useEffect(() => {
+    if (etape === 2 && livraisonQuartier.trim()) {
+      setCalculEnCours(true);
+      fraisLivraisonPourQuartier(livraisonQuartier.trim()).then((p) => {
+        setFraisLivraisonCfg(p);
+        setCalculEnCours(false);
+      });
+    }
+  }, [etape, livraisonQuartier]);
 
   useEffect(() => {
     void lireParametre<number>(CLE_FRAIS, FRAIS_LIVRAISON_DEFAUT).then((f) => {

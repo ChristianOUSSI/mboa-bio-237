@@ -335,6 +335,7 @@ export default function TableauAdmin() {
               badgeLabel: fournisseurs.filter((f) => !f.actif).length > 0 ? t("adm.fourn.enAttente") : null,
             },
             { href: "/admin/livreurs", emoji: "🛵", label: t("adm.livreurs"), badge: livreurs.length },
+            { href: "/admin/zones", emoji: "📍", label: t("adm.zones.titre"), badge: null },
             { href: "/admin/compte", emoji: "🔐", label: t("adm.compte"), badge: null },
           ] as const).map((item) => (
             <button

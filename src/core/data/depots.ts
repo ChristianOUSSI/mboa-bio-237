@@ -18,6 +18,7 @@ import { Profil, profilFromMap } from "../types/profil";
 import { roleResolve } from "../config/app_env";
 import { Livreur, livreurFromMap } from "../types/livreur";
 import { Fournisseur, fournisseurFromMap } from "../types/fournisseur";
+import { ZoneLivraison, zoneFromMap, zonesParDefaut } from "../types/zone_livraison";
 import { SuiviColis, suiviFromMaps, suiviVide, PositionGps, DEPOT_MBOA, etapesDepuisStatut } from "../types/suivi_colis";
 import { uuidV4, slugDe } from "../utils/identifiants";
 
@@ -1884,3 +1885,79 @@ export async function annulerCourseComplete(commande: Commande): Promise<void> {
   await cacheEcrire("commande", commande.id, { ...commande, statut: StatutCommande.annulee });
   void notifierActiviteAdmin("act.courseAnnulee", commande.lignes.map((l) => l.nom).join(", "));
 }
+
+// ============================================================
+// Zones de livraison paramétrables
+// ============================================================
+
+export function chargerZonesLivraison(): Promise<ZoneLivraison[]> {
+  return dedoublonner("chargerZonesLivraison", () => _chargerZonesLivraison());
+}
+
+async function _chargerZonesLivraison(): Promise<ZoneLivraison[]> {
+  const locales = await cacheTout<ZoneLivraison>("zone_livraison");
+  const client = mboaReseau();
+  if (client) {
+    const { data, error } = await client
+      .from("zones_livraison")
+      .select("*")
+      .order("nom", { ascending: true });
+    if (!error && data) {
+      const distantes = data.map((d) => zoneFromMap(d as unknown as Record<string, unknown>));
+      const parId = new Map(locales.map((z) => [z.id, z]));
+      for (const d of distantes) {
+        parId.set(d.id, d);
+        await cacheEcrire("zone_livraison", d.id, d);
+      }
+      return Array.from(parId.values());
+    }
+  }
+  if (locales.length === 0) {
+    const defauts = zonesParDefaut();
+    for (const z of defauts) await cacheEcrire("zone_livraison", z.id, z);
+    return defauts;
+  }
+  return locales;
+}
+
+export async function sauverZoneLivraison(zone: ZoneLivraison): Promise<ZoneLivraison | null> {
+  const client = mboaReseau();
+  if (client) {
+    const { data, error } = await client
+      .from("zones_livraison")
+      .upsert({
+        id: zone.id,
+        nom: zone.nom,
+        prix: zone.prix,
+        actif: zone.actif,
+        created_le: zone.createdLe ?? new Date().toISOString(),
+      })
+      .select("*")
+      .maybeSingle();
+    if (!error && data) {
+      const z = zoneFromMap(data as unknown as Record<string, unknown>);
+      await cacheEcrire("zone_livraison", z.id, z);
+      return z;
+    }
+  }
+  await cacheEcrire("zone_livraison", zone.id, zone);
+  await fileAjouter("zone_livraison", zone.id, "upsert:zone", zone);
+  return zone;
+}
+
+export async function supprimerZoneLivraison(zoneId: string): Promise<void> {
+  const client = mboaReseau();
+  if (client) {
+    await client.from("zones_livraison").delete().eq("id", zoneId);
+  }
+  await cacheEcrire("zone_livraison", zoneId, null);
+  await fileAjouter("zone_livraison", zoneId, "delete:zone", {});
+}
+
+export async function fraisLivraisonPourQuartier(quartier: string): Promise<number> {
+  const zones = await chargerZonesLivraison();
+  const actives = zones.filter((z) => z.actif);
+  const trouve = actives.find((z) => quartier.toLowerCase().includes(z.nom.toLowerCase()) || z.nom.toLowerCase().includes(quartier.toLowerCase()));
+  return trouve?.prix ?? 0;
+}
+

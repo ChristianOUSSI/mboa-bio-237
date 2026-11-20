@@ -505,6 +505,16 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.livr.reactiver": "Réactiver",
     "adm.livr.supprimer": "Supprimer",
 
+    // Admin - zones de livraison
+    "adm.zones.titre": "Zones de livraison",
+    "adm.zones.ajouter": "Nouvelle zone",
+    "adm.zones.nomPh": "Nom du quartier",
+    "adm.zones.ajouterBtn": "Ajouter",
+    "adm.zones.actif": "Actif",
+    "adm.zones.inactif": "Désactivé",
+    "adm.zones.supprimer": "Supprimer",
+    "adm.zones.reinitialiser": "Réinitialiser aux zones par défaut",
+
     // Admin - packs
     "adm.pack.titre": "Plats prêts",
     "adm.pack.sousTitre": "Un plat, ses ingrédients, un prix",
@@ -1173,6 +1183,16 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.livr.desactiver": "Deactivate",
     "adm.livr.reactiver": "Reactivate",
     "adm.livr.supprimer": "Delete",
+
+    // Admin - delivery zones
+    "adm.zones.titre": "Delivery zones",
+    "adm.zones.ajouter": "New zone",
+    "adm.zones.nomPh": "Neighborhood name",
+    "adm.zones.ajouterBtn": "Add",
+    "adm.zones.actif": "Active",
+    "adm.zones.inactif": "Disabled",
+    "adm.zones.supprimer": "Delete",
+    "adm.zones.reinitialiser": "Reset to default zones",
 
     // Admin - packs
     "adm.pack.titre": "Dish packs",
