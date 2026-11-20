@@ -877,12 +877,15 @@ export async function sauverPack(params: {
   prix: number;
   quantite?: number;
   composants: { slug: string; nom: string; quantite: number; unite: string }[];
+  typePack?: "plat" | "bundle" | "theme";
+  bundleProduits?: { slug: string; quantite: number }[];
+  theme?: string;
 }): Promise<Produit | null> {
   const slug = slugDe(params.nom);
   // Chaque plat devient sa propre catégorie (ex. « Ndolé sauce ») pour que les
   // clientes le retrouvent dans la grille des catégories du marché.
   const categorie =
-    (await creerCategoriePerso(params.nom, "🍲"))?.slug ?? params.categorie ?? slug;
+    (await creerCategoriePerso(params.nom, params.typePack === "theme" ? "🎁" : params.typePack === "bundle" ? "🧺" : "🍲"))?.slug ?? params.categorie ?? slug;
   const produit: Produit = {
     id: uuidV4(),
     slug,
@@ -903,6 +906,9 @@ export async function sauverPack(params: {
       quantite: c.quantite,
       unite: c.unite as never,
     })),
+    typePack: params.typePack ?? "plat",
+    bundleProduits: params.bundleProduits ?? null,
+    theme: params.theme ?? null,
     createdLe: new Date().toISOString(),
   };
   let resultat: Produit | null = null;
@@ -921,6 +927,7 @@ export async function sauverPack(params: {
       // le plat soit visible sur TOUS les appareils (sinon il reste local à
       // l'admin et le client ne le voit jamais).
       const packJson = JSON.parse(JSON.stringify(params.composants));
+      const bundleJson = params.bundleProduits ? JSON.parse(JSON.stringify(params.bundleProduits)) : null;
       const { data: ins, error: errIns } = await mboaReseau()!
         .from("produits")
         .insert({
@@ -934,6 +941,9 @@ export async function sauverPack(params: {
           perissable: false,
           actif: true,
           pack_composants: packJson,
+          type_pack: params.typePack ?? "plat",
+          bundle_produits: bundleJson,
+          theme: params.theme ?? null,
         })
         .select("*")
         .maybeSingle();

@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { chargerCatalogue, chargerStock, sauverPack, majPackComposants } from "@/core/data/depots";
+import { chargerCatalogue, chargerStock, sauverPack, majPackComposants, chargerVitrine } from "@/core/data/depots";
 import { CarteMboa, BoutonMboa, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { EntreeCatalogue, catalogueUniteReelle } from "@/core/types/catalogue";
-import { Produit, produitEstPack } from "@/core/types/produit";
+import { Produit, produitEstPack, produitEstBundle, produitEstTheme } from "@/core/types/produit";
 import { Unite, UNITE_INFO, unitePour } from "@/core/types/unite";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { choisirPhotoDepuisAppareil } from "@/core/utils/photo";
@@ -106,21 +106,28 @@ export default function PacksAdminPage() {
   const { pret } = useGuardRole("admin");
   const t = useTr();
   const [catalogue, setCatalogue] = useState<EntreeCatalogue[]>([]);
+  const [stock, setStock] = useState<Produit[]>([]);
   const [packs, setPacks] = useState<Produit[]>([]);
   const [nom, setNom] = useState("");
   const [photo, setPhoto] = useState("");
   const [prix, setPrix] = useState("");
-  const [stock, setStock] = useState("10");
+  const [quantiteStock, setQuantiteStock] = useState("10");
+  const [typePack, setTypePack] = useState<"plat" | "bundle" | "theme">("plat");
   const [composants, setComposants] = useState<ComposantDraft[]>([]);
+  const [bundleProduits, setBundleProduits] = useState<{ slug: string; quantite: number }[]>([]);
+  const [theme, setTheme] = useState("");
   const [enCours, setEnCours] = useState(false);
   const [editionId, setEditionId] = useState<string | null>(null);
   const [editionComposants, setEditionComposants] = useState<ComposantDraft[]>([]);
   const [editionEnCours, setEditionEnCours] = useState(false);
 
   async function charger() {
-    const [c, s] = await Promise.all([chargerCatalogue(), chargerStock()]);
+    const [c, s, v] = await Promise.all([chargerCatalogue(), chargerStock(), chargerVitrine()]);
     setCatalogue(c);
-    setPacks(s.filter(produitEstPack));
+    setStock(s);
+    // Les packs sont dans le stock ET la vitrine (les bundles/themes peuvent être vitrine sans stock).
+    const tous = [...s, ...v.filter((v) => !s.some((p) => p.id === v.id))];
+    setPacks(tous.filter(produitEstPack));
   }
 
   // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
@@ -128,27 +135,36 @@ export default function PacksAdminPage() {
 
   async function sauver() {
     const prixNum = parseInt(prix) || 0;
-    if (!nom.trim() || prixNum <= 0 || composants.length === 0) return;
+    if (!nom.trim() || prixNum <= 0) return;
+    if (typePack === "plat" && composants.length === 0) return;
+    if (typePack === "bundle" && bundleProduits.length === 0) return;
+    if (typePack === "theme" && !theme.trim()) return;
     setEnCours(true);
     try {
       const p = await sauverPack({
         nom: nom.trim(),
         photo,
         prix: prixNum,
-        quantite: Math.max(1, parseInt(stock) || 1),
-        composants: composants.map((c) => ({
+        quantite: Math.max(1, parseInt(quantiteStock) || 1),
+        composants: typePack === "plat" ? composants.map((c) => ({
           slug: c.slug,
           nom: c.nom,
           quantite: c.quantite,
           unite: c.unite,
-        })),
+        })) : [],
+        typePack,
+        bundleProduits: typePack === "bundle" ? bundleProduits : undefined,
+        theme: typePack === "theme" ? theme.trim() : undefined,
       });
       if (p) setPacks([...packs, p]);
       setNom("");
       setPhoto("");
       setPrix("");
-      setStock("10");
+      setQuantiteStock("10");
+      setTypePack("plat");
       setComposants([]);
+      setBundleProduits([]);
+      setTheme("");
     } finally {
       setEnCours(false);
     }
@@ -202,9 +218,34 @@ export default function PacksAdminPage() {
       <EnTetePage titre={t("adm.pack.titre")} sousTitre={t("adm.pack.sousTitre")} onRetour={() => router.back()} />
 
       <div className="flex-1 p-4 space-y-3">
-        {/* Composition d'un nouveau plat */}
+        {/* Composition d'un nouveau pack */}
         <CarteMboa>
           <h2 className="text-titre titre-section mb-3">{t("adm.pack.composer")}</h2>
+
+          {/* Sélection du type de pack */}
+          <div className="flex gap-2 mb-3">
+            <button
+              onClick={() => setTypePack("plat")}
+              className={`flex-1 p-2 rounded-xl border-2 font-bold ${typePack === "plat" ? "border-[var(--mboa-primary)] bg-[var(--mboa-primary)] text-white" : "border-[var(--mboa-primary)] text-[var(--mboa-primary)]"}`}
+              style={{ fontSize: 14 }}
+            >
+              🍲 Plat
+            </button>
+            <button
+              onClick={() => setTypePack("bundle")}
+              className={`flex-1 p-2 rounded-xl border-2 font-bold ${typePack === "bundle" ? "border-[var(--mboa-primary)] bg-[var(--mboa-primary)] text-white" : "border-[var(--mboa-primary)] text-[var(--mboa-primary)]"}`}
+              style={{ fontSize: 14 }}
+            >
+              🧺 Bundle
+            </button>
+            <button
+              onClick={() => setTypePack("theme")}
+              className={`flex-1 p-2 rounded-xl border-2 font-bold ${typePack === "theme" ? "border-[var(--mboa-primary)] bg-[var(--mboa-primary)] text-white" : "border-[var(--mboa-primary)] text-[var(--mboa-primary)]"}`}
+              style={{ fontSize: 14 }}
+            >
+              🎁 Thème
+            </button>
+          </div>
 
           <input
             type="text"
@@ -253,9 +294,77 @@ export default function PacksAdminPage() {
             <img src={photo} alt="" className="w-full h-32 object-cover rounded-xl mb-2" />
           )}
 
-          <EditeurComposants catalogue={catalogue} composants={composants} onChange={setComposants} />
+          {/* Éditeur selon le type */}
+          {typePack === "plat" && (
+            <EditeurComposants catalogue={catalogue} composants={composants} onChange={setComposants} />
+          )}
 
-          {/* Prix unique + stock de parts */}
+          {typePack === "bundle" && (
+            <div className="mb-3">
+              <p className="text-corps font-bold mb-2">🧺 Produits du bundle</p>
+              {bundleProduits.map((b, i) => (
+                <div key={i} className="flex gap-2 mb-2 items-center">
+                  <select
+                    value={b.slug}
+                    onChange={(e) => {
+                      const slug = e.target.value;
+                      const prod = stock.find((p) => p.slug === slug);
+                      setBundleProduits(bundleProduits.map((bp, idx) => idx === i ? { ...bp, slug, quantite: bp.quantite || 1 } : bp));
+                    }}
+                    className="flex-1 p-2 border-2 border-[var(--mboa-primary)] rounded-xl"
+                    style={{ fontSize: 16 }}
+                  >
+                    <option value="">Choisir un produit…</option>
+                    {stock.filter((p) => !produitEstPack(p) && p.actif).map((p) => (
+                      <option key={p.id} value={p.slug}>{p.nom}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    value={b.quantite}
+                    onChange={(e) => setBundleProduits(bundleProduits.map((bp, idx) => idx === i ? { ...bp, quantite: parseInt(e.target.value) || 1 } : bp))}
+                    className="w-16 p-2 border-2 border-[var(--mboa-primary)] rounded-xl text-center"
+                    style={{ fontSize: 18 }}
+                  />
+                  <button
+                    onClick={() => setBundleProduits(bundleProduits.filter((_, idx) => idx !== i))}
+                    className="text-[var(--mboa-error)] text-2xl px-1"
+                    aria-label="Retirer"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <BoutonMboa
+                variant="surface"
+                onClick={() => setBundleProduits([...bundleProduits, { slug: "", quantite: 1 }])}
+                className="w-full mb-3"
+              >
+                ➕ Ajouter un produit
+              </BoutonMboa>
+            </div>
+          )}
+
+          {typePack === "theme" && (
+            <div className="mb-3">
+              <label className="text-corps block mb-1 font-bold">🎁 Thème du pack</label>
+              <input
+                type="text"
+                placeholder="Ex. : fruits_rouges, saint_valentin, noel"
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                className="champ-mboa w-full"
+                style={{ fontSize: 18 }}
+              />
+              <p className="text-aide text-[var(--mboa-text-doux)] mt-1 italic">
+                Les produits de ce thème seront regroupés côté client.
+              </p>
+            </div>
+          )}
+
+          {/* Prix unique + stock */}
           <div className="grid grid-cols-2 gap-2 mb-3">
             <div>
               <label className="text-corps block mb-1">{t("adm.pack.prix")}</label>
@@ -275,8 +384,8 @@ export default function PacksAdminPage() {
                 type="number"
                 inputMode="numeric"
                 min={1}
-                value={stock}
-                onChange={(e) => setStock(e.target.value)}
+                value={quantiteStock}
+                onChange={(e) => setQuantiteStock(e.target.value)}
                 className="champ-mboa w-full text-chiffre text-center"
                 style={{ fontSize: 24 }}
               />
@@ -288,7 +397,7 @@ export default function PacksAdminPage() {
           <BoutonMboa
             variant="primary"
             onClick={sauver}
-            disabled={!nom.trim() || !prix || composants.length === 0 || enCours}
+            disabled={!nom.trim() || !prix || (typePack === "plat" && composants.length === 0) || (typePack === "bundle" && bundleProduits.length === 0) || (typePack === "theme" && !theme.trim()) || enCours}
             className="w-full"
           >
             {enCours ? t("adm.pack.sauvegarde") : t("adm.pack.sauver")}
@@ -306,13 +415,24 @@ export default function PacksAdminPage() {
         {packs.map((p) => (
           <CarteMboa key={p.id}>
             <div className="flex justify-between items-start mb-1">
-              <span className="text-corps font-bold">{p.nom}</span>
+              <span className="text-corps font-bold">
+                {p.nom}
+                {produitEstBundle(p) && <span className="ml-2 text-[10px] bg-[var(--mboa-primary)] text-white px-2 py-0.5 rounded-full">BUNDLE</span>}
+                {produitEstTheme(p) && <span className="ml-2 text-[10px] bg-[var(--mboa-secondary)] text-white px-2 py-0.5 rounded-full">THÈME</span>}
+              </span>
               <span className="text-chiffre text-[var(--mboa-primary)]">{formaterFcfa(p.prix)}</span>
             </div>
             <p className="text-aide text-[var(--mboa-text-doux)]">
-              {p.composants
-                .map((c) => `${c.quantite} ${unitePour(c.unite, c.quantite)} ${t("adm.pack.de")} ${c.nom?.trim() || c.slug.replaceAll("_", " ")}`)
-                .join(" · ")}
+              {produitEstBundle(p) && p.bundleProduits
+                ? p.bundleProduits.map((b) => {
+                    const prod = stock.find((s) => s.slug === b.slug);
+                    return `${b.quantite}× ${prod?.nom ?? b.slug}`;
+                  }).join(" · ")
+                : produitEstTheme(p) && p.theme
+                ? `Thème : ${p.theme}`
+                : p.composants
+                    .map((c) => `${c.quantite} ${unitePour(c.unite, c.quantite)} ${t("adm.pack.de")} ${c.nom?.trim() || c.slug.replaceAll("_", " ")}`)
+                    .join(" · ")}
             </p>
 
             {editionId === p.id ? (
