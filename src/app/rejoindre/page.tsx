@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CarteMboa, BoutonMboa, EnTetePage, PictoCategorie, FondMboa } from "@/core/design_system/composants";
-import { chargerCatalogue, proposerAchat, sauverFournisseur } from "@/core/data/depots";
+import { chargerCatalogue, chargerFournisseurs, proposerAchat, sauverFournisseur } from "@/core/data/depots";
 import { CATEGORIES_ORDREES, Categorie } from "@/core/types/categorie";
 import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
 import { Unite, UNITE_INFO } from "@/core/types/unite";
@@ -125,18 +125,26 @@ export default function RejoindrePage() {
     setEnCours(true);
     try {
       const tel = telephone.replace(/\D/g, "");
+      // Fiche existante ? On conserve son statut : un fournisseur déjà
+      // validé qui republie une offre ne doit PAS être désactivé.
+      const fiches = await chargerFournisseurs();
+      const existante = fiches.find((f) => f.id === `tel_${tel}` || f.telephone.replace(/\D/g, "") === tel);
       // Create the supplier record
       await sauverFournisseur({
         nom: nom.trim(),
         telephone: tel,
         // Numéro WhatsApp dédié à la notification de candidature ;
-        // vide = on écrira au numéro de téléphone principal.
-        whatsapp: whatsapp.replace(/\D/g, "") || null,
+        // vide = on conserve le numéro existant de la fiche.
+        whatsapp: whatsapp.replace(/\D/g, "") || undefined,
         village: villageEffectif(),
-        productionLibre: produits.map((p) => p.nom).join(", "),
+        productionLibre: [
+          produits.map((p) => p.nom).join(", "),
+          note.trim() ? `${t("rej.noteLabel")}: ${note.trim()}` : "",
+        ].filter(Boolean).join(" — "),
         unite: produits[0]?.unite ?? "kg",
-        // Candidature : la fiche reste inactive tant que l'admin ne l'a pas validée.
-        actif: false,
+        // Candidature : inactif tant que l'admin n'a pas validé —
+        // sauf si la fiche existait déjà avec son propre statut.
+        actif: existante?.actif ?? false,
       });
       // Propose each product as a purchase
       for (const p of produits) {

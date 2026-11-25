@@ -835,17 +835,26 @@ export async function sauverFournisseur(params: {
   // Sans lienCompteId explicite, on conserve le lien existant :
   // une mise à jour de fiche ne doit pas délier le compte.
   const existant = await cacheLire<Fournisseur>("fournisseur", id);
+  // photo / categorie / whatsapp non fournis → on conserve l'existant
+  // (sinon une candidature /rejoindre effaçait la photo et la
+  // catégorie posées par l'admin).
+  const photo = params.photo !== undefined ? params.photo : (existant?.photo ?? null);
+  const productionCategorie =
+    params.productionCategorie !== undefined
+      ? params.productionCategorie
+      : (existant?.productionCategorie ?? null);
+  const whatsappFinal = params.whatsapp !== undefined ? whatsapp : (existant?.whatsapp ?? whatsapp);
   const fournisseur: Fournisseur = {
     id,
     profilId: params.lienCompteId ?? existant?.profilId ?? null,
     nom: params.nom,
     telephone: params.telephone,
-    whatsapp,
+    whatsapp: whatsappFinal,
     village: params.village,
-    photo: params.photo ?? null,
-    productionCategorie: (params.productionCategorie as never) ?? null,
-    productionLibre: params.productionLibre ?? "",
-    unite: params.unite ?? "kg",
+    photo,
+    productionCategorie: productionCategorie as never,
+    productionLibre: params.productionLibre ?? existant?.productionLibre ?? "",
+    unite: params.unite ?? existant?.unite ?? "kg",
     actif,
   };
   if (mboaReseau()) {
@@ -855,10 +864,10 @@ export async function sauverFournisseur(params: {
         id,
         nom: params.nom,
         telephone_237: params.telephone,
-        whatsapp,
+        whatsapp: whatsappFinal,
         village: params.village,
-        photo: params.photo ?? null,
-        production_categorie: params.productionCategorie ?? null,
+        photo,
+        production_categorie: productionCategorie ?? null,
         production_libre: params.productionLibre ?? "",
         unite: params.unite ?? "kg",
         actif,
