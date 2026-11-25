@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, FondMboa, SkeletonMboa, BoutonMboa } from "@/core/design_system/composants";
@@ -13,6 +13,8 @@ import { categoriesPerso, libelleCategorie, CategoriePerso } from "@/core/data/c
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { toutesAnnonces } from "@/core/data/depots";
 import { Annonce } from "@/core/types/annonce";
 import { annoncePromoPct, annonceExpiree } from "@/core/utils/promos";
@@ -49,19 +51,23 @@ function PageProduitInterne() {
   // Horodatage pour le badge « Nouveau » (Date.now() impur au render).
   const [maintenant, setMaintenant] = useState(0);
 
-  useEffect(() => {
-    async function charger() {
-      setMaintenant(Date.now());
-      const [s, a, p] = await Promise.all([chargerStock(), toutesAnnonces(), categoriesPerso()]);
-      const actifs = s.filter((x) => x.actif);
-      setStock(actifs);
-      setProduit(actifs.find((x) => x.slug === slug) ?? null);
-      setAnnonces(a.filter((x) => x.actif && !annonceExpiree(x)));
-      setPersos(p);
-      setChargement(false);
-    }
-    charger();
+  const recharger = useCallback(async () => {
+    setMaintenant(Date.now());
+    const [s, a, p] = await Promise.all([chargerStock(), toutesAnnonces(), categoriesPerso()]);
+    const actifs = s.filter((x) => x.actif);
+    setStock(actifs);
+    setProduit(actifs.find((x) => x.slug === slug) ?? null);
+    setAnnonces(a.filter((x) => x.actif && !annonceExpiree(x)));
+    setPersos(p);
+    setChargement(false);
   }, [slug]);
+
+  useEffect(() => {
+    void recharger();
+  }, [recharger]);
+
+  // Tirer vers le bas depuis le haut = recharger la fiche (stock frais).
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(recharger);
 
   if (!pret || chargement) {
     return (
@@ -102,6 +108,7 @@ function PageProduitInterne() {
 
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage
         titre={produit.nom}
         sousTitre={libelleCategorie(produit.categorie, persos)}

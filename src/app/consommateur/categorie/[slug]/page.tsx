@@ -13,6 +13,8 @@ import { usePanier, toast } from "@/core/etat/store";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { vibrer } from "@/core/utils/son";
 import { formaterFcfaCourt } from "@/core/utils/format_monnaie";
 
@@ -57,6 +59,8 @@ function PageCategorieInterne() {
 
   // Recharge au montage, toutes les 60 s et au retour sur l'onglet.
   useActualisation(charger, 60000);
+  // Tirer vers le bas depuis le haut = recharger la catégorie.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   if (!pret || chargement) {
     return (
@@ -77,6 +81,7 @@ function PageCategorieInterne() {
 
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage
         titre={`${emoji ? `${emoji} ` : ""}${titre}`}
         sousTitre={`${produits.length} ${t("cat.produits")}`}

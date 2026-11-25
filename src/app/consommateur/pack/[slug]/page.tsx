@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, FondMboa, SkeletonMboa, BoutonMboa } from "@/core/design_system/composants";
@@ -11,6 +11,8 @@ import { packComposantLibelle } from "@/core/types/pack_composant";
 import { usePanier } from "@/core/etat/store";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 
 /** Détail d'un plat : photo, prix et liste de ce qu'il contient. */
 export default function PagePack() {
@@ -39,14 +41,18 @@ function PagePackInterne() {
   const [produit, setProduit] = useState<Produit | null>(null);
   const [chargement, setChargement] = useState(true);
 
-  useEffect(() => {
-    async function charger() {
-      const v = await chargerVitrine();
-      setProduit(v.find((x) => x.slug === slug && produitEstPack(x)) ?? null);
-      setChargement(false);
-    }
-    charger();
+  const recharger = useCallback(async () => {
+    const v = await chargerVitrine();
+    setProduit(v.find((x) => x.slug === slug && produitEstPack(x)) ?? null);
+    setChargement(false);
   }, [slug]);
+
+  useEffect(() => {
+    void recharger();
+  }, [recharger]);
+
+  // Tirer vers le bas depuis le haut = recharger la fiche du plat.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(recharger);
 
   if (!pret || chargement) {
     return (
@@ -90,6 +96,7 @@ function PagePackInterne() {
 
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage
         titre={produit.nom}
         sousTitre={t("pack.contenu")}
