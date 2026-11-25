@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { toutesCommandes, chargerLivreurs, validerDevis, assignerLivreur, refuserDevis } from "@/core/data/depots";
 import { toast } from "@/core/etat/store";
 import { CarteMboa, EnTetePage, BadgeStatut, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { Commande, commandeMontantAPayer } from "@/core/types/commande_full";
 import { Livreur } from "@/core/types/livreur";
 import { STATUT_COMMANDE_INFO, StatutCommande } from "@/core/types/statuts";
@@ -63,6 +65,8 @@ export default function DevisAdminPage() {
 
   // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
   useActualisation(charger);
+  // Tirer vers le bas depuis le haut = recharger devis et livreurs.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   /** Validation du devis + envoi d'un livreur. */
   async function validerEtEnvoyer(c: Commande, livreurId?: string) {
@@ -137,6 +141,7 @@ export default function DevisAdminPage() {
   }
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage titre={t("adm.dev.titre")} sousTitre={t("adm.dev.sousTitre")} onRetour={() => router.back()} />
       <div className="px-4 pt-2 space-y-2">
         <div className="champ-recherche">

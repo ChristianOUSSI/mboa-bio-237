@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useSession, useReseau } from "@/core/etat/store";
 import { mesAchats } from "@/core/data/depots";
 import { CarteMboa, BoutonMboa, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { Achat, achatMontant, achatEstPayee, achatEstDu } from "@/core/types/achat";
 import { STATUT_ACHAT_INFO } from "@/core/types/achat";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
@@ -34,6 +36,8 @@ export default function AccueilFournisseur() {
 
   // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
   useActualisation(charger);
+  // Tirer vers le bas depuis le haut = recharger ventes et gains.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   if (!pret) {
     return (
@@ -46,6 +50,7 @@ export default function AccueilFournisseur() {
   }
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage
         titre="MBOA SUPPLIER"
         sousTitre={profil ? profil.village : ""}

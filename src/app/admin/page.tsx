@@ -6,6 +6,8 @@ import { useSession } from "@/core/etat/store";
 import { fileAttenteAchats, toutesCommandes, chargerStock, chargerLivreurs, chargerFournisseurs, activitesAdmin, synchroniserFileAttente, compterFile, ActiviteAdmin } from "@/core/data/depots";
 import { fileCompte } from "@/core/data/base_locale";
 import { CarteMboa, BoutonMboa, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { Achat } from "@/core/types/achat";
 import { Commande } from "@/core/types/commande_full";
 import { Produit } from "@/core/types/produit";
@@ -88,6 +90,8 @@ export default function TableauAdmin() {
 
   // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
   useActualisation(charger);
+  // Tirer vers le bas depuis le haut = recharger tout le tableau de bord.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   async function demanderNotif() {
     if (typeof Notification === "undefined") return;
@@ -141,6 +145,7 @@ export default function TableauAdmin() {
 
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage
         titre="MBOA ADMIN"
         sousTitre={t("adm.sousTitre")}
