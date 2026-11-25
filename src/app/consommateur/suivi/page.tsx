@@ -69,6 +69,9 @@ export default function SuiviPage() {
   // Âge (minutes) de la dernière position livreur, par commande - calculé
   // au chargement pour garder le render pur.
   const [agesPositions, setAgesPositions] = useState<Map<string, number>>(new Map());
+  // Heures écoulées depuis la livraison sans confirmation, par commande.
+  const [heuresAttente, setHeuresAttente] = useState<Map<string, number>>(new Map());
+  const livreursPrec = useRef<Map<string, string | null>>(new Map());
   const [confirmationCmd, setConfirmationCmd] = useState<string | null>(null);
   const [annulationCmd, setAnnulationCmd] = useState<string | null>(null);
   const [annulationEnCours, setAnnulationEnCours] = useState(false);
@@ -106,6 +109,22 @@ export default function SuiviPage() {
         }
       }
       statutsPrec.current.set(c.id, c.statut);
+      // Notification quand un livreur est assigné : le client sait
+      // qui va livrer, avec nom + plaque, avant même le départ.
+      const livreurAvant = livreursPrec.current.get(c.id);
+      if (livreurAvant == null && c.livreurNom) {
+        const texte = `🏍️ ${c.livreurNom}${c.livreurPlaque ? ` (${c.livreurPlaque})` : ""} · ${t("suivi.livreurAssigne")}`;
+        toast(texte);
+        vibrer();
+        if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+          try {
+            new Notification("🏍️ MBOA BIO", { body: texte, icon: "/logo-mboa.jpeg" });
+          } catch {
+            /* notification indisponible */
+          }
+        }
+      }
+      livreursPrec.current.set(c.id, c.livreurNom ?? null);
     }
     setCommandes(cmds);
     // Suivis en parallele : un await sequentiel par commande rendait
@@ -185,6 +204,15 @@ export default function SuiviPage() {
       }
     }
     setAgesPositions(ages);
+    // Heures depuis la livraison sans confirmation (rappel discret).
+    const attentes = new Map<string, number>();
+    for (const c of cmds) {
+      if (c.statut === StatutCommande.livree && c.livreeLe) {
+        const h = (Date.now() - new Date(c.livreeLe).getTime()) / 3600000;
+        if (!isNaN(h) && h >= 0) attentes.set(c.id, Math.floor(h));
+      }
+    }
+    setHeuresAttente(attentes);
   }
 
   useEffect(() => {
@@ -555,6 +583,13 @@ export default function SuiviPage() {
                         </button>
                       )}
                     </div>
+                  )}
+
+                  {/* Rappel doux : livrée depuis 2 h+ sans confirmation */}
+                  {commandeAttendConfirmation(c) && (heuresAttente.get(c.id) ?? 0) >= 2 && (
+                    <p className="text-aide mt-2 text-center font-bold" style={{ color: "var(--mboa-primary)" }}>
+                      💡 {t("suivi.relanceConfirmation")}
+                    </p>
                   )}
 
                   {/* Confirmation */}
