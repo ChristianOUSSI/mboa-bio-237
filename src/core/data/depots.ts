@@ -699,10 +699,13 @@ export async function modifierProduit(produitId: string, maj: {
     produit.emoji = maj.emoji;
     distant.emoji = maj.emoji;
   }
+  let syncOk = Object.keys(distant).length === 0;
   if (mboaReseau() && Object.keys(distant).length > 0) {
-    await mboaReseau()!.from("produits").update(distant).eq("id", produitId);
-    await mboaReseau()!.from("vitrine").update(distant).eq("id", produitId);
+    const { error } = await mboaReseau()!.from("produits").update(distant).eq("id", produitId);
+    syncOk = !error;
+    if (syncOk) await mboaReseau()!.from("vitrine").update(distant).eq("id", produitId);
   }
+  if (!syncOk) await fileAjouter("produit", produitId, "sync:modification", {});
   await cacheEcrire("produit", produit.id, produit);
   await cacheEcrire("vitrine", produit.id, produit);
   void notifierActiviteAdmin("act.produitModifie", produit.nom);
@@ -1539,7 +1542,10 @@ export async function ouvrirSessionLocale(profil: Profil): Promise<void> {
 export async function sauverProfil(profil: Profil): Promise<void> {
   await cacheEcrire("profil", profil.id, profil);
   const client = mboaReseau();
-  if (!client) return;
+  if (!client) {
+    await fileAjouter("profil", profil.id, "upsert:profil", {});
+    return;
+  }
   const { error } = await client.from("profiles").upsert({
     id: profil.id,
     role: profil.role,
@@ -1552,7 +1558,10 @@ export async function sauverProfil(profil: Profil): Promise<void> {
     longitude: profil.longitude ?? null,
     actif: profil.actif,
   });
-  if (error) console.warn("[synchro] profil:", error.message);
+  if (error) {
+    console.warn("[synchro] profil:", error.message);
+    await fileAjouter("profil", profil.id, "upsert:profil", {});
+  }
 }
 
 export async function deconnexionAuth(): Promise<void> {
