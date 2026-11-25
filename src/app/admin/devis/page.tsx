@@ -144,6 +144,9 @@ export default function DevisAdminPage() {
       <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage titre={t("adm.dev.titre")} sousTitre={t("adm.dev.sousTitre")} onRetour={() => router.back()} />
       <div className="px-4 pt-2 space-y-2">
+        {/* Recherche + filtres épinglés : la liste des devis est longue,
+            le comptoir filtre sans remonter. */}
+        <div className="barre-filtres -mx-4 px-4 pt-2 pb-2 space-y-2">
         <div className="champ-recherche">
           <span aria-hidden>🔍</span>
           <input
@@ -171,6 +174,7 @@ export default function DevisAdminPage() {
               {label}
             </button>
           ))}
+        </div>
         </div>
         <BoutonMboa variant="surface" className="w-full !min-h-[44px]" onClick={() => exporterCsv(commandesFiltrees)} disabled={commandesFiltrees.length === 0}>
           📊 {t("adm.dev.exporter")}

@@ -110,7 +110,7 @@ export default function LivraisonsPage() {
       <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage titre={t("adm.liv.titre")} sousTitre={t("adm.liv.sousTitre")} onRetour={() => router.back()} />
       <div className="flex-1 p-4 space-y-3">
-        <div className="champ-recherche">
+        <div className="champ-recherche barre-filtres -mx-4 px-4">
           <span aria-hidden>🔍</span>
           <input
             type="text"
