@@ -6,7 +6,7 @@ import { FondMboa, EnTetePage, CarteMboa, BoutonVoix } from "@/core/design_syste
 import { useTr } from "@/core/i18n";
 
 /**
- * Page « Comment ça marche » — guide en 4 étapes pour les clients,
+ * Page « Comment ça marche » - guide en 4 étapes pour les clients,
  * en très gros caractères et emojis, avec lecture vocale sur chaque
  * étape. Accessible sans connexion (aide avant même de s'inscrire).
  */

@@ -360,7 +360,7 @@ export default function MarchePage() {
             <button onClick={() => setRecherche("")} aria-label="Effacer" className="text-aide font-bold opacity-70">✕</button>
           )}
         </div>
-        {/* Filtre rapide par catégorie — ne montre que les catégories
+        {/* Filtre rapide par catégorie - ne montre que les catégories
             réellement présentes dans le stock affiché. */}
         {(() => {
           const presentes = [...new Set(vitrine.map((p) => p.categorie))];

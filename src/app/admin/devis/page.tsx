@@ -183,7 +183,7 @@ export default function DevisAdminPage() {
           const estNouveau = c.statut === StatutCommande.nouvelle;
           // Assignation possible : devis neuf (validation + envoi groupés)
           // ou déjà validé/en cours (changement de livreur sans re-décrémenter
-          // le stock — c'est ce qui manquait : une fois validé, impossible
+          // le stock - c'est ce qui manquait : une fois validé, impossible
           // de corriger une mauvaise assignation).
           const estAssignable =
             estNouveau ||
@@ -243,7 +243,7 @@ export default function DevisAdminPage() {
                 <p className="text-aide text-[var(--mboa-error)] mt-2">{t("adm.dev.sansLivreur")}</p>
               )}
 
-              {/* Réassignation : commande déjà validée ou en cours —
+              {/* Réassignation : commande déjà validée ou en cours -
                   on change juste le livreur, sans re-valider le devis. */}
               {!estNouveau && estAssignable && livreurs.length > 0 && (
                 <div className="mt-2 space-y-2">

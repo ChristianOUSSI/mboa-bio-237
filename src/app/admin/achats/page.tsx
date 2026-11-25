@@ -83,7 +83,7 @@ export default function AchatsAdminPage() {
       const fiches = await chargerFournisseurs();
       // Le fournisseurId d'un achat est `tel_<numéro>` ou un id de compte :
       // on retrouve la fiche par id, par compte lié, ou par téléphone
-      // (9 derniers chiffres) — les formats ne sont jamais garantis.
+      // (9 derniers chiffres) - les formats ne sont jamais garantis.
       const digits = a.fournisseurId.replace(/^tel_/, "").replace(/\D/g, "");
       const fin = digits.slice(-9);
       let f = fiches.find(
@@ -93,7 +93,7 @@ export default function AchatsAdminPage() {
           (fin.length >= 9 && x.telephone.replace(/\D/g, "").slice(-9) === fin),
       );
       if (!f) {
-        // Repli : le fournisseur s'est connecté sans fiche (ou id ≠ tel_) —
+        // Repli : le fournisseur s'est connecté sans fiche (ou id ≠ tel_) -
         // on résout le compte puis on crée la fiche à la volée.
         const profilVendeur = a.fournisseurId.startsWith("tel_")
           ? null
@@ -163,7 +163,7 @@ export default function AchatsAdminPage() {
           expediteur: profil,
           destinataireId: compte.id,
           destinataireRole: "fournisseur",
-          texte: `Bonjour ${f.nom}, votre espace fournisseur MBOA BIO 237 est prêt ! Identifiant : ${identifiant} — Mot de passe provisoire : ${mdp} (vous devrez en choisir un nouveau à la première connexion). À bientôt !`,
+          texte: `Bonjour ${f.nom}, votre espace fournisseur MBOA BIO 237 est prêt ! Identifiant : ${identifiant} - Mot de passe provisoire : ${mdp} (vous devrez en choisir un nouveau à la première connexion). À bientôt !`,
         }).catch(() => {});
       }
       toast(t("adm.ach.accesCree"));
@@ -223,14 +223,14 @@ export default function AchatsAdminPage() {
             à communiquer au vendeur (WhatsApp ou chat intégré). */}
         {accesCree && (
           <CarteMboa className="border-2" style={{ borderColor: "var(--mboa-primary)" }}>
-            <p className="text-corps font-bold">✅ {t("adm.ach.accesCreeTitre")} — {accesCree.nom}</p>
+            <p className="text-corps font-bold">✅ {t("adm.ach.accesCreeTitre")} - {accesCree.nom}</p>
             <p className="text-aide mt-1">
               {t("adm.ach.identifiant")} : <b>{accesCree.identifiant}</b><br />
               {t("adm.ach.mdpProvisoire")} : <b>{accesCree.mdp}</b>
             </p>
             <a
               className="btn-mboa btn-secondary mt-2 inline-block"
-              href={`https://wa.me/${accesCree.tel.replace(/\D/g, "").replace(/^237/, "237")}?text=${encodeURIComponent(`Bonjour ${accesCree.nom}, votre espace fournisseur MBOA BIO 237 est prêt ! Identifiant : ${accesCree.identifiant} — Mot de passe provisoire : ${accesCree.mdp} (à changer à la première connexion).`)}`}
+              href={`https://wa.me/${accesCree.tel.replace(/\D/g, "").replace(/^237/, "237")}?text=${encodeURIComponent(`Bonjour ${accesCree.nom}, votre espace fournisseur MBOA BIO 237 est prêt ! Identifiant : ${accesCree.identifiant} - Mot de passe provisoire : ${accesCree.mdp} (à changer à la première connexion).`)}`}
               target="_blank"
               rel="noreferrer"
             >

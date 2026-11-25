@@ -106,7 +106,7 @@ export default function SuperAdminPage() {
       setErreur(t("super.erreurId"));
       return;
     }
-    // L'identifiant doit être un email OU un téléphone normalisable —
+    // L'identifiant doit être un email OU un téléphone normalisable -
     // sinon le compte serait introuvable à la connexion.
     const estEmail = id.includes("@");
     if (!estEmail && !normaliserTel(id)) {

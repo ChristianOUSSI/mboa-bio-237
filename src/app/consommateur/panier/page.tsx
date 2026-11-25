@@ -172,7 +172,7 @@ export default function PanierPage() {
     setEnCours(true);
     try {
       // Prix recalculés au moment de la commande : le prix figé dans le
-      // panier datait de l'ajout — une promo expirée ou un prix ajusté
+      // panier datait de l'ajout - une promo expirée ou un prix ajusté
       // depuis ne doit plus être honoré.
       const vitrineFraiche = await chargerVitrine();
       const lignes = panier.lignes.map((l) => {

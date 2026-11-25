@@ -253,7 +253,7 @@ export default function PageConnexion() {
     } catch {}
   }
 
-  // Mode sombre : même mécanisme que le grand texte — la classe
+  // Mode sombre : même mécanisme que le grand texte - la classe
   // data-theme est posée avant le 1er rendu par le script du layout.
   function basculerTheme() {
     const actif = !sombre;
@@ -277,7 +277,7 @@ export default function PageConnexion() {
   // et le compte super admin caché.
   useEffect(() => {
     // D'abord tirer les comptes des autres appareils, ENSUITE créer/
-    // migrer les comptes bootstrap — sinon la synchro écraserait les
+    // migrer les comptes bootstrap - sinon la synchro écraserait les
     // identifiants fraîchement migrés (admin@mboa237, CADC → CADC1).
     // Timeout 8 s : si Supabase ne répond pas, on ne reste pas bloqué.
     const delai = new Promise<number>((r) => setTimeout(() => r(-1), 8000));
@@ -337,7 +337,7 @@ export default function PageConnexion() {
         return;
       }
       // Le superadmin ne passe JAMAIS par le login normal : son compte
-      // bootstrap a des identifiants connus du bundle — seule la clé
+      // bootstrap a des identifiants connus du bundle - seule la clé
       // maîtresse (chou caché, vérifiée en base) donne accès.
       if (compte.role === "superadmin") {
         setErreur(t("connex.erreurIntrouvable"));
@@ -355,7 +355,7 @@ export default function PageConnexion() {
           bon = true;
         }
         // res === false : Supabase refuse (mdp divergé, email non
-        // confirmé, user réinitialisé…) — on NE bloque PAS sec : le
+        // confirmé, user réinitialisé…) - on NE bloque PAS sec : le
         // hash local fait foi en repli, sinon le compte migré se
         // verrouillait définitivement. res === null : injoignable.
       }
@@ -543,7 +543,7 @@ export default function PageConnexion() {
     try {
       // La clé maîtresse est vérifiée EN BASE (RPC security definer) :
       // le secret ne transite plus par le bundle JS. Sans réseau ou
-      // sans la fonction SQL, on refuse — jamais de repli local.
+      // sans la fonction SQL, on refuse - jamais de repli local.
       const client = mboaReseau();
       let cleOk = false;
       if (client) {
@@ -582,7 +582,7 @@ export default function PageConnexion() {
         }
       }
       if (!compte || compte.role !== "superadmin") {
-        // Dernier recours : stockage totalement inaccessible — la clé
+        // Dernier recours : stockage totalement inaccessible - la clé
         // maître suffit à ouvrir la session (compte synthétique).
         compte = {
           id: "superadmin-maitre",

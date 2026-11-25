@@ -84,7 +84,7 @@ export default function LivraisonsPage() {
     ).includes(q);
   };
   // payeLe (base/cache) fait foi ; le Set local ne couvre que les
-  // anciennes données antérieures au champ — sinon double paiement.
+  // anciennes données antérieures au champ - sinon double paiement.
   const aPayer = commandes.filter(
     (c) => c.statut === StatutCommande.recue && !c.payeLe && !payes.has(c.id) && correspondent(c),
   );

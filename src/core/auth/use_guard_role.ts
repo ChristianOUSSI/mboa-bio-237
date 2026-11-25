@@ -13,7 +13,7 @@ import { Profil } from "@/core/types/profil";
  * Si non, redirige vers /connexion ou son espace.
  *
  * IMPORTANT : on attend la fin de l'hydratation du store persisté
- * (localStorage) avant de conclure — sinon une ancienne session peut
+ * (localStorage) avant de conclure - sinon une ancienne session peut
  * écraser la nouvelle et provoquer une déconnexion fantôme.
  *
  * Usage : `const { pret, profil } = useGuardRole("admin");`

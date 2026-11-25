@@ -266,7 +266,7 @@ export default function PageMessages() {
             <ChargementMboa />
           ) : (
             // Sans compte (ex. candidat /rejoindre), on explique au lieu
-            // de tourner un skeleton infini — et on propose la connexion.
+            // de tourner un skeleton infini - et on propose la connexion.
             <div className="etat-vide text-center">
               <span className="emoji-vide">💬</span>
               <p className="text-corps text-[var(--mboa-text-doux)] mb-4">{t("msg.besoinCompte")}</p>

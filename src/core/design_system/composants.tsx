@@ -256,7 +256,7 @@ export function BoutonVoix({ texte, label = "🔊" }: { texte: string; label?: s
   );
 }
 
-/** Toast de confirmation éphémère — monté dans FondMboa sur toutes les pages. */
+/** Toast de confirmation éphémère - monté dans FondMboa sur toutes les pages. */
 export function ToastMboa() {
   const { message, visible, cacher } = useToast();
   if (!visible) return null;

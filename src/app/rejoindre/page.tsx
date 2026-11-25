@@ -140,9 +140,9 @@ export default function RejoindrePage() {
         productionLibre: [
           produits.map((p) => p.nom).join(", "),
           note.trim() ? `${t("rej.noteLabel")}: ${note.trim()}` : "",
-        ].filter(Boolean).join(" — "),
+        ].filter(Boolean).join(" - "),
         unite: produits[0]?.unite ?? "kg",
-        // Candidature : inactif tant que l'admin n'a pas validé —
+        // Candidature : inactif tant que l'admin n'a pas validé -
         // sauf si la fiche existait déjà avec son propre statut.
         actif: existante?.actif ?? false,
       });

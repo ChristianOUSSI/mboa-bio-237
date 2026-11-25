@@ -81,7 +81,7 @@ export function ttsArreter(): void {
   window.speechSynthesis.cancel();
 }
 
-/** Dicte un code OTP — dans la langue de l'utilisateur. */
+/** Dicte un code OTP - dans la langue de l'utilisateur. */
 export function ttsDicterCode(code: string): void {
   const fr = useLangue.getState().langue === "fr";
   const caracteres = code.split("").join(", ");

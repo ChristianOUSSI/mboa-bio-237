@@ -77,7 +77,7 @@ export default function FournisseursAdminPage() {
           expediteur: profil,
           destinataireId: compte.id,
           destinataireRole: "fournisseur",
-          texte: `Bonjour ${f.nom}, votre espace fournisseur MBOA BIO 237 est prêt ! Identifiant : ${identifiant} — Mot de passe provisoire : ${mdp} (vous devrez en choisir un nouveau à la première connexion). À bientôt !`,
+          texte: `Bonjour ${f.nom}, votre espace fournisseur MBOA BIO 237 est prêt ! Identifiant : ${identifiant} - Mot de passe provisoire : ${mdp} (vous devrez en choisir un nouveau à la première connexion). À bientôt !`,
         }).catch(() => {});
       }
       return { identifiant, mdp };
@@ -109,7 +109,7 @@ export default function FournisseursAdminPage() {
     const inter = brut.startsWith("237") ? brut : `237${brut}`;
     let msg: string;
     if (valide && identifiant && mdp) {
-      msg = `Bonjour ${f.nom}, votre candidature fournisseur MBOA BIO 237 a été validée ! Votre espace fournisseur est prêt. Identifiant : ${identifiant} — Mot de passe provisoire : ${mdp} (à changer à la première connexion). Connectez-vous sur l'application. À bientôt !`;
+      msg = `Bonjour ${f.nom}, votre candidature fournisseur MBOA BIO 237 a été validée ! Votre espace fournisseur est prêt. Identifiant : ${identifiant} - Mot de passe provisoire : ${mdp} (à changer à la première connexion). Connectez-vous sur l'application. À bientôt !`;
     } else if (valide) {
       msg = `Bonjour ${f.nom}, votre candidature fournisseur MBOA BIO 237 a été validée ! Vous pouvez dès maintenant proposer vos récoltes depuis l'application. À bientôt !`;
     } else {

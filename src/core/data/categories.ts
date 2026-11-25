@@ -13,7 +13,7 @@ import { CATEGORIE_INFO, Categorie } from "../types/categorie";
 
 export interface CategoriePerso {
   id: string;
-  /** Slug unique — stocké dans `produit.categorie` / `achat.categorie`. */
+  /** Slug unique - stocké dans `produit.categorie` / `achat.categorie`. */
   slug: string;
   nom: string;
   emoji: string;

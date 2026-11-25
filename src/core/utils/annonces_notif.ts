@@ -6,7 +6,7 @@ const CLE_VUES = "mboa_annonces_vues";
 /**
  * Détecte les annonces actives jamais vues sur cet appareil et les
  * notifie (Notification système si permission accordée + son discret).
- * Appelé à chaque chargement du marché — la synchro fait le reste.
+ * Appelé à chaque chargement du marché - la synchro fait le reste.
  */
 export async function notifierNouvellesAnnonces(annonces: Annonce[]): Promise<void> {
   try {
@@ -29,7 +29,7 @@ export async function notifierNouvellesAnnonces(annonces: Annonce[]): Promise<vo
         typeof Notification !== "undefined" &&
         Notification.permission === "granted"
       ) {
-        new Notification(`MBOA BIO — ${info.libelle}`, {
+        new Notification(`MBOA BIO - ${info.libelle}`, {
           body: a.titre + (a.texte ? ` : ${a.texte}` : ""),
           icon: "/icon-192.png",
           tag: a.id,

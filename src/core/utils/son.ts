@@ -22,7 +22,7 @@ export function basculerSonNotification(): boolean {
   return actif;
 }
 
-/** Retour haptique discret (Android) — silencieux si non supporté. */
+/** Retour haptique discret (Android) - silencieux si non supporté. */
 export function vibrer(pattern: number | number[] = 15): void {
   const ms = pattern;
   try {
@@ -34,7 +34,7 @@ export function vibrer(pattern: number | number[] = 15): void {
   }
 }
 
-/** Petit bip deux tons — joué uniquement si l'interrupteur est activé. */
+/** Petit bip deux tons - joué uniquement si l'interrupteur est activé. */
 export function jouerNotificationSonore(): void {
   if (!sonNotificationActif() || typeof window === "undefined") return;
   try {

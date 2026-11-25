@@ -321,7 +321,7 @@ export async function confirmerReception(commandeId: string, satisfaction: "bon"
   // du client n'était persistée nulle part.
   const maintenant = new Date().toISOString();
   const cmd = await cacheLire<Commande>("commande", commandeId);
-  // Garde : seule une course livrée peut être confirmée — sinon un
+  // Garde : seule une course livrée peut être confirmée - sinon un
   // appel tardif marquerait « recue » une commande annulée/en cours.
   if (cmd && cmd.statut !== StatutCommande.livree) return;
   if (cmd) {
@@ -375,7 +375,7 @@ async function ecrireStockProduit(produit: Produit, nouvelleQte: number): Promis
     syncOk = !error;
     if (syncOk) await mboaReseau()!.from("vitrine").update({ quantite: nouvelleQte }).eq("id", produit.id);
   }
-  // Hors-ligne ou échec : la quantité est mise en file — le replay
+  // Hors-ligne ou échec : la quantité est mise en file - le replay
   // upsert tout le produit depuis le cache, sinon le stock divergeait.
   if (!syncOk) await fileAjouter("produit", produit.id, "sync:quantite", {});
   // Le client ne voit que le stock réel : vitrine et stock admin restent synchronisés
@@ -387,7 +387,7 @@ async function ecrireStockProduit(produit: Produit, nouvelleQte: number): Promis
 async function decrementerStock(ligne: LigneCommande): Promise<void> {
   if (!ligne.produitId || ligne.produitId.startsWith("libre_")) return;
   // Unité brute choisie (« sac »…) : seule une unité strictement égale à
-  // l'unité de stock du produit peut décrémenter — jamais à l'aveugle.
+  // l'unité de stock du produit peut décrémenter - jamais à l'aveugle.
   const uLigne = ligne.unite ?? ligneUniteReelle(ligne);
 
   let produit: Produit | null = null;
@@ -431,7 +431,7 @@ async function decrementerStock(ligne: LigneCommande): Promise<void> {
 /** L'admin valide le devis : statut nouvelle → validee_admin, et le stock diminue. */
 export async function validerDevis(commande: Commande): Promise<void> {
   const commandeId = commande.id;
-  // Garde : seule une commande « nouvelle » sort le stock — une
+  // Garde : seule une commande « nouvelle » sort le stock - une
   // re-validation décrémenterait le stock une seconde fois.
   if (commande.statut !== StatutCommande.nouvelle) return;
   const maj: Commande = { ...commande, statut: StatutCommande.valideeAdmin, stockSorti: true };
@@ -586,7 +586,7 @@ export async function ajusterProduit(produitId: string, maj: { quantite?: number
     syncOk = !error;
     if (syncOk) await mboaReseau()!.from("vitrine").update(miseAJour).eq("id", produitId);
   }
-  // Hors-ligne ou échec : mise en file — le replay synchronise le produit.
+  // Hors-ligne ou échec : mise en file - le replay synchronise le produit.
   if (!syncOk) await fileAjouter("produit", produitId, "sync:ajustement", {});
   await cacheEcrire("produit", produit.id, produit);
   await cacheEcrire("vitrine", produit.id, produit);
@@ -1447,7 +1447,7 @@ export async function validerAchat(achatId: string, prixMarchand?: number): Prom
     };
     produit.quantite += achat.quantite;
     // Produit existant : le prix d'achat négocié reste un FAIT à
-    // enregistrer (coût réel) — sinon les marges et le coût des
+    // enregistrer (coût réel) - sinon les marges et le coût des
     // commandes restaient calculés sur l'ancien prix.
     if (produitExistant && prixMarchand != null) {
       produit.prixAchat = prixMarchand;
@@ -2048,7 +2048,7 @@ export async function sauverAnnonce(params: {
   code?: string | null;
 }): Promise<void> {
   const id = params.id ?? uuidV4();
-  // En modification, on conserve actif/createdLe de l'existante —
+  // En modification, on conserve actif/createdLe de l'existante -
   // sinon éditer une annonce désactivée la réactivait et réinitialisait
   // sa date de création.
   const existante = params.id
@@ -2143,7 +2143,7 @@ async function restaurerStock(ligne: LigneCommande): Promise<void> {
 /**
  * Annule une course déjà validée (stock décrémenté) : remet le stock
  * et passe la commande à annulee. À utiliser à la place de refuserDevis
- * pour les courses en cours — sinon les produits restent en rupture
+ * pour les courses en cours - sinon les produits restent en rupture
  * et le client ne peut plus recommander.
  */
 export async function annulerCourseComplete(commande: Commande): Promise<void> {

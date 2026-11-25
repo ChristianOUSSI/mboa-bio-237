@@ -34,7 +34,7 @@ export interface CompteAuth {
    *  hash local - on n'appelle jamais Supabase pour eux. */
   authSupabase?: boolean;
   createdLe: string;
-  /** Tombstone : le compte a été supprimé — ne plus republier. */
+  /** Tombstone : le compte a été supprimé - ne plus republier. */
   supprime?: boolean;
 }
 
@@ -105,14 +105,14 @@ export const EMAIL_ADMIN_INITIAL = "admin123@test.com";
 export const ID_COMPTE_ADMIN_BOOTSTRAP = "bootstrap-admin";
 export const ID_COMPTE_SUPERADMIN = "superadmin-maitre";
 
-/** Ancien identifiant bootstrap — migré automatiquement vers le nouveau. */
+/** Ancien identifiant bootstrap - migré automatiquement vers le nouveau. */
 export const EMAIL_ADMIN_INITIAL_ANTERIEUR = "admin@mboa237";
 
 /** Identifiant affiché du super admin (compte caché, accessible via le chou 🥬). */
 export const IDENTIFIANT_SUPERADMIN = "OJCJ";
 export const EMAIL_SUPERADMIN = "cadc@mboa-super.local";
 const MDP_SUPERADMIN = "CADC";
-/** Ancien mot de passe super admin — migré automatiquement vers le nouveau. */
+/** Ancien mot de passe super admin - migré automatiquement vers le nouveau. */
 export const MDP_SUPERADMIN_ANTERIEUR = "CADC1";
 
 /** Mot de passe du super admin - utilisé uniquement à la création du compte. */

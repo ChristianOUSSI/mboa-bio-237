@@ -27,7 +27,7 @@ import {
 const TABLE = "admin_comptes";
 const TABLE_SUPPRIMES = "comptes_supprimes";
 
-/** Ids des comptes supprimés (tombstones) — chargés à chaque synchro. */
+/** Ids des comptes supprimés (tombstones) - chargés à chaque synchro. */
 let supprimesConnus: Set<string> | null = null;
 
 /** Purge locale d'un compte (id + alias tel/mail). */
@@ -185,7 +185,7 @@ export async function synchroniserComptesAdmin(): Promise<number> {
     for (const c of groupe) {
       if (c.id === meilleur.id || !c.actif) continue;
       // Doublons bootstrap / super admin : ce sont des artefacts de synchro,
-      // pas de vrais comptes — on les SUPPRIME (local + distant) au lieu de
+      // pas de vrais comptes - on les SUPPRIME (local + distant) au lieu de
       // simplement les révoquer, sinon la liste reste encombrée à jamais.
       if (estBootstrap || c.role === "superadmin") {
         await purgerCompteLocal(c, c.id);
@@ -244,7 +244,7 @@ export async function synchroniserComptesAdmin(): Promise<number> {
 
   // L'admin par défaut (admin123@test.com) est le compte maître du
   // comptoir : tout nouvel admin passe par lui. Il ne doit JAMAIS être
-  // révoqué — sinon plus personne ne peut créer les autres admins.
+  // révoqué - sinon plus personne ne peut créer les autres admins.
   // On force actif:true sur toutes les copies et on republie.
   const adminMaitre = tous.find(
     (c) =>

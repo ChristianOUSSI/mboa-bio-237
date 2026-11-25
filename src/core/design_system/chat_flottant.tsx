@@ -7,7 +7,7 @@ import { useSession } from "@/core/etat/store";
 import { messagesNonLus } from "@/core/data/depots";
 
 /**
- * Bouton flottant « discuter avec l'admin » — visible sur tous les menus
+ * Bouton flottant « discuter avec l'admin » - visible sur tous les menus
  * dès qu'une session existe, avec badge du nombre de messages non lus.
  * Masqué sur la page /messages elle-même.
  */

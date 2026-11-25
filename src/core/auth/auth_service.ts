@@ -73,7 +73,7 @@ export async function creerCompte(params: {
   motDePasse: string;
   /** Mot de passe par défaut à changer à la première connexion. */
   motDePasseParDefaut?: boolean;
-  /** Id fixe (comptes bootstrap) — sinon uuid aléatoire. */
+  /** Id fixe (comptes bootstrap) - sinon uuid aléatoire. */
   id?: string;
 }): Promise<CompteAuth> {
   const id = params.id ?? uuidV4();
@@ -189,11 +189,11 @@ export function estNouvelAppareil(compte: CompteAuth): boolean {
 export async function assurerCompteAdmin(): Promise<CompteAuth | null> {
   // Déduplication : si un compte porte déjà l'identifiant bootstrap
   // (créé sur un autre appareil puis synchronisé), on le réutilise
-  // au lieu d'en créer un second — sinon la connexion devient instable.
+  // au lieu d'en créer un second - sinon la connexion devient instable.
   const parId = await compteParIdentifiant(EMAIL_ADMIN_INITIAL);
   if (parId) return parId;
   // Migration : l'ancien identifiant bootstrap (mboa-admin@237) devient
-  // admin@mboa237 — même compte, même mot de passe par défaut.
+  // admin@mboa237 - même compte, même mot de passe par défaut.
   const ancien = await compteParIdentifiant(EMAIL_ADMIN_INITIAL_ANTERIEUR);
   if (ancien) {
     // La migration d'identifiant remet aussi le mot de passe par défaut :
@@ -244,7 +244,7 @@ export async function assurerCompteSuperAdmin(): Promise<CompteAuth | null> {
   }
   if (compte) {
     // Identifiants fixes : on force le hash du mot de passe canonique,
-    // comme le fait la synchro distante — ainsi le nouveau mot de passe
+    // comme le fait la synchro distante - ainsi le nouveau mot de passe
     // prend effet même sans Supabase et quelle que soit la version
     // antérieure stockée sur l'appareil.
     const hashActuel = await hacherMotDePasse(motDePasseSuperAdmin(), `mboa-${compte.id}`);

@@ -259,7 +259,7 @@ export default function StockAdminPage() {
           {edition && (
             <CarteMboa className="mb-3 anim-apparition" style={{ border: "2px solid var(--mboa-primary)" }}>
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-titre titre-section">✏️ {t("adm.stk.modifier")} — {edition.nom}</h3>
+                <h3 className="text-titre titre-section">✏️ {t("adm.stk.modifier")} - {edition.nom}</h3>
                 <button onClick={() => setEdition(null)} className="text-aide font-bold">✕</button>
               </div>
 
