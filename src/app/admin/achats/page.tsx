@@ -7,6 +7,8 @@ import { creerCompte, compteParIdentifiant, changerMotDePasse, majCompte, valide
 import { toast } from "@/core/etat/store";
 import { Profil } from "@/core/types/profil";
 import { CarteMboa, EnTetePage, BadgeStatut, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { Achat, achatMontant, achatResume, achatEstPrise } from "@/core/types/achat";
 import { STATUT_ACHAT_INFO } from "@/core/types/achat";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
@@ -61,6 +63,8 @@ export default function AchatsAdminPage() {
 
   // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
   useActualisation(charger);
+  // Tirer vers le bas depuis le haut = recharger la page.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   /** Mboa achète chez le fournisseur : la marchandise entre au stock. */
   async function signer(a: Achat) {
@@ -217,6 +221,7 @@ export default function AchatsAdminPage() {
   }
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage titre={t("adm.ach.titre")} sousTitre={t("adm.ach.sousTitre")} onRetour={() => router.back()} />
       <div className="flex-1 p-4 space-y-4">
         {/* Identifiants du compte fournisseur qui vient d'être créé :

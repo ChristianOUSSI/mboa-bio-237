@@ -18,6 +18,8 @@ import {
 } from "@/core/data/depots";
 import { MessageChat, RoleMessage } from "@/core/types/message";
 import { vibrer } from "@/core/utils/son";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { formaterDateHeure } from "@/core/utils/format_date";
 
 type Conversation = {
@@ -207,6 +209,9 @@ export default function PageMessages() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profil?.id]);
 
+  // Tirer vers le bas depuis le haut = recharger la conversation.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
+
   const conversations = useMemo(
     () => (estAdmin && messages ? grouperConversations(messages) : []),
     [estAdmin, messages],
@@ -327,6 +332,7 @@ export default function PageMessages() {
 
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage
         titre={titreConv}
         sousTitre={estAdmin ? t("msg.sousTitreAdmin") : t("msg.sousTitre")}

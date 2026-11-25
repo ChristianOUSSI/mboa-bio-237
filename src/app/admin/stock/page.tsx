@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { chargerStock, ajusterProduit, creerProduit, supprimerProduit, basculerProduitActif, modifierProduit } from "@/core/data/depots";
 import { CarteMboa, EnTetePage, JaugeMboa, BoutonVoix, BadgeStatut, BoutonMboa, PictoCategorie, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { Produit, produitJauge, produitMargeUnitaire, produitMargePct, produitEstAPerte, produitDisponibilite, produitEstPack } from "@/core/types/produit";
 import { CATEGORIES_ORDREES } from "@/core/types/categorie";
 import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
@@ -61,6 +63,8 @@ export default function StockAdminPage() {
 
   // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
   useActualisation(charger);
+  // Tirer vers le bas depuis le haut = recharger la page.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   async function ajusterQuantite(p: Produit, delta: number) {
     await ajusterProduit(p.id, { quantite: p.quantite + delta });
@@ -185,6 +189,7 @@ export default function StockAdminPage() {
   }
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage titre={t("adm.stock")} sousTitre={t("adm.stk.sousTitre")} onRetour={() => router.back()} />
 
       {/* Onglets */}

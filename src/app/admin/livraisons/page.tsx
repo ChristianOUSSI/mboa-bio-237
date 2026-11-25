@@ -6,6 +6,8 @@ import { toutesCommandes, payerLivreur, annulerCourseComplete } from "@/core/dat
 import { etatLire, etatEcrire } from "@/core/data/base_locale";
 import { lireParametre, ecrireParametre } from "@/core/data/parametres";
 import { CarteMboa, EnTetePage, BadgeStatut, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { Commande, commandeMontantAPayer } from "@/core/types/commande_full";
 import { STATUT_COMMANDE_INFO, StatutCommande } from "@/core/types/statuts";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
@@ -50,6 +52,8 @@ export default function LivraisonsPage() {
 
   // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
   useActualisation(charger);
+  // Tirer vers le bas depuis le haut = recharger la page.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   /** Annule une course assignée ou en cours (retour au comptoir). */
   async function annulerCourse(c: Commande) {
@@ -103,6 +107,7 @@ export default function LivraisonsPage() {
   }
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage titre={t("adm.liv.titre")} sousTitre={t("adm.liv.sousTitre")} onRetour={() => router.back()} />
       <div className="flex-1 p-4 space-y-3">
         <div className="champ-recherche">

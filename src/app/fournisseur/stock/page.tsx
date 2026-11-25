@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 
 import { chargerStock } from "@/core/data/depots";
 import { CarteMboa, EnTetePage, JaugeMboa, BoutonVoix, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { Produit, produitJauge, produitDisponibilite } from "@/core/types/produit";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { useGuardRole } from "@/core/auth/use_guard_role";
@@ -24,6 +26,8 @@ export default function StockFournisseurPage() {
 
   // Recharge au montage, toutes les 60 s et au retour sur l'onglet.
   useActualisation(charger, 60000);
+  // Tirer vers le bas depuis le haut = recharger la page.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   if (!pret) {
     return (
@@ -36,6 +40,7 @@ export default function StockFournisseurPage() {
   }
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage titre={t("stock.titre")} onRetour={() => router.back()} />
       <p className="px-4 py-2 text-aide text-[var(--mboa-text-doux)] italic">
         {t("stock.note")}
