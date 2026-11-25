@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { commandesCliente, confirmerReception, suiviCommande, partagerPositionGps } from "@/core/data/depots";
+import { commandesCliente, confirmerReception, suiviCommande, partagerPositionGps, annulerMaCommande } from "@/core/data/depots";
 import { cacheEcrire } from "@/core/data/base_locale";
 import { CarteColis } from "@/core/design_system/carte_colis";
 import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
@@ -70,6 +70,8 @@ export default function SuiviPage() {
   // au chargement pour garder le render pur.
   const [agesPositions, setAgesPositions] = useState<Map<string, number>>(new Map());
   const [confirmationCmd, setConfirmationCmd] = useState<string | null>(null);
+  const [annulationCmd, setAnnulationCmd] = useState<string | null>(null);
+  const [annulationEnCours, setAnnulationEnCours] = useState(false);
   const [satisfactionChoisie, setSatisfactionChoisie] = useState<Satisfaction | null>(null);
   const [motifChoisi, setMotifChoisi] = useState<MotifReception | null>(null);
   // Dernier partage GPS par commande : la position est re-publiée
@@ -516,6 +518,44 @@ export default function SuiviPage() {
                         </div>
                       );
                     })()}
+
+                  {/* Annulation par le client : possible tant que la
+                      commande n'est pas validée par le comptoir. */}
+                  {c.statut === StatutCommande.nouvelle && (
+                    <div className="mt-3">
+                      {annulationCmd === c.id ? (
+                        <div className="flex gap-2">
+                          <BoutonMboa variant="surface" onClick={() => setAnnulationCmd(null)} className="flex-1">
+                            {t("suivi.retour")}
+                          </BoutonMboa>
+                          <BoutonMboa
+                            variant="error"
+                            className="flex-1"
+                            disabled={annulationEnCours}
+                            onClick={async () => {
+                              setAnnulationEnCours(true);
+                              const r = await annulerMaCommande(c.id);
+                              setAnnulationEnCours(false);
+                              setAnnulationCmd(null);
+                              toast(r === "ok" ? t("suivi.annuleeOk") : t("suivi.nonAnnulable"));
+                              if (profil) await recharger(profil.id);
+                            }}
+                          >
+                            {annulationEnCours ? "..." : t("suivi.annulerCertains")}
+                          </BoutonMboa>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setAnnulationCmd(c.id)}
+                          className="text-aide font-bold"
+                          style={{ color: "var(--mboa-error)" }}
+                        >
+                          {t("suivi.annulerCmd")}
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   {/* Confirmation */}
                   {commandeAttendConfirmation(c) && (

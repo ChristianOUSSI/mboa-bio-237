@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node scripts/test_promos.mjs && node scripts/test_unites.mjs"
+    "test": "node scripts/test_promos.mjs && node scripts/test_unites.mjs && node scripts/test_suivi.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.109.0",

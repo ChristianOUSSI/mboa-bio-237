@@ -546,6 +546,36 @@ export async function demarrerLivraison(commandeId: string): Promise<void> {
   void enregistrerJalon(commandeId, JalonSuivi.motoPartie, "livreur");
 }
 
+/**
+ * Le client annule sa propre commande tant qu'elle est « nouvelle ».
+ * Garde côté base : l'update n'est accepté que si le statut est
+ * encore nouvelle - si l'admin a validé entre-temps (stock sorti),
+ * rien ne s'annule et on renvoie "refuse".
+ */
+export async function annulerMaCommande(commandeId: string): Promise<"ok" | "refuse"> {
+  const cmd = await cacheLire<Commande>("commande", commandeId);
+  if (!cmd || cmd.statut !== StatutCommande.nouvelle) return "refuse";
+  const maj: Commande = { ...cmd, statut: StatutCommande.annulee };
+  if (mboaReseau()) {
+    const { data, error } = await mboaReseau()!
+      .from("commandes")
+      .update({ statut_enum: "annulee", annule_le: new Date().toISOString() })
+      .eq("id", commandeId)
+      .eq("statut_enum", "nouvelle")
+      .select("id");
+    if (!error) {
+      if (!data || data.length === 0) return "refuse";
+      await cacheEcrire("commande", commandeId, maj);
+      void notifierActiviteAdmin("act.courseAnnulee", cmd.lignes.map((l) => l.nom).join(", "));
+      return "ok";
+    }
+  }
+  await fileAjouter("commande", commandeId, "update:statut=annulee", {});
+  await cacheEcrire("commande", commandeId, maj);
+  void notifierActiviteAdmin("act.courseAnnulee", cmd.lignes.map((l) => l.nom).join(", "));
+  return "ok";
+}
+
 /** L'admin refuse un devis : statut → annulee (avant toute sortie de stock). */
 export async function refuserDevis(commandeId: string): Promise<void> {
   if (mboaReseau()) {

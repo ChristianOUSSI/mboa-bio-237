@@ -149,19 +149,6 @@ export function suiviFromMaps(commandeId: string, maps: Record<string, unknown>[
   return { commandeId, etapes, positionActuelle: null, positionDepart: null, positionDestination: null };
 }
 
-/** Reconstruit les jalons du suivi depuis le statut de la commande (mode hors-ligne). */
-export function etapesDepuisStatut(statut: string, depuis: string): EtapeSuivi[] {
-  const base = new Date(depuis).toISOString();
-  const jalons: JalonSuivi[] = [];
-  // Chaque statut ne coche que les jalons réellement atteints :
-  // validé = panier en préparation, la moto ne part qu'à en_livraison.
-  if (statut === "validee_admin") jalons.push(JalonSuivi.panierPrepare);
-  else if (statut === "en_livraison") jalons.push(JalonSuivi.panierPrepare, JalonSuivi.motoPartie, JalonSuivi.enApproche);
-  else if (statut === "livree") jalons.push(JalonSuivi.panierPrepare, JalonSuivi.motoPartie, JalonSuivi.enApproche, JalonSuivi.arrive);
-  else if (statut === "recue") jalons.push(...JALON_SUIVI_ORDRE);
-  return jalons.map((jalon) => ({ jalon, horodatage: base, auteur: "auto" }));
-}
-
 /** Rayon (mètres) auquel le livreur est « en approche » puis « arrivé ». */
 export const RAYON_APPROCHE_M = 3000;
 export const RAYON_ARRIVE_M = 400;
@@ -199,6 +186,9 @@ export function etapesDepuisEtat(
     poser(JalonSuivi.motoPartie, createdLe);
   }
   if (s === StatutCommande.livree || s === StatutCommande.recue) {
+    // Livrée/reçue implique forcément le passage « en approche » :
+    // le GPS peut ensuite préciser l'horaire exact via la fusion.
+    poser(JalonSuivi.enApproche, livreeLe ?? createdLe);
     poser(JalonSuivi.arrive, livreeLe ?? createdLe);
   }
   if (s === StatutCommande.recue) {
