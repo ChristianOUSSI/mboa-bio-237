@@ -2467,10 +2467,14 @@ export async function messagesNonLus(profil: Profil): Promise<number> {
   ).length;
 }
 
-/** Marque comme lus les messages reçus par le profil. */
-export async function marquerMessagesLus(profil: Profil): Promise<void> {
+/** Marque comme lus les messages reçus par le profil.
+ *  `filtre` optionnel : ne marque que les messages du fil ouvert
+ *  (évite de perdre les badges non lus des autres conversations). */
+export async function marquerMessagesLus(profil: Profil, filtre?: (m: MessageChat) => boolean): Promise<void> {
   const messages = await messagesPour(profil);
-  const aLire = messages.filter((m) => !m.lu && m.expediteurId !== profil.id);
+  const aLire = messages.filter(
+    (m) => !m.lu && m.expediteurId !== profil.id && (!filtre || filtre(m)),
+  );
   for (const m of aLire) {
     const maj = { ...m, lu: true };
     await cacheEcrire("message", m.id, maj);

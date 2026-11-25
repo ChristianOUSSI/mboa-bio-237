@@ -253,7 +253,8 @@ export default function PageMessages() {
     if (!profil) return;
     const msgs = await messagesPour(profil);
     setMessages(msgs);
-    await marquerMessagesLus(profil).catch(() => {});
+    // Le marquage « lu » se fait dans l'effet dédié, scopé au fil
+    // ouvert — pas ici, sinon tous les fils perdent leurs badges.
   }
 
   useEffect(() => {
@@ -320,6 +321,28 @@ export default function PageMessages() {
   useEffect(() => {
     bas.current?.scrollIntoView({ behavior: "smooth" });
   }, [fil.length]);
+
+  // Marque « lu » uniquement le fil affiché : les autres conversations
+  // gardent leur badge de non lus. En vue liste (pas de fil ouvert),
+  // rien n'est marqué.
+  useEffect(() => {
+    if (!profil || !messages) return;
+    const d = setTimeout(() => {
+      let filtre: ((m: MessageChat) => boolean) | undefined;
+      if (vueConversations) {
+        if (!conversation) return;
+        const conv = conversations.find((c) => c.cle === conversation);
+        if (!conv) return;
+        const ids = new Set(conv.messages.map((m) => m.id));
+        filtre = (m) => ids.has(m.id);
+      } else {
+        const cle = convInitiale?.id ?? "__equipe__";
+        filtre = (m) => cleConversation(m, profil.id) === cle;
+      }
+      void marquerMessagesLus(profil, filtre).catch(() => {});
+    }, 0);
+    return () => clearTimeout(d);
+  }, [profil, messages, vueConversations, conversation, conversations, convInitiale]);
 
   async function envoyer(data?: { texte?: string; audio?: string | null }) {
     if (!profil || envoi) return;
