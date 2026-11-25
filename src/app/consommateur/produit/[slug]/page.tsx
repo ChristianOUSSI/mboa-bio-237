@@ -63,7 +63,9 @@ function PageProduitInterne() {
   }, [slug]);
 
   useEffect(() => {
-    void recharger();
+    // Différé : évite le setState synchrone dans le corps de l'effet.
+    const delai = setTimeout(() => void recharger(), 0);
+    return () => clearTimeout(delai);
   }, [recharger]);
 
   // Tirer vers le bas depuis le haut = recharger la fiche (stock frais).

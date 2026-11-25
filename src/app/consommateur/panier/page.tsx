@@ -105,7 +105,9 @@ export default function PanierPage() {
   }, []);
 
   useEffect(() => {
-    void charger();
+    // Différé : évite le setState synchrone dans le corps de l'effet.
+    const delai = setTimeout(() => void charger(), 0);
+    return () => clearTimeout(delai);
   }, [charger]);
 
   // Tirer vers le bas depuis le haut = recalculer prix, frais et promos.

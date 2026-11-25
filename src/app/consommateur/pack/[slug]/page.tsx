@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, FondMboa, SkeletonMboa, BoutonMboa } from "@/core/design_system/composants";
 import { chargerVitrine } from "@/core/data/depots";
-import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstPack } from "@/core/types/produit";
+import { Produit, produitAnnonceVocale, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstPack } from "@/core/types/produit";
 import { unitePour } from "@/core/types/unite";
 import { packComposantLibelle } from "@/core/types/pack_composant";
 import { usePanier } from "@/core/etat/store";
@@ -48,7 +48,9 @@ function PagePackInterne() {
   }, [slug]);
 
   useEffect(() => {
-    void recharger();
+    // Différé : évite le setState synchrone dans le corps de l'effet.
+    const delai = setTimeout(() => void recharger(), 0);
+    return () => clearTimeout(delai);
   }, [recharger]);
 
   // Tirer vers le bas depuis le haut = recharger la fiche du plat.

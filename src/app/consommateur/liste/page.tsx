@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useListe, usePanier } from "@/core/etat/store";
-import { CarteMboa, BoutonMboa, EnTetePage, BoutonVoix, FondMboa, SkeletonMboa, ChargementMboa } from "@/core/design_system/composants";
+import { CarteMboa, BoutonMboa, EnTetePage, BoutonVoix, FondMboa, ChargementMboa } from "@/core/design_system/composants";
 import { formaterFcfa, formaterFcfaCourt } from "@/core/utils/format_monnaie";
 import { CATEGORIES_ORDREES, Categorie } from "@/core/types/categorie";
 import { Unite, UNITE_INFO } from "@/core/types/unite";
@@ -13,7 +13,6 @@ import {
   exporterPdf,
   partagerWhatsApp,
   imprimerDocument,
-  construireTexteDocument,
 } from "@/core/utils/export_document";
 import { useState } from "react";
 import { useGuardRole } from "@/core/auth/use_guard_role";
