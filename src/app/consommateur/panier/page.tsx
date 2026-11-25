@@ -560,6 +560,7 @@ export default function PanierPage() {
                   ❌ {t("panier.codeInvalide")}
                 </p>
               ) : null}
+              <p className="text-aide mt-1 text-[var(--mboa-text-doux)]">{t("panier.codeNote")}</p>
             </CarteMboa>
 
             {/* Cost summary - bloqué en bas : total et validation toujours visibles */}

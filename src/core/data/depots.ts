@@ -763,22 +763,6 @@ export async function supprimerFournisseur(fournisseurId: string): Promise<void>
   }
 }
 
-/** Enregistre le mode et la référence de paiement d'une commande (à la livraison). */
-export async function enregistrerPaiementCommande(commandeId: string, mode: string, reference?: string): Promise<void> {
-  if (mboaReseau()) {
-    const { error } = await mboaReseau()!
-      .from("commandes")
-      .update({ paiement: mode, paiement_ref: reference ?? null })
-      .eq("id", commandeId);
-    if (!error) return;
-  }
-  await fileAjouter("commande", commandeId, "update:paiement", { mode, reference });
-  const cmd = await cacheLire<Commande>("commande", commandeId);
-  if (cmd) {
-    await cacheEcrire("commande", commandeId, { ...cmd, paiement: mode as never, paiementRef: reference ?? null });
-  }
-}
-
 /** L'admin crée ou met à jour une fiche fournisseur. */
 export async function sauverFournisseur(params: {
   id?: string;

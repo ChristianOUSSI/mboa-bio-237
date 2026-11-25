@@ -14,6 +14,7 @@ import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 import { vibrer } from "@/core/utils/son";
+import { formaterFcfaCourt } from "@/core/utils/format_monnaie";
 
 /** Page d'une catégorie : tous les produits qu'elle contient, prix et photos. */
 export default function PageCategorie() {
@@ -187,7 +188,7 @@ function CarteProduitCat({
                   fontSize: 13,
                 }}
               >
-                {u.unite}
+                {u.unite} · {formaterFcfaCourt(u.prix)}
               </button>
             );
           })}

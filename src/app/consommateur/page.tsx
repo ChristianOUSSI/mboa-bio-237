@@ -14,6 +14,7 @@ import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 import { formaterDate } from "@/core/utils/format_date";
+import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { toutesAnnonces } from "@/core/data/depots";
 import { TYPE_ANNONCE_INFO, Annonce } from "@/core/types/annonce";
 import { annonceEstPhare, annoncePromoPct, annonceExpiree } from "@/core/utils/promos";
@@ -75,7 +76,7 @@ function BlocQuantite({ produit, promoPct, t }: { produit: Produit; promoPct: (p
               color: actif ? "var(--mboa-primary)" : "var(--mboa-text-doux)",
             }}
           >
-            {u.unite} · {u.prix.toLocaleString("fr-FR")} F
+            {u.unite} · {formaterFcfa(u.prix)}
           </button>
         );
       })}
