@@ -6,8 +6,8 @@ import { CarteMboa, BoutonMboa, EnTetePage, BoutonVoix, FondMboa, ChargementMboa
 import { formaterFcfa, formaterFcfaCourt } from "@/core/utils/format_monnaie";
 import { commander, chargerVitrine, toutesAnnonces, fraisLivraisonPourQuartier } from "@/core/data/depots";
 import { Annonce } from "@/core/types/annonce";
-import { codePromoPct } from "@/core/utils/promos";
-import { Produit, produitEstRupture, produitPrixLabel, produitUniteReelle } from "@/core/types/produit";
+import { codePromoPct, annoncePromoPct } from "@/core/utils/promos";
+import { Produit, produitEstRupture, produitPrixLabel, produitUniteReelle, produitUnites } from "@/core/types/produit";
 import { resumerQuantites } from "@/core/types/commande";
 import { ModePaiement, MODE_PAIEMENT_INFO } from "@/core/types/statuts";
 import {
@@ -77,12 +77,28 @@ export default function PanierPage() {
     void lireParametre<number>(CLE_FRAIS, FRAIS_LIVRAISON_DEFAUT).then((f) => {
       if (typeof f === "number" && f >= 0) setFraisLivraisonCfg(f);
     });
-    // Suggestions : produits du marché absents du panier.
-    void chargerVitrine().then((v) => {
+    // Catalogue + annonces : suggestions, prix à jour, code promo.
+    void Promise.all([chargerVitrine(), toutesAnnonces()]).then(([v, a]) => {
+      const anns = a.filter((x) => x.actif);
+      setAnnonces(anns);
       const ids = new Set(panier.lignes.map((l) => l.produitId));
       setSuggestions(v.filter((p) => p.actif && p.quantite > 0 && !ids.has(p.id)).slice(0, 8));
+      // Le prix figé dans le panier datait de l'ajout : on le recalcule
+      // avec le catalogue et les promos ACTUELS pour que l'affichage,
+      // le total et la commande soient identiques.
+      const lignes = panier.lignes.map((l) => {
+        const p = v.find((x) => x.id === l.produitId);
+        if (!p) return l;
+        const u = produitUnites(p).find((x) => x.unite === l.unite);
+        if (!u) return l;
+        const pct = annoncePromoPct(anns, p);
+        const prix = pct ? Math.round(u.prix * (1 - pct / 100)) : u.prix;
+        return prix === l.prix ? l : { ...l, prix };
+      });
+      if (lignes.some((l, i) => l !== panier.lignes[i])) {
+        usePanier.getState().actualiserPrix(lignes);
+      }
     });
-    void toutesAnnonces().then((a) => setAnnonces(a.filter((x) => x.actif)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -155,17 +171,35 @@ export default function PanierPage() {
     setErreurAdresse(false);
     setEnCours(true);
     try {
-      const lignes = panier.lignes.map((l) => ({
-        produitId: l.produitId,
-        slug: l.slug ?? "",
-        nom: l.nom,
-        categorie: l.categorie,
-        quantite: l.quantite,
-        prix: codePct ? Math.round(l.prix * (1 - codePct / 100)) : l.prix,
-        unite: String(l.unite ?? "kg"),
-        photo: l.photo,
-        composants: l.composants,
-      }));
+      // Prix recalculés au moment de la commande : le prix figé dans le
+      // panier datait de l'ajout — une promo expirée ou un prix ajusté
+      // depuis ne doit plus être honoré.
+      const vitrineFraiche = await chargerVitrine();
+      const lignes = panier.lignes.map((l) => {
+        const p = vitrineFraiche.find((x) => x.id === l.produitId);
+        let prix = l.prix;
+        if (p) {
+          const unites = produitUnites(p);
+          // Unité disparue de la config ? On garde le prix de ligne
+          // plutôt que de facturer l'unité de base à la place.
+          const u = unites.find((x) => x.unite === l.unite);
+          if (u) {
+            const pct = annoncePromoPct(annonces, p);
+            prix = pct ? Math.round(u.prix * (1 - pct / 100)) : u.prix;
+          }
+        }
+        return {
+          produitId: l.produitId,
+          slug: l.slug ?? "",
+          nom: l.nom,
+          categorie: l.categorie,
+          quantite: l.quantite,
+          prix,
+          unite: String(l.unite ?? "kg"),
+          photo: l.photo,
+          composants: l.composants,
+        };
+      });
       await commander(lignes, profil.id, {
         appelSouhaite,
         numeroContact: appelSouhaite ? numeroContact.trim() || profil.telephone || null : null,

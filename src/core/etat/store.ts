@@ -71,6 +71,7 @@ interface PanierState {
   poser: (ligne: LigneCommande) => void;
   retirer: (cle: string) => void;
   ajuster: (cle: string, quantite: number) => void;
+  actualiserPrix: (lignes: LigneCommande[]) => void;
   vider: () => void;
   montantTotal: () => number;
   resumeQuantites: () => string;
@@ -108,6 +109,7 @@ export const usePanier = create<PanierState>()(
               : l,
           ).filter((l) => l.quantite > 0),
         })),
+      actualiserPrix: (lignes) => set(() => ({ lignes })),
       vider: () => set(() => ({ lignes: [] })),
       montantTotal: () =>
         get().lignes.reduce((somme, l) => somme + Math.round(l.quantite * l.prix), 0),
