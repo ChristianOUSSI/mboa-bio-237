@@ -8,14 +8,13 @@ import { chargerVitrine, toutesAnnonces } from "@/core/data/depots";
 import { Annonce } from "@/core/types/annonce";
 import { annoncePromoPct, annonceExpiree } from "@/core/utils/promos";
 import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
-import { Produit, produitAnnonceVocale, produitJauge, produitEstRupture, produitEstVitrine, produitEstPack, produitUnites } from "@/core/types/produit";
-import { usePanier, toast } from "@/core/etat/store";
+import { Produit, produitAnnonceVocale, produitJauge, produitEstRupture, produitEstVitrine, produitEstPack, produitPrixLabel } from "@/core/types/produit";
+import { BlocQuantite } from "@/core/design_system/bloc_quantite";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
 import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
-import { vibrer } from "@/core/utils/son";
 import { formaterFcfaCourt } from "@/core/utils/format_monnaie";
 
 /** Page d'une catégorie : tous les produits qu'elle contient, prix et photos. */
@@ -106,9 +105,9 @@ function PageCategorieInterne() {
   );
 }
 
-/** Carte produit de la page catégorie : quand le produit a plusieurs
- *  unités (kg / pièce / sac…), le client choisit la sienne et voit
- *  directement le prix correspondant avant d'ajouter au panier. */
+/** Carte produit de la page catégorie : même présentation que la
+ *  grille du marché - photo cliquable vers la fiche, prix et
+ *  BlocQuantite partagé (unité + quantité). */
 function CarteProduitCat({
   p,
   promoPct,
@@ -120,29 +119,7 @@ function CarteProduitCat({
   estNouveau: (x: Produit) => boolean;
   t: (k: string) => string;
 }) {
-  const panier = usePanier();
-  const unites = produitUnites(p);
-  const [uniteIdx, setUniteIdx] = useState(0);
-  const uniteChoisie = unites[Math.min(uniteIdx, unites.length - 1)];
   const pct = promoPct(p);
-  const prixAffiche = pct ? Math.round(uniteChoisie.prix * (1 - pct / 100)) : uniteChoisie.prix;
-
-  function poser() {
-    panier.poser({
-      produitId: p.id,
-      slug: p.slug,
-      nom: p.nom,
-      categorie: p.categorie,
-      quantite: 1,
-      prix: prixAffiche,
-      coutAchat: p.prixAchat ?? 0,
-      photo: p.photoReelle,
-      unite: uniteChoisie.unite,
-      composants: p.composants,
-    });
-    vibrer();
-    toast(`${p.nom} ${uniteChoisie.unite} ${t("toast.ajoute")}`);
-  }
 
   return (
     <CarteMboa className="card-produit !p-3">
@@ -176,51 +153,24 @@ function CarteProduitCat({
       </p>
       <JaugeMboa valeur={produitJauge(p)} />
 
-      {unites.length > 1 && (
-        <div className="flex flex-wrap gap-1.5 mt-2" role="radiogroup" aria-label={t("march.uniteChoisir")}>
-          {unites.map((u, i) => {
-            const actif = i === Math.min(uniteIdx, unites.length - 1);
-            return (
-              <button
-                key={u.unite}
-                type="button"
-                role="radio"
-                aria-checked={actif}
-                onClick={() => setUniteIdx(i)}
-                className="px-2.5 py-1 rounded-full text-aide font-bold border-2"
-                style={{
-                  borderColor: actif ? "var(--mboa-primary)" : "var(--mboa-border)",
-                  background: actif ? "var(--mboa-secondary-doux)" : "var(--mboa-surface)",
-                  color: actif ? "var(--mboa-primary)" : "var(--mboa-text-doux)",
-                  fontSize: 13,
-                }}
-              >
-                {u.unite} · {formaterFcfaCourt(u.prix)}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
+      {/* Prix de l'unité par défaut (+ promo) puis sélecteur partagé :
+          le choix d'unité et la quantité se font dans BlocQuantite,
+          comme sur la grille du marché. */}
       <div className="flex justify-between items-center mt-2">
         {pct ? (
           <span className="flex flex-col items-end">
-            <span className="text-aide line-through" style={{ color: "var(--mboa-text-doux)" }}>{uniteChoisie.prix} F/{uniteChoisie.unite}</span>
-            <span className="puce-prix" style={{ background: "var(--mboa-error)" }}>{prixAffiche} F -{pct} %</span>
+            <span className="text-aide line-through" style={{ color: "var(--mboa-text-doux)" }}>{produitPrixLabel(p)}</span>
+            <span className="puce-prix" style={{ background: "var(--mboa-error)" }}>
+              {formaterFcfaCourt(Math.round(p.prix * (1 - pct / 100)))} -{pct} %
+            </span>
           </span>
         ) : (
-          <span className="puce-prix">{uniteChoisie.prix} F / {uniteChoisie.unite}</span>
-        )}
-        {!produitEstRupture(p) && (
-          <button
-            onClick={poser}
-            className="btn-mboa btn-primary !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl"
-            aria-label={t("march.ajouter")}
-          >
-            +
-          </button>
+          <span className="puce-prix">{produitPrixLabel(p)}</span>
         )}
       </div>
+      {!produitEstRupture(p) && (
+        <BlocQuantite produit={p} promoPct={promoPct} t={t} />
+      )}
       {produitEstPack(p) && (
         <Link
           href={`/consommateur/pack/${encodeURIComponent(p.slug)}`}
