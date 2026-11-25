@@ -249,7 +249,23 @@ export default function PanierPage() {
         <EnTetePage titre={t("panier.envoye")} onRetour={() => router.push("/consommateur")} />
         <div className="flex-1 p-4">
           <div className="etat-vide anim-apparition">
-            <span className="emoji-vide" style={{ fontSize: 72 }}>✅</span>
+            <div className="relative inline-block mb-2">
+              <span className="emoji-vide" style={{ fontSize: 72 }}>✅</span>
+              {/* Petite liesse : emojis qui s'élèvent autour du succès */}
+              {["🎉", "🌿", "🥬", "🍅", "✨", "🥭"].map((e, i) => (
+                <span
+                  key={i}
+                  aria-hidden
+                  className="confetti-mboa"
+                  style={{
+                    left: `${8 + i * 15}%`,
+                    animationDelay: `${i * 0.18}s`,
+                  }}
+                >
+                  {e}
+                </span>
+              ))}
+            </div>
             <p className="text-corps font-bold">{t("panier.envoyeTexte")}</p>
             <p className="text-aide mt-1">🚴 {t("panier.delai")}</p>
           </div>

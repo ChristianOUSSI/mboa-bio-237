@@ -231,10 +231,12 @@ export default function PageConnexion() {
   const [enCours, setEnCours] = useState(false);
   const [roleChoisi, setRoleChoisi] = useState<AppRole>("consommateur");
   const [grandTexte, setGrandTexte] = useState(false);
+  const [sombre, setSombre] = useState(false);
 
   // Mode grand texte : synchronisé avec la classe posée avant le 1er rendu.
   useEffect(() => {
     setGrandTexte(document.documentElement.classList.contains("texte-grand"));
+    setSombre(document.documentElement.dataset.theme === "sombre");
   }, []);
 
   function basculerTexteGrand() {
@@ -243,6 +245,17 @@ export default function PageConnexion() {
     document.documentElement.classList.toggle("texte-grand", actif);
     try {
       localStorage.setItem("mboa-texte-grand", actif ? "1" : "0");
+    } catch {}
+  }
+
+  // Mode sombre : même mécanisme que le grand texte — la classe
+  // data-theme est posée avant le 1er rendu par le script du layout.
+  function basculerTheme() {
+    const actif = !sombre;
+    setSombre(actif);
+    document.documentElement.dataset.theme = actif ? "sombre" : "clair";
+    try {
+      localStorage.setItem("mboa-theme", actif ? "sombre" : "clair");
     } catch {}
   }
   const [modeInscription, setModeInscription] = useState<"telephone" | "email">("telephone");
@@ -697,6 +710,26 @@ export default function PageConnexion() {
             }}
           >
             {grandTexte ? "A+ ✓" : "A+"}
+          </button>
+          {/* Mode sombre / clair : persisté, appliqué avant le 1er rendu. */}
+          <button
+            type="button"
+            aria-label={sombre ? "Passer en mode clair" : "Passer en mode sombre"}
+            aria-pressed={sombre}
+            onClick={basculerTheme}
+            style={{
+              borderRadius: 999,
+              padding: "8px 14px",
+              fontWeight: 800,
+              fontSize: 15,
+              border: "1.5px solid rgba(255,255,255,0.35)",
+              background: sombre ? "#FFD54F" : "rgba(255,255,255,0.16)",
+              color: sombre ? "#3E2723" : "rgba(255,255,255,0.85)",
+              cursor: "pointer",
+              backdropFilter: "blur(6px)",
+            }}
+          >
+            {sombre ? "☀️" : "🌙"}
           </button>
         </div>
       </div>

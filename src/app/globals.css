@@ -1207,3 +1207,33 @@ select:focus-visible {
   .halo-alerte { animation: none; }
   .emoji-anime { animation: none; }
 }
+
+/* Transition de page : fondu + glissement doux à chaque navigation */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.transition-page {
+  animation: page-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .transition-page { animation: none; }
+}
+
+/* Célébration commande : emojis qui s'élèvent autour du ✅ */
+.confetti-mboa {
+  position: absolute;
+  bottom: 30%;
+  font-size: 22px;
+  opacity: 0;
+  animation: confetti-leve 2.4s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes confetti-leve {
+  0% { opacity: 0; transform: translateY(10px) scale(0.6) rotate(0deg); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-70px) scale(1.15) rotate(24deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .confetti-mboa { animation: none; opacity: 0; }
+}
