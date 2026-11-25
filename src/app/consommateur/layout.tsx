@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { NavBasConsommateur } from "@/core/design_system/nav_bas";
 
 export const metadata: Metadata = {
   title: "Espace client - MBOA BIO 237",
@@ -6,5 +8,12 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <>
+      <div className="pb-nav-bas">{children}</div>
+      <Suspense fallback={null}>
+        <NavBasConsommateur />
+      </Suspense>
+    </>
+  );
 }

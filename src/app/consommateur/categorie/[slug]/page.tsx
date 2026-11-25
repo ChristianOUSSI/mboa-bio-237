@@ -142,27 +142,29 @@ function CarteProduitCat({
   return (
     <CarteMboa className="card-produit !p-3">
       <div className="flex justify-between items-start mb-1">
-        <div className="flex items-center gap-1">
+        <Link href={`/consommateur/produit/${encodeURIComponent(p.slug)}`} className="flex items-center gap-1 min-w-0">
           {p.emoji ?? <PictoCategorie categorie={p.categorie} size={24} />}
-          <h3 className="text-corps font-bold">{p.nom}</h3>
+          <h3 className="text-corps font-bold truncate">{p.nom}</h3>
           {estNouveau(p) && (
-            <span className="text-aide px-1.5 py-0.5 rounded-full font-bold" style={{ background: "var(--mboa-accent-doux)", color: "var(--mboa-primary)", fontSize: 11 }}>
+            <span className="text-aide px-1.5 py-0.5 rounded-full font-bold shrink-0" style={{ background: "var(--mboa-accent-doux)", color: "var(--mboa-primary)", fontSize: 11 }}>
               {t("march.nouveau")}
             </span>
           )}
-        </div>
+        </Link>
         <BoutonVoix texte={produitAnnonceVocale(p, true)} />
       </div>
 
-      <div className="zone-photo w-full h-32 rounded-xl flex items-center justify-center mb-2 overflow-hidden">
-        {p.emoji ? (
-          <span className="emoji-anime" style={{ fontSize: 64 }} aria-hidden>{p.emoji}</span>
-        ) : p.photoReelle ? (
-          <img src={p.photoReelle} alt={p.nom} loading="lazy" decoding="async" className="w-full h-full object-cover rounded-xl" />
-        ) : (
-          <PictoCategorie categorie={p.categorie} size={64} />
-        )}
-      </div>
+      <Link href={`/consommateur/produit/${encodeURIComponent(p.slug)}`} className="block">
+        <div className="zone-photo w-full h-32 rounded-xl flex items-center justify-center mb-2 overflow-hidden">
+          {p.emoji ? (
+            <span className="emoji-anime" style={{ fontSize: 64 }} aria-hidden>{p.emoji}</span>
+          ) : p.photoReelle ? (
+            <img src={p.photoReelle} alt={p.nom} loading="lazy" decoding="async" className="w-full h-full object-cover rounded-xl" />
+          ) : (
+            <PictoCategorie categorie={p.categorie} size={64} />
+          )}
+        </div>
+      </Link>
 
       <p className="text-aide text-[var(--mboa-text-doux)] mb-1">
         {produitEstRupture(p) ? t("march.rupture") : t("march.disponible")}

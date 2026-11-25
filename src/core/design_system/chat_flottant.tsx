@@ -36,13 +36,18 @@ export function BoutonChatFlottant() {
 
   if (!profil || pathname === "/messages") return null;
 
+  // Sur l'espace client, la nav basse occupe ~68px en bas : on remonte le bouton.
+  const avecNavBas = pathname?.startsWith("/consommateur") ?? false;
+
   return (
     <Link
       href="/messages"
       aria-label="Discuter avec l'admin"
       className={`fixed z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-transform active:scale-90 ${nonLus > 0 ? "halo-alerte" : ""}`}
       style={{
-        bottom: "calc(1.25rem + env(safe-area-inset-bottom, 0px))",
+        bottom: avecNavBas
+          ? "calc(5.75rem + env(safe-area-inset-bottom, 0px))"
+          : "calc(1.25rem + env(safe-area-inset-bottom, 0px))",
         left: "1rem",
         background: "var(--mboa-secondary, #AED581)",
         color: "#1E5128",

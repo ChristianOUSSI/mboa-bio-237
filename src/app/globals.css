@@ -1240,3 +1240,73 @@ select:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .confetti-mboa { animation: none; opacity: 0; }
 }
+
+/* ============================================================
+   NAVIGATION BASSE - espace client (pouce-friendly, toujours visible)
+   ============================================================ */
+.nav-bas {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid rgba(46, 125, 50, 0.14);
+  box-shadow: 0 -4px 18px rgba(27, 94, 32, 0.10);
+}
+.nav-bas-item {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 52px;
+  border-radius: 14px;
+  color: var(--mboa-text-mute, #6b7c6e);
+  text-decoration: none;
+  transition: color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+.nav-bas-item:active { transform: scale(0.95); }
+.nav-bas-item.actif {
+  color: var(--mboa-primary, #2E7D32);
+  background: rgba(174, 213, 129, 0.28);
+  font-weight: 800;
+}
+.nav-bas-icon { font-size: 20px; line-height: 1; }
+.nav-bas-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  padding: 0 2px;
+}
+.nav-bas-badge {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 26px);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--mboa-error, #C62828);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+/* Réserve la place de la barre pour que le contenu ne passe pas dessous */
+.pb-nav-bas { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }

@@ -598,7 +598,7 @@ export default function PanierPage() {
             </CarteMboa>
 
             {/* Cost summary - bloqué en bas : total et validation toujours visibles */}
-            <CarteMboa className="mt-3 anim-apparition sticky bottom-4 z-30 !shadow-[0_16px_40px_-10px_rgba(30,81,40,0.4)]" style={{ border: "2px solid var(--mboa-primary)" }}>
+            <CarteMboa className="mt-3 anim-apparition sticky bottom-20 z-30 !shadow-[0_16px_40px_-10px_rgba(30,81,40,0.4)]" style={{ border: "2px solid var(--mboa-primary)" }}>
               <div className="space-y-1 mb-3">
                 <div className="flex justify-between text-corps">
                   <span>{t("panier.produits")}</span>
@@ -662,7 +662,7 @@ export default function PanierPage() {
 
             {/* Navigation entre étapes : total visible + Continuer / Retour */}
             {etape < 3 && (
-              <CarteMboa className="mt-3 anim-apparition sticky bottom-4 z-30 !shadow-[0_16px_40px_-10px_rgba(30,81,40,0.4)]" style={{ border: "2px solid var(--mboa-primary)" }}>
+              <CarteMboa className="mt-3 anim-apparition sticky bottom-20 z-30 !shadow-[0_16px_40px_-10px_rgba(30,81,40,0.4)]" style={{ border: "2px solid var(--mboa-primary)" }}>
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-aide text-[var(--mboa-text-doux)]">{t("panier.total")}</p>

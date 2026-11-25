@@ -560,6 +560,14 @@ const DICT: Record<Lang, Record<string, string>> = {
     "pack.videIngredients": "La composition de ce plat n'est pas encore détaillée.",
     "pack.ajouterPanier": "Ajouter au panier",
 
+    // Fiche produit
+    "produit.fiche": "Fiche produit",
+    "produit.introuvable": "Ce produit est introuvable ou n'est plus au comptoir.",
+    "produit.bundleContenu": "Contenu du lot",
+    "produit.voirFiche": "Voir la fiche",
+    "produit.perissable": "Produit frais",
+    "produit.conservation": "À consommer rapidement",
+
     // Admin - stock
     "adm.stk.sousTitre": "Gestion complète du comptoir",
     "adm.stk.ajouter": "+ Ajouter un produit",
@@ -1295,6 +1303,14 @@ const DICT: Record<Lang, Record<string, string>> = {
     "pack.introuvable": "This dish is unavailable.",
     "pack.videIngredients": "This dish composition is not detailed yet.",
     "pack.ajouterPanier": "Add to cart",
+
+    // Product details
+    "produit.fiche": "Product details",
+    "produit.introuvable": "This product is unavailable.",
+    "produit.bundleContenu": "Bundle contents",
+    "produit.voirFiche": "View details",
+    "produit.perissable": "Fresh product",
+    "produit.conservation": "Eat soon",
 
     // Admin - stock
     "adm.stk.sousTitre": "Full counter management",

@@ -157,7 +157,7 @@ function PagePackInterne() {
           </ul>
         </CarteMboa>
 
-        <div className="sticky bottom-4 z-30 mt-2">
+        <div className="sticky bottom-20 z-30 mt-2">
           {!produitEstRupture(produit) && (
             <BoutonMboa variant="primary" onClick={poserAuPanier} className="w-full !text-titre mb-2">
               🛒 {t("pack.ajouterPanier")}

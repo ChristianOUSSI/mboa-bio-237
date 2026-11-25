@@ -3,149 +3,30 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession, usePanier, useData, useReseau, toast, clePanier } from "@/core/etat/store";
+import { useSession, usePanier, useData, useReseau } from "@/core/etat/store";
 import { chargerVitrine, chargerCatalogue, commandesCliente, compterFile } from "@/core/data/depots";
-import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa, ChargementMboa } from "@/core/design_system/composants";
+import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, FondMboa, ChargementMboa } from "@/core/design_system/composants";
+import { BlocQuantite } from "@/core/design_system/bloc_quantite";
 import { CATEGORIES_ORDREES } from "@/core/types/categorie";
 import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
-import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitEstVitrine, produitEstPack, produitUnites } from "@/core/types/produit";
+import { Produit, produitAnnonceVocale, produitPrixLabel, produitJauge, produitEstRupture, produitEstVitrine, produitEstPack } from "@/core/types/produit";
 import { Commande } from "@/core/types/commande_full";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
 import { formaterDate } from "@/core/utils/format_date";
-import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { toutesAnnonces } from "@/core/data/depots";
 import { TYPE_ANNONCE_INFO, Annonce } from "@/core/types/annonce";
 import { annonceEstPhare, annoncePromoPct, annonceExpiree } from "@/core/utils/promos";
 import { notifierNouvellesAnnonces } from "@/core/utils/annonces_notif";
 import { OnboardingMboa, estOnboardingVu } from "@/core/design_system/onboarding";
-import { vibrer } from "@/core/utils/son";
-
-/** Sélecteur de quantité sur la fiche produit : on tape la quantité
- *  souhaitée (ex. 30, 20) au lieu de taper + une par une. */
-function BlocQuantite({ produit, promoPct, t }: { produit: Produit; promoPct: (p: Produit) => number | null; t: (k: string) => string }) {
-  const panier = usePanier();
-  const [qte, setQte] = useState(1);
-  // Multi-unités : le client choisit kg / pièce / sac… et voit le prix
-  // de l'unité sélectionnée avant d'ajouter.
-  const unites = produitUnites(produit);
-  const [uniteIdx, setUniteIdx] = useState(0);
-  const uniteChoisie = unites[Math.min(uniteIdx, unites.length - 1)];
-  const enPanier = panier.lignes
-    .filter((l) => l.produitId === produit.id && l.unite === uniteChoisie.unite)
-    .reduce((s, l) => s + l.quantite, 0);
-  const cle = clePanier(produit.id, uniteChoisie.unite);
-
-  function ajouter() {
-    const n = Math.max(1, Math.floor(qte) || 1);
-    const pct = promoPct(produit) ?? 0;
-    const prix = pct ? Math.round(uniteChoisie.prix * (1 - pct / 100)) : uniteChoisie.prix;
-    panier.poser({
-      produitId: produit.id,
-      slug: produit.slug,
-      nom: produit.nom,
-      categorie: produit.categorie,
-      quantite: n,
-      prix,
-      coutAchat: produit.prixAchat ?? 0,
-      photo: produit.photoReelle,
-      unite: uniteChoisie.unite,
-      composants: produit.composants,
-    });
-    vibrer();
-    toast(`${produit.nom} ×${n} ${uniteChoisie.unite} ${t("toast.ajoute")}`);
-    setQte(1);
-  }
-
-  const pucesUnites = unites.length > 1 && (
-    <div className="flex flex-wrap gap-1.5 mb-1.5" role="radiogroup" aria-label={t("march.uniteChoisir")}>
-      {unites.map((u, i) => {
-        const actif = i === Math.min(uniteIdx, unites.length - 1);
-        return (
-          <button
-            key={u.unite}
-            type="button"
-            role="radio"
-            aria-checked={actif}
-            onClick={() => { setUniteIdx(i); setQte(1); }}
-            className="px-3 py-1.5 rounded-full text-aide font-bold border-2 transition-colors"
-            style={{
-              borderColor: actif ? "var(--mboa-primary)" : "var(--mboa-border)",
-              background: actif ? "var(--mboa-secondary-doux)" : "var(--mboa-surface)",
-              color: actif ? "var(--mboa-primary)" : "var(--mboa-text-doux)",
-            }}
-          >
-            {u.unite} · {formaterFcfa(u.prix)}
-          </button>
-        );
-      })}
-    </div>
-  );
-
-  if (enPanier > 0) {
-    return (
-      <div className="mt-2">
-        {pucesUnites}
-        <div className="flex items-center justify-between gap-1">
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => panier.ajuster(cle, enPanier - 1)}
-            className="btn-mboa btn-surface !min-h-[40px] !min-w-[40px] !rounded-xl text-xl"
-            aria-label={`Moins de ${produit.nom}`}
-          >
-            −
-          </button>
-          <span className="text-corps font-bold min-w-[28px] text-center">{enPanier}</span>
-          <button
-            onClick={() => panier.ajuster(cle, enPanier + 1)}
-            className="btn-mboa btn-secondary !min-h-[40px] !min-w-[40px] !rounded-xl text-xl"
-            aria-label={`Plus de ${produit.nom}`}
-          >
-            +
-          </button>
-        </div>
-        <button
-          onClick={ajouter}
-          className="btn-mboa btn-primary !min-h-[40px] !rounded-xl px-3 text-aide font-bold"
-        >
-          +{t("march.ajouter")}
-        </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-2">
-      {pucesUnites}
-      <div className="flex items-center gap-1.5">
-      <input
-        type="number"
-        inputMode="numeric"
-        min={1}
-        value={qte}
-        onChange={(e) => setQte(Math.max(1, parseInt(e.target.value) || 1))}
-        className="champ-mboa !min-h-[44px] !w-16 text-center text-corps font-bold"
-        aria-label={t("march.quantite")}
-      />
-      <button
-        onClick={ajouter}
-        className="btn-mboa btn-primary flex-1 !min-h-[44px] !rounded-xl text-aide font-bold"
-      >
-        + {t("march.ajouter")}
-      </button>
-      </div>
-    </div>
-  );
-}
 
 export default function MarchePage() {
   const router = useRouter();
   const { pret, profil } = useGuardRole("consommateur");
   const { deconnexion } = useSession();
   const panier = usePanier();
-  const { vitrine, catalogue, setVitrine, setCatalogue } = useData();
+  const { vitrine, setVitrine, setCatalogue } = useData();
   const { enLigne, fileAttente, setEnLigne, setFileAttente } = useReseau();
   const [persos, setPersos] = useState<CategoriePerso[]>([]);
   const [commandes, setCommandes] = useState<Commande[]>([]);
@@ -441,17 +322,19 @@ export default function MarchePage() {
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: "none" }}>
               {produitsPhares.map((p) => (
                 <CarteMboa key={p.id} className="card-produit !p-3 shrink-0" style={{ width: 190 }}>
-                  <div className="zone-photo w-full h-24 rounded-xl flex items-center justify-center mb-2 overflow-hidden">
-                    {p.emoji ? (
-                      <span className="emoji-anime" style={{ fontSize: 48 }} aria-hidden>{p.emoji}</span>
-                    ) : p.photoReelle ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.photoReelle} alt={p.nom} loading="lazy" decoding="async" className="w-full h-full object-cover" />
-                    ) : (
-                      <PictoCategorie categorie={p.categorie} size={48} />
-                    )}
-                  </div>
-                  <h3 className="text-corps font-bold truncate">{p.nom}</h3>
+                  <Link href={`/consommateur/produit/${encodeURIComponent(p.slug)}`} className="block">
+                    <div className="zone-photo w-full h-24 rounded-xl flex items-center justify-center mb-2 overflow-hidden">
+                      {p.emoji ? (
+                        <span className="emoji-anime" style={{ fontSize: 48 }} aria-hidden>{p.emoji}</span>
+                      ) : p.photoReelle ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.photoReelle} alt={p.nom} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                      ) : (
+                        <PictoCategorie categorie={p.categorie} size={48} />
+                      )}
+                    </div>
+                    <h3 className="text-corps font-bold truncate">{p.nom}</h3>
+                  </Link>
                   {(() => {
                     const pct = promoPct(p);
                     return pct ? (
@@ -482,28 +365,30 @@ export default function MarchePage() {
             {produitsFiltres.map((p) => (
               <CarteMboa key={p.id} className="card-produit !p-3">
                 <div className="flex justify-between items-start mb-1">
-                  <div className="flex items-center gap-1">
+                  <Link href={`/consommateur/produit/${encodeURIComponent(p.slug)}`} className="flex items-center gap-1 min-w-0">
                     {p.emoji ?? <PictoCategorie categorie={p.categorie} size={24} />}
-                    <h3 className="text-corps font-bold">{p.nom}</h3>
+                    <h3 className="text-corps font-bold truncate">{p.nom}</h3>
                     {estNouveau(p) && (
-                      <span className="text-aide px-1.5 py-0.5 rounded-full font-bold" style={{ background: "var(--mboa-accent-doux)", color: "var(--mboa-primary)", fontSize: 11 }}>
+                      <span className="text-aide px-1.5 py-0.5 rounded-full font-bold shrink-0" style={{ background: "var(--mboa-accent-doux)", color: "var(--mboa-primary)", fontSize: 11 }}>
                         {t("march.nouveau")}
                       </span>
                     )}
-                  </div>
+                  </Link>
                   <BoutonVoix texte={produitAnnonceVocale(p, true)} />
                 </div>
 
-                {/* Photo or pictogram */}
-                <div className="zone-photo w-full h-32 rounded-xl flex items-center justify-center mb-2 overflow-hidden">
-                  {p.emoji ? (
-                    <span className="emoji-anime" style={{ fontSize: 64 }} aria-hidden>{p.emoji}</span>
-                  ) : p.photoReelle ? (
-                    <img src={p.photoReelle} alt={p.nom} loading="lazy" decoding="async" className="w-full h-full object-cover rounded-xl" />
-                  ) : (
-                    <PictoCategorie categorie={p.categorie} size={64} />
-                  )}
-                </div>
+                {/* Photo or pictogram - clique vers la fiche produit */}
+                <Link href={`/consommateur/produit/${encodeURIComponent(p.slug)}`} className="block">
+                  <div className="zone-photo w-full h-32 rounded-xl flex items-center justify-center mb-2 overflow-hidden">
+                    {p.emoji ? (
+                      <span className="emoji-anime" style={{ fontSize: 64 }} aria-hidden>{p.emoji}</span>
+                    ) : p.photoReelle ? (
+                      <img src={p.photoReelle} alt={p.nom} loading="lazy" decoding="async" className="w-full h-full object-cover rounded-xl" />
+                    ) : (
+                      <PictoCategorie categorie={p.categorie} size={64} />
+                    )}
+                  </div>
+                </Link>
 
                 {/* Availability + gauge */}
                 <p className="text-aide text-[var(--mboa-text-doux)] mb-1">
@@ -546,15 +431,7 @@ export default function MarchePage() {
         )}
       </div>
 
-      {/* Useful links */}
-      <div className="px-4 py-2 flex gap-2">
-        <Link href="/consommateur/liste" className="flex-1">
-          <BoutonMboa variant="surface" className="w-full">📋 {t("march.liste")}</BoutonMboa>
-        </Link>
-        <Link href="/consommateur/suivi" className="flex-1">
-          <BoutonMboa variant="surface" className="w-full">📦 {t("march.mesCommandes")}</BoutonMboa>
-        </Link>
-      </div>
+      {/* La navigation se fait via la barre du bas (nav-bas) */}
       {monterVisible && (
         <button
           type="button"
@@ -562,7 +439,7 @@ export default function MarchePage() {
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="fixed z-40 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-lg transition-transform active:scale-90"
           style={{
-            bottom: "calc(1.25rem + env(safe-area-inset-bottom, 0px))",
+            bottom: "calc(5.75rem + env(safe-area-inset-bottom, 0px))",
             right: "1rem",
             background: "var(--mboa-primary)",
             color: "#fff",
