@@ -17,7 +17,7 @@ import {
   envoyerMessageChat,
 } from "@/core/data/depots";
 import { MessageChat, RoleMessage } from "@/core/types/message";
-import { vibrer } from "@/core/utils/son";
+import { vibrer, jouerNotificationSonore } from "@/core/utils/son";
 import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
 import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { formaterDateHeure } from "@/core/utils/format_date";
@@ -224,6 +224,9 @@ export default function PageMessages() {
   const [conversation, setConversation] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const bas = useRef<HTMLDivElement | null>(null);
+  // Dernier message entrant connu : sert à vibrer/bipper quand un
+  // nouveau message arrive pendant qu'on regarde la conversation.
+  const dernierRecu = useRef<string | null>(null);
   // Conversation directe ouverte via ?avec=<id>&nom=<nom>&role=<role>
   // (ex. client → livreur depuis la page suivi).
   const [convInitiale, setConvInitiale] = useState<{ id: string; nom: string; role: RoleMessage | null } | null>(null);
@@ -252,6 +255,17 @@ export default function PageMessages() {
   async function charger() {
     if (!profil) return;
     const msgs = await messagesPour(profil);
+    // Message entrant plus récent que le dernier connu → alerte
+    // discrète (son + vibration), sans notifier les siens.
+    const recus = msgs
+      .filter((m) => m.expediteurId !== profil.id)
+      .sort((a, b) => b.createdLe.localeCompare(a.createdLe));
+    const plusRecent = recus[0];
+    if (plusRecent && dernierRecu.current && plusRecent.id !== dernierRecu.current) {
+      vibrer();
+      jouerNotificationSonore();
+    }
+    if (plusRecent) dernierRecu.current = plusRecent.id;
     setMessages(msgs);
     // Le marquage « lu » se fait dans l'effet dédié, scopé au fil
     // ouvert — pas ici, sinon tous les fils perdent leurs badges.
