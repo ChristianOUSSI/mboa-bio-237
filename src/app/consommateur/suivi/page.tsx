@@ -15,7 +15,7 @@ import { vibrer, jouerNotificationSonore } from "@/core/utils/son";
 import { Commande, commandeMontantAPayer, commandeAttendConfirmation, commandeEstAnnule } from "@/core/types/commande_full";
 import { STATUT_COMMANDE_INFO, StatutCommande, Satisfaction, SATISFACTION_INFO, MotifReception, MOTIF_RECEPTION_INFO, statutRang } from "@/core/types/statuts";
 import { toast } from "@/core/etat/store";
-import { SuiviColis, suiviTimeline, JALON_SUIVI_INFO, PositionGps, distanceGps, distanceRestante, JalonSuivi } from "@/core/types/suivi_colis";
+import { SuiviColis, suiviTimeline, JALON_SUIVI_INFO, PositionGps, distanceGps, distanceRestante, JalonSuivi, jalonRang } from "@/core/types/suivi_colis";
 import { resumerQuantites } from "@/core/types/commande";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
@@ -79,6 +79,7 @@ export default function SuiviPage() {
   const [jalonOuvert, setJalonOuvert] = useState<{ cmdId: string; jalon: JalonSuivi } | null>(null);
   const statutsPrec = useRef<Map<string, StatutCommande>>(new Map());
   const alertesProximite = useRef<Set<string>>(new Set());
+  const jalonsPrec = useRef<Map<string, number>>(new Map());
   const notifDemandee = useRef(false);
 
   async function recharger(profilId: string) {
@@ -148,6 +149,29 @@ export default function SuiviPage() {
         jouerNotificationSonore();
         toast(t("suivi.arriveBientot"));
       }
+    }
+    // Notification quand un jalon progresse (ex. « en approche » ou
+    // « arrivé » détectés par le GPS du livreur, pas par le statut).
+    for (const c of cmds) {
+      const s = sMap.get(c.id);
+      if (!s || s.etapes.length === 0) continue;
+      const dernier = s.etapes[s.etapes.length - 1];
+      const rang = jalonRang(dernier.jalon);
+      const avant = jalonsPrec.current.get(c.id) ?? -1;
+      if (rang > avant && avant >= 0) {
+        const libelle = JALON_SUIVI_INFO[dernier.jalon].libelle;
+        toast(`📦 ${libelle}`);
+        vibrer();
+        jouerNotificationSonore();
+        if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+          try {
+            new Notification("📦 MBOA BIO", { body: libelle, icon: "/logo-mboa.jpeg" });
+          } catch {
+            /* notification indisponible */
+          }
+        }
+      }
+      jalonsPrec.current.set(c.id, rang);
     }
     setSuivis(sMap);
     const ages = new Map<string, number>();

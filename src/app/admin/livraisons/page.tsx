@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toutesCommandes, payerLivreur, annulerCourseComplete } from "@/core/data/depots";
+import { toutesCommandes, payerLivreur, annulerCourseComplete, suiviCommande } from "@/core/data/depots";
 import { etatLire, etatEcrire } from "@/core/data/base_locale";
 import { lireParametre, ecrireParametre } from "@/core/data/parametres";
 import { CarteMboa, EnTetePage, BadgeStatut, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
@@ -12,6 +12,7 @@ import { Commande, commandeMontantAPayer } from "@/core/types/commande_full";
 import { STATUT_COMMANDE_INFO, StatutCommande } from "@/core/types/statuts";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { resumerQuantites } from "@/core/types/commande";
+import { JALON_SUIVI_INFO, distanceRestante } from "@/core/types/suivi_colis";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
@@ -30,6 +31,11 @@ export default function LivraisonsPage() {
   const [fraisSaisie, setFraisSaisie] = useState("");
   const [recherche, setRecherche] = useState("");
   const [fraisSauve, setFraisSauve] = useState(false);
+  // Suivi live des courses en_livraison : dernier jalon + distance +
+  // fraîcheur GPS, calculés au chargement (render pur).
+  const [suivisLive, setSuivisLive] = useState<
+    Map<string, { jalon: string; distance: string; ageMin: number | null }>
+  >(new Map());
 
   async function charger() {
     const [c, p, f] = await Promise.all([
@@ -40,6 +46,26 @@ export default function LivraisonsPage() {
     setCommandes(c);
     setPayes(new Set(p ?? []));
     setFraisSaisie(String(f ?? FRAIS_LIVRAISON_DEFAUT));
+    // Position live des courses en route : le comptoir voit où en est
+    // chaque livraison sans appeler le livreur.
+    const actives = c.filter((x) => x.statut === StatutCommande.enLivraison);
+    const entrees = await Promise.all(
+      actives.map(async (x) => {
+        const s = await suiviCommande(x.id);
+        const dernier = s.etapes[s.etapes.length - 1];
+        const h = s.positionActuelle?.horodatage;
+        const t = h ? new Date(h).getTime() : NaN;
+        return [
+          x.id,
+          {
+            jalon: dernier ? JALON_SUIVI_INFO[dernier.jalon].libelle : "-",
+            distance: distanceRestante(s),
+            ageMin: isNaN(t) ? null : Math.max(0, Math.round((Date.now() - t) / 60000)),
+          },
+        ] as const;
+      }),
+    );
+    setSuivisLive(new Map(entrees));
   }
 
   async function sauverFrais() {
@@ -204,6 +230,14 @@ export default function LivraisonsPage() {
                 )}
                 {c.livreurNom && (
                   <p className="text-aide text-[var(--mboa-text-doux)] mt-1">{t("adm.liv.livreur2")} : {c.livreurNom}</p>
+                )}
+                {c.statut === StatutCommande.enLivraison && suivisLive.get(c.id) && (
+                  <p className="text-aide mt-1 font-bold" style={{ color: "var(--mboa-secondary)" }}>
+                    🏍️ {suivisLive.get(c.id)!.jalon}
+                    {suivisLive.get(c.id)!.distance !== "N/A" ? ` · ${suivisLive.get(c.id)!.distance}` : ""}
+                    {suivisLive.get(c.id)!.ageMin != null &&
+                      ` · ${suivisLive.get(c.id)!.ageMin! <= 2 ? t("adm.liv.gpsLive") : `${t("adm.liv.gpsIlYa")} ${suivisLive.get(c.id)!.ageMin} min`}`}
+                  </p>
                 )}
                 <button
                   onClick={() => annulerCourse(c)}
