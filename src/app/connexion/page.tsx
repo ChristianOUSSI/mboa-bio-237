@@ -734,7 +734,7 @@ export default function PageConnexion() {
           {/* Mode sombre / clair : persisté, appliqué avant le 1er rendu. */}
           <button
             type="button"
-            aria-label={sombre ? "Passer en mode clair" : "Passer en mode sombre"}
+            aria-label={sombre ? t("a11y.themeClair") : t("a11y.themeSombre")}
             aria-pressed={sombre}
             onClick={basculerTheme}
             style={{
