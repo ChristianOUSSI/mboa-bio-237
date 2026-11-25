@@ -197,7 +197,7 @@ export default function ProposerRecoltePage() {
         </CarteMboa>
 
         {/* Send button - toujours visible en bas */}
-        <div className="sticky bottom-4 z-30 mt-2">
+        <div className="sticky bottom-20 z-30 mt-2">
           <BoutonMboa
             variant="primary"
             onClick={envoyer}

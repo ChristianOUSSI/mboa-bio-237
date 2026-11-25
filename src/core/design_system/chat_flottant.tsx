@@ -40,7 +40,8 @@ export function BoutonChatFlottant() {
   // en bas : on remonte le bouton pour ne pas le masquer.
   const avecNavBas =
     (pathname?.startsWith("/consommateur") ?? false) ||
-    (pathname?.startsWith("/admin") ?? false);
+    (pathname?.startsWith("/admin") ?? false) ||
+    (pathname?.startsWith("/fournisseur") ?? false);
 
   return (
     <Link
