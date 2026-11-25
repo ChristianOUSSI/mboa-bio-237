@@ -10,7 +10,7 @@ import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
 import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { CarteMboa, BoutonMboa, EnTetePage, BadgeStatut, BoutonVoix, FondMboa, ChargementMboa } from "@/core/design_system/composants";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
-import { formaterHeure } from "@/core/utils/format_date";
+import { formaterHeure, formaterDateHeure } from "@/core/utils/format_date";
 import { vibrer, jouerNotificationSonore } from "@/core/utils/son";
 import { Commande, commandeMontantAPayer, commandeAttendConfirmation, commandeEstAnnule } from "@/core/types/commande_full";
 import { STATUT_COMMANDE_INFO, StatutCommande, Satisfaction, SATISFACTION_INFO, MotifReception, MOTIF_RECEPTION_INFO, statutRang } from "@/core/types/statuts";
@@ -69,7 +69,11 @@ export default function SuiviPage() {
   const [confirmationCmd, setConfirmationCmd] = useState<string | null>(null);
   const [satisfactionChoisie, setSatisfactionChoisie] = useState<Satisfaction | null>(null);
   const [motifChoisi, setMotifChoisi] = useState<MotifReception | null>(null);
-  const positionsPartagees = useRef<Set<string>>(new Set());
+  // Dernier partage GPS par commande : la position est re-publiée
+  // toutes les 3 min pour que « approche » / « arrivé » restent exacts.
+  const positionsPartagees = useRef<Map<string, number>>(new Map());
+  const PARTAGE_GPS_MS = 3 * 60 * 1000;
+  const [jalonOuvert, setJalonOuvert] = useState<{ cmdId: string; jalon: JalonSuivi } | null>(null);
   const statutsPrec = useRef<Map<string, StatutCommande>>(new Map());
   const alertesProximite = useRef<Set<string>>(new Set());
   const notifDemandee = useRef(false);
@@ -108,7 +112,7 @@ export default function SuiviPage() {
         (c.statut === StatutCommande.valideeAdmin ||
           c.statut === StatutCommande.enLivraison ||
           c.statut === StatutCommande.livree) &&
-        !positionsPartagees.current.has(c.id),
+        Date.now() - (positionsPartagees.current.get(c.id) ?? 0) > PARTAGE_GPS_MS,
     );
     if (actives.length > 0 && typeof Notification !== "undefined" && Notification.permission === "default" && !notifDemandee.current) {
       notifDemandee.current = true;
@@ -123,7 +127,7 @@ export default function SuiviPage() {
             partagerPositionGps("client", c.id, pos);
             const s = sMap.get(c.id);
             if (s) s.positionDestination = pos;
-            positionsPartagees.current.add(c.id);
+            positionsPartagees.current.set(c.id, Date.now());
           }),
         );
       }
@@ -362,21 +366,36 @@ export default function SuiviPage() {
                       </div>
                     )}
 
-                  {/* Timeline : chaque jalon coché affiche son heure réelle */}
+                  {/* Timeline interactive : chaque jalon atteint est
+                      tappable et affiche le détail de l'étape. */}
                   {timeline.length > 0 && (
                     <div className="timeline-suivi flex justify-between items-start mt-4 mb-2">
                       {timeline.map((etape, i) => {
                         const atteint = !!etape.etape;
                         const estDernier = i === rangAtteintMax && atteint;
                         const enCours = estDernier && etape.jalon !== JalonSuivi.remis;
+                        const ouvert = jalonOuvert?.cmdId === c.id && jalonOuvert.jalon === etape.jalon;
                         return (
-                          <div key={i} className="flex flex-col items-center flex-1">
+                          <button
+                            key={i}
+                            type="button"
+                            disabled={!atteint}
+                            onClick={() =>
+                              atteint &&
+                              setJalonOuvert(ouvert ? null : { cmdId: c.id, jalon: etape.jalon })
+                            }
+                            className={`flex flex-col items-center flex-1 ${atteint ? "cursor-pointer" : "cursor-default"}`}
+                            aria-label={atteint ? t("suivi.details") : undefined}
+                            aria-expanded={ouvert}
+                          >
                             <div
                               className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${enCours ? "animate-pulse" : ""}`}
                               style={{
                                 background: atteint
                                   ? "var(--mboa-secondary)"
                                   : "var(--mboa-trait)",
+                                outline: ouvert ? "2px solid var(--mboa-primary)" : "none",
+                                outlineOffset: 2,
                               }}
                             >
                               {atteint ? "✓" : ""}
@@ -401,11 +420,56 @@ export default function SuiviPage() {
                                 {formaterHeure(etape.etape.horodatage)}
                               </span>
                             )}
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
                   )}
+
+                  {/* Détail de l'étape sélectionnée */}
+                  {jalonOuvert?.cmdId === c.id &&
+                    (() => {
+                      const et = timeline.find((x) => x.jalon === jalonOuvert.jalon)?.etape;
+                      if (!et) return null;
+                      const auteur =
+                        et.auteur === "admin"
+                          ? t("suivi.auteurComptoir")
+                          : et.auteur === "livreur"
+                            ? t("suivi.auteurLivreur")
+                            : et.auteur === "client"
+                              ? t("suivi.auteurVous")
+                              : et.auteur === "gps"
+                                ? t("suivi.auteurGps")
+                                : null;
+                      return (
+                        <div
+                          className="mt-1 rounded-xl p-3"
+                          style={{ background: "var(--mboa-background)" }}
+                        >
+                          <div className="flex justify-between items-start gap-2">
+                            <p className="text-corps font-bold">
+                              {JALON_SUIVI_INFO[jalonOuvert.jalon].libelle}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => setJalonOuvert(null)}
+                              className="text-aide"
+                              style={{ color: "var(--mboa-text-doux)" }}
+                              aria-label={t("suivi.fermer")}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          <p className="text-aide text-[var(--mboa-text-doux)] mt-0.5">
+                            {JALON_SUIVI_INFO[jalonOuvert.jalon].description}
+                          </p>
+                          <p className="text-aide mt-1" style={{ color: "var(--mboa-text-doux)" }}>
+                            {formaterDateHeure(et.horodatage)}
+                            {auteur ? ` · ${auteur}` : ""}
+                          </p>
+                        </div>
+                      );
+                    })()}
 
                   {/* Confirmation */}
                   {commandeAttendConfirmation(c) && (

@@ -1,3 +1,5 @@
+import { StatutCommande, statutCommandeResolve } from "./statuts";
+
 /** Les cinq étapes du suivi de colis, dans l'ordre du voyage. */
 export enum JalonSuivi {
   panierPrepare = "panier_prepare",
@@ -158,6 +160,83 @@ export function etapesDepuisStatut(statut: string, depuis: string): EtapeSuivi[]
   else if (statut === "livree") jalons.push(JalonSuivi.panierPrepare, JalonSuivi.motoPartie, JalonSuivi.enApproche, JalonSuivi.arrive);
   else if (statut === "recue") jalons.push(...JALON_SUIVI_ORDRE);
   return jalons.map((jalon) => ({ jalon, horodatage: base, auteur: "auto" }));
+}
+
+/** Rayon (mètres) auquel le livreur est « en approche » puis « arrivé ». */
+export const RAYON_APPROCHE_M = 3000;
+export const RAYON_ARRIVE_M = 400;
+/** Au-delà, une position livreur est trop vieille pour déduire un jalon. */
+const POSITION_FRAICHE_MS = 15 * 60 * 1000;
+
+function positionFraiche(p?: PositionGps | null): p is PositionGps {
+  if (!p?.horodatage) return false;
+  const t = new Date(p.horodatage).getTime();
+  return !isNaN(t) && Date.now() - t < POSITION_FRAICHE_MS;
+}
+
+/**
+ * Reconstruit les jalons depuis l'état RÉEL : statut de la commande +
+ * position GPS du livreur. « En approche » et « arrivé » ne sont cochés
+ * que si le GPS le prouve - jamais sur la foi du seul statut.
+ */
+export function etapesDepuisEtat(
+  statut: string,
+  createdLe: string,
+  livreeLe?: string | null,
+  recueLe?: string | null,
+  positionActuelle?: PositionGps | null,
+  positionDestination?: PositionGps | null,
+): EtapeSuivi[] {
+  const s = statutCommandeResolve(statut);
+  if (s === StatutCommande.nouvelle || s === StatutCommande.annulee) return [];
+  const parJalon = new Map<JalonSuivi, EtapeSuivi>();
+  const poser = (jalon: JalonSuivi, horodatage: string, auteur = "auto", position?: PositionGps | null) =>
+    parJalon.set(jalon, { jalon, horodatage, auteur, position: position ?? null });
+
+  // Jalons certains, déduits du statut.
+  poser(JalonSuivi.panierPrepare, createdLe);
+  if (s === StatutCommande.enLivraison || s === StatutCommande.livree || s === StatutCommande.recue) {
+    poser(JalonSuivi.motoPartie, createdLe);
+  }
+  if (s === StatutCommande.livree || s === StatutCommande.recue) {
+    poser(JalonSuivi.arrive, livreeLe ?? createdLe);
+  }
+  if (s === StatutCommande.recue) {
+    poser(JalonSuivi.remis, recueLe ?? livreeLe ?? createdLe);
+  }
+
+  // Jalons déduits de la position RÉELLE du livreur (GPS frais uniquement).
+  // « Arrivé » peut donc être coché pendant que le statut est encore
+  // en_livraison : c'est la vraie position qui parle.
+  if (positionFraiche(positionActuelle) && positionDestination && s !== StatutCommande.recue) {
+    const d = distanceGps(positionActuelle, positionDestination);
+    if (d <= RAYON_ARRIVE_M) {
+      poser(JalonSuivi.enApproche, positionActuelle.horodatage, "gps", positionActuelle);
+      if (!parJalon.has(JalonSuivi.arrive)) {
+        poser(JalonSuivi.arrive, positionActuelle.horodatage, "gps", positionActuelle);
+      }
+    } else if (d <= RAYON_APPROCHE_M) {
+      poser(JalonSuivi.enApproche, positionActuelle.horodatage, "gps", positionActuelle);
+    }
+  }
+  return JALON_SUIVI_ORDRE.map((j) => parJalon.get(j)).filter((e): e is EtapeSuivi => !!e);
+}
+
+/**
+ * Fusionne les jalons enregistrés (faits) avec ceux déduits de l'état
+ * réel. Les jalons « en approche » / « arrivé » déduits du GPS temps
+ * réel priment : ils reflètent la position actuelle du livreur.
+ */
+export function fusionnerEtapes(stored: EtapeSuivi[], derivees: EtapeSuivi[]): EtapeSuivi[] {
+  const parJalon = new Map<JalonSuivi, EtapeSuivi>();
+  for (const e of stored) parJalon.set(e.jalon, e);
+  for (const e of derivees) {
+    const existant = parJalon.get(e.jalon);
+    if (!existant || e.jalon === JalonSuivi.enApproche || e.jalon === JalonSuivi.arrive) {
+      parJalon.set(e.jalon, e);
+    }
+  }
+  return JALON_SUIVI_ORDRE.map((j) => parJalon.get(j)).filter((e): e is EtapeSuivi => !!e);
 }
 
 /** Distance en mètres entre deux coordonnées GPS (formule de Haversine). */

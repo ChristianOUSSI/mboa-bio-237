@@ -20,7 +20,7 @@ import { roleResolve } from "../config/app_env";
 import { Livreur, livreurFromMap } from "../types/livreur";
 import { Fournisseur, fournisseurFromMap } from "../types/fournisseur";
 import { ZoneLivraison, zoneFromMap, zonesParDefaut } from "../types/zone_livraison";
-import { SuiviColis, suiviFromMaps, suiviVide, PositionGps, DEPOT_MBOA, etapesDepuisStatut } from "../types/suivi_colis";
+import { SuiviColis, suiviFromMaps, suiviVide, PositionGps, DEPOT_MBOA, EtapeSuivi, JalonSuivi, etapesDepuisEtat, fusionnerEtapes } from "../types/suivi_colis";
 import { uuidV4, slugDe } from "../utils/identifiants";
 
 // ============================================================
@@ -345,11 +345,13 @@ export async function confirmerReception(commandeId: string, satisfaction: "bon"
       .eq("id", commandeId);
     if (!error) {
       void notifierActiviteAdmin("act.receptionConfirmee", satisfaction);
+      void enregistrerJalon(commandeId, JalonSuivi.remis, "client");
       return;
     }
   }
   await fileAjouter("commande", commandeId, "update:confirmer_reception", { satisfaction, motif });
   void notifierActiviteAdmin("act.receptionConfirmee", satisfaction);
+  void enregistrerJalon(commandeId, JalonSuivi.remis, "client");
 }
 
 /** Retrouve un produit par son slug (remote puis cache). */
@@ -444,6 +446,7 @@ export async function validerDevis(commande: Commande): Promise<void> {
       await cacheEcrire("commande", commandeId, maj);
       for (const l of commande.lignes) await decrementerStock(l);
       void notifierActiviteAdmin("act.devisValide", commande.lignes.map((l) => l.nom).join(", "));
+      void enregistrerJalon(commandeId, JalonSuivi.panierPrepare, "admin");
       return;
     }
   }
@@ -451,6 +454,7 @@ export async function validerDevis(commande: Commande): Promise<void> {
   await cacheEcrire("commande", commandeId, maj);
   for (const l of commande.lignes) await decrementerStock(l);
   void notifierActiviteAdmin("act.devisValide", commande.lignes.map((l) => l.nom).join(", "));
+  void enregistrerJalon(commandeId, JalonSuivi.panierPrepare, "admin");
 }
 
 /** L'admin assigne (ou réassigne) un livreur à une commande. */
@@ -533,9 +537,13 @@ export async function demarrerLivraison(commandeId: string): Promise<void> {
       .from("commandes")
       .update({ statut_enum: "en_livraison" })
       .eq("id", commandeId);
-    if (!error) return;
+    if (!error) {
+      void enregistrerJalon(commandeId, JalonSuivi.motoPartie, "livreur");
+      return;
+    }
   }
   await fileAjouter("commande", commandeId, "update:statut=en_livraison", {});
+  void enregistrerJalon(commandeId, JalonSuivi.motoPartie, "livreur");
 }
 
 /** L'admin refuse un devis : statut → annulee (avant toute sortie de stock). */
@@ -987,9 +995,13 @@ export async function marquerLivree(commandeId: string): Promise<void> {
       .from("commandes")
       .update({ statut_enum: "livree", livree_le: maintenant })
       .eq("id", commandeId);
-    if (!error) return;
+    if (!error) {
+      void enregistrerJalon(commandeId, JalonSuivi.arrive, "livreur");
+      return;
+    }
   }
   await fileAjouter("commande", commandeId, "update:statut=livree", {});
+  void enregistrerJalon(commandeId, JalonSuivi.arrive, "livreur");
 }
 
 /** Le livreur est payé après réception confirmée par la cliente. */
@@ -1172,12 +1184,9 @@ async function _suiviCommande(commandeId: string): Promise<SuiviColis> {
   } else {
     suivi = suiviVide(commandeId);
   }
-  // Hors ligne ou RPC indisponible : on reconstruit les jalons depuis le statut
-  if (suivi.etapes.length === 0) {
-    const cmd = await cacheLire<Commande>("commande", commandeId);
-    if (cmd) suivi.etapes = etapesDepuisStatut(cmd.statut, cmd.createdLe);
-  }
-  // Position temps réel du livreur, partagée depuis son téléphone
+  // Les jalons sont résolus en fin de fonction : les positions GPS
+  // (lues ci-dessous) servent à déduire « en approche » / « arrivé ».
+  // Positions temps réel du livreur, partagée depuis son téléphone
   const posLivreur = await cacheLire<PositionGps>("gps_livreur", commandeId);
   if (posLivreur) suivi.positionActuelle = posLivreur;
   const posClient = await cacheLire<PositionGps>("gps_client", commandeId);
@@ -1232,6 +1241,33 @@ async function _suiviCommande(commandeId: string): Promise<SuiviColis> {
         longitude: cmd.livraisonLng,
         horodatage: "",
       };
+    }
+  }
+  // Jalons : enregistrés (RPC + cache local) fusionnés avec ceux déduits
+  // de l'état RÉEL - statut de la commande et position GPS du livreur.
+  const cmd = await cacheLire<Commande>("commande", commandeId);
+  const stockes: EtapeSuivi[] = [...suivi.etapes];
+  // Jalons posés sur cet appareil (ex. écrits hors-ligne) : la table
+  // distante ne les connaît pas encore.
+  for (const j of await cacheTout<{ commandeId: string; etape: EtapeSuivi }>("jalon")) {
+    if (j.commandeId === commandeId) stockes.push(j.etape);
+  }
+  const derivees = cmd
+    ? etapesDepuisEtat(
+        cmd.statut,
+        cmd.createdLe,
+        cmd.livreeLe,
+        cmd.recueLe,
+        suivi.positionActuelle,
+        suivi.positionDestination,
+      )
+    : [];
+  suivi.etapes = fusionnerEtapes(stockes, derivees);
+  // Les jalons déduits du GPS sont figés une fois détectés : sinon ils
+  // disparaîtraient de la timeline si le livreur s'éloigne à nouveau.
+  for (const e of derivees) {
+    if (e.auteur === "gps" && e.position && !stockes.some((s) => s.jalon === e.jalon)) {
+      void enregistrerJalon(commandeId, e.jalon, "gps", e.position);
     }
   }
   return suivi;
@@ -1799,6 +1835,57 @@ export async function viderActivites(): Promise<void> {
   await etatEcrire(CLE_ACTIVITE_ADMIN, []);
 }
 
+
+/**
+ * Enregistre un jalon de suivi (colis préparé, moto partie, arrivé…).
+ * Cache local immédiat + table `jalons_suivi` distante quand elle existe.
+ * Best-effort : ne bloque jamais le flux de la commande.
+ */
+export async function enregistrerJalon(
+  commandeId: string,
+  jalon: JalonSuivi,
+  auteur: string,
+  position?: PositionGps | null,
+): Promise<void> {
+  const etape: EtapeSuivi = {
+    jalon,
+    horodatage: new Date().toISOString(),
+    auteur,
+    position: position ?? null,
+  };
+  await cacheEcrire("jalon", `${commandeId}:${jalon}`, { commandeId, etape });
+  const client = mboaReseau();
+  if (!client) return;
+  const positionJson = position
+    ? { latitude: position.latitude, longitude: position.longitude }
+    : null;
+  try {
+    // RPC idempotent (upsert par commande+jalon) si le SQL est déployé.
+    const { error } = await client.rpc("ajouter_jalon", {
+      p_commande: commandeId,
+      p_jalon: jalon,
+      p_auteur: auteur,
+      p_position: positionJson,
+    });
+    if (error) {
+      // Repli : insert direct si la table existe mais pas le RPC.
+      await client
+        .from("jalons_suivi")
+        .upsert(
+          {
+            commande_id: commandeId,
+            jalon,
+            horodatage: etape.horodatage,
+            auteur,
+            position: positionJson,
+          },
+          { onConflict: "commande_id,jalon" },
+        );
+    }
+  } catch {
+    /* suivi best-effort : la déduction par état réel prend le relais */
+  }
+}
 
 /** Publie une position GPS (livreur ou client) pour le suivi cross-device. */
 export function partagerPositionGps(type: "livreur" | "client", commandeId: string, pos: PositionGps): void {
