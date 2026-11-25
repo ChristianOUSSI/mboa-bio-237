@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Typecheck + build de production : échoue si une erreur TS ou
+      # un import cassé se glisse (comme le "});" en double d'avant).
+      - run: npm run build
+
+      # Tests unitaires : promos + unités de vente multiples.
+      - run: npm test
