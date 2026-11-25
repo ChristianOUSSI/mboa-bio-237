@@ -733,6 +733,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "msg.videAdmin": "Aucune conversation pour le moment.",
     "msg.infoAdmin": "Vos messages arrivent directement à l'administration MBOA BIO.",
     "msg.erreurEnvoi": "Envoi impossible — réessayez",
+    "msg.besoinCompte": "Connectez-vous pour discuter avec le comptoir MBOA.",
+    "msg.allerConnexion": "Se connecter",
     "a11y.voirMdp": "Afficher le mot de passe",
     "a11y.masquerMdp": "Masquer le mot de passe",
 
@@ -1467,6 +1469,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "msg.videAdmin": "No conversations yet.",
     "msg.infoAdmin": "Your messages go straight to the MBOA BIO administration.",
     "msg.erreurEnvoi": "Could not send — try again",
+    "msg.besoinCompte": "Sign in to chat with the MBOA counter.",
+    "msg.allerConnexion": "Sign in",
     "a11y.voirMdp": "Show password",
     "a11y.masquerMdp": "Hide password",
 

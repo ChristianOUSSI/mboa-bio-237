@@ -10,7 +10,6 @@ import {
   BoutonMboa,
   FondMboa,
   ChargementMboa,
-  SkeletonMboa,
 } from "@/core/design_system/composants";
 import {
   messagesPour,
@@ -263,7 +262,19 @@ export default function PageMessages() {
       <FondMboa>
         <EnTetePage titre={t("msg.titre")} onRetour={() => router.back()} />
         <div className="flex-1 p-4">
-          {profil ? <ChargementMboa /> : <SkeletonMboa lignes={4} />}
+          {profil ? (
+            <ChargementMboa />
+          ) : (
+            // Sans compte (ex. candidat /rejoindre), on explique au lieu
+            // de tourner un skeleton infini — et on propose la connexion.
+            <div className="etat-vide text-center">
+              <span className="emoji-vide">💬</span>
+              <p className="text-corps text-[var(--mboa-text-doux)] mb-4">{t("msg.besoinCompte")}</p>
+              <a href="/connexion" className="btn-mboa btn-primary inline-block">
+                {t("msg.allerConnexion")}
+              </a>
+            </div>
+          )}
         </div>
       </FondMboa>
     );
