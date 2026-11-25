@@ -353,12 +353,11 @@ export default function PageConnexion() {
         const res = await verifierMotDePasseSupabase(compte.email, motDePasse);
         if (res === true) {
           bon = true;
-        } else if (res === false) {
-          // Compte migré : Supabase fait foi, pas de repli local.
-          setErreur(t("connex.erreurMdpFaux"));
-          return;
         }
-        // res === null : Supabase injoignable → repli local ci-dessous.
+        // res === false : Supabase refuse (mdp divergé, email non
+        // confirmé, user réinitialisé…) — on NE bloque PAS sec : le
+        // hash local fait foi en repli, sinon le compte migré se
+        // verrouillait définitivement. res === null : injoignable.
       }
       if (!bon) {
         bon = await verifierMotDePasse(compte, motDePasse);
