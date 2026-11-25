@@ -152,7 +152,7 @@ function CarteProduitCat({
 
       <div className="zone-photo w-full h-32 rounded-xl flex items-center justify-center mb-2 overflow-hidden">
         {p.emoji ? (
-          <span style={{ fontSize: 64 }} aria-hidden>{p.emoji}</span>
+          <span className="emoji-anime" style={{ fontSize: 64 }} aria-hidden>{p.emoji}</span>
         ) : p.photoReelle ? (
           <img src={p.photoReelle} alt={p.nom} loading="lazy" decoding="async" className="w-full h-full object-cover rounded-xl" />
         ) : (

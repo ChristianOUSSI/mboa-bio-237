@@ -40,7 +40,7 @@ export function BoutonChatFlottant() {
     <Link
       href="/messages"
       aria-label="Discuter avec l'admin"
-      className="fixed z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-transform active:scale-90"
+      className={`fixed z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-transform active:scale-90 ${nonLus > 0 ? "halo-alerte" : ""}`}
       style={{
         bottom: "calc(1.25rem + env(safe-area-inset-bottom, 0px))",
         left: "1rem",

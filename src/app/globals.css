@@ -1109,3 +1109,101 @@ input, select, textarea {
 .texte-grand .champ-mboa { font-size: 19px; padding: 16px 18px; }
 .texte-grand .btn-mboa { font-size: 18px; }
 .texte-grand .selecteur-langue button { font-size: 16px; }
+
+/* ============================================================
+   Finitions premium - les détails qui font la différence
+   ============================================================ */
+
+/* Sélection de texte aux couleurs de la marque */
+::selection {
+  background: var(--mboa-secondary-vif);
+  color: var(--mboa-primary);
+}
+
+/* Scrollbar fine et discrète, teinte verte */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--mboa-secondary) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb {
+  background: var(--mboa-secondary);
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* Focus visible : anneau vert visible au clavier et aux lecteurs
+   d'écran - crucial pour l'accessibilité personnes âgées. */
+:focus-visible {
+  outline: 3px solid var(--mboa-primary-vif);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline-offset: 0;
+}
+
+/* Carte produit : la photo zoome doucement au survol */
+.card-produit .zone-photo img {
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.card-produit:hover .zone-photo img {
+  transform: scale(1.07);
+}
+
+/* Emoji produit : flottement vivant et ludique */
+.emoji-anime {
+  display: inline-block;
+  animation: flotte 4.5s ease-in-out infinite;
+}
+
+/* Puce prix : reflet qui balaie au survol */
+.puce-prix {
+  position: relative;
+  overflow: hidden;
+}
+.puce-prix::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.38) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+.puce-prix:hover::after {
+  transform: translateX(120%);
+}
+
+/* Mode sombre : la carte produit gardait un dégradé clair codé en dur */
+[data-theme="sombre"] .card-produit {
+  background: linear-gradient(180deg, var(--mboa-surface) 0%, #131C15 100%);
+}
+
+/* Encart encart-livreur : léger flottement de l'avatar */
+.encart-livreur .avatar-livreur {
+  animation: flotte 5s ease-in-out infinite;
+}
+
+/* Skeleton : léger pulse en plus du shimmer pour plus de vie */
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton-mboa {
+    animation: skeleton-shimmer 1.6s ease-in-out infinite, pulsation 2.4s ease-in-out infinite;
+  }
+}
+
+/* Bouton chat : halo pulsant quand des messages non lus attendent */
+@keyframes halo-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 121, 0, 0.45); }
+  70% { box-shadow: 0 0 0 14px rgba(255, 121, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 121, 0, 0); }
+}
+.halo-alerte {
+  animation: halo-pulse 2.2s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .halo-alerte { animation: none; }
+  .emoji-anime { animation: none; }
+}

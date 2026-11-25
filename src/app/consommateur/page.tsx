@@ -427,7 +427,7 @@ export default function MarchePage() {
                 <CarteMboa key={p.id} className="card-produit !p-3 shrink-0" style={{ width: 190 }}>
                   <div className="zone-photo w-full h-24 rounded-xl flex items-center justify-center mb-2 overflow-hidden">
                     {p.emoji ? (
-                      <span style={{ fontSize: 48 }} aria-hidden>{p.emoji}</span>
+                      <span className="emoji-anime" style={{ fontSize: 48 }} aria-hidden>{p.emoji}</span>
                     ) : p.photoReelle ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={p.photoReelle} alt={p.nom} loading="lazy" decoding="async" className="w-full h-full object-cover" />
@@ -481,7 +481,7 @@ export default function MarchePage() {
                 {/* Photo or pictogram */}
                 <div className="zone-photo w-full h-32 rounded-xl flex items-center justify-center mb-2 overflow-hidden">
                   {p.emoji ? (
-                    <span style={{ fontSize: 64 }} aria-hidden>{p.emoji}</span>
+                    <span className="emoji-anime" style={{ fontSize: 64 }} aria-hidden>{p.emoji}</span>
                   ) : p.photoReelle ? (
                     <img src={p.photoReelle} alt={p.nom} loading="lazy" decoding="async" className="w-full h-full object-cover rounded-xl" />
                   ) : (
