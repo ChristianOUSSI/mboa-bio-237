@@ -46,9 +46,11 @@ export default function LivraisonsPage() {
     setCommandes(c);
     setPayes(new Set(p ?? []));
     setFraisSaisie(String(f ?? FRAIS_LIVRAISON_DEFAUT));
-    // Position live des courses en route : le comptoir voit où en est
-    // chaque livraison sans appeler le livreur.
-    const actives = c.filter((x) => x.statut === StatutCommande.enLivraison);
+    // Position live des courses en route ou livrées non confirmées :
+    // le comptoir voit où en est chaque livraison sans appeler le livreur.
+    const actives = c.filter(
+      (x) => x.statut === StatutCommande.enLivraison || x.statut === StatutCommande.livree,
+    );
     const entrees = await Promise.all(
       actives.map(async (x) => {
         const s = await suiviCommande(x.id);
@@ -119,7 +121,11 @@ export default function LivraisonsPage() {
     (c) => c.statut === StatutCommande.recue && !c.payeLe && !payes.has(c.id) && correspondent(c),
   );
   const enCours2 = commandes.filter(
-    (c) => (c.statut === StatutCommande.enLivraison || c.statut === StatutCommande.valideeAdmin) && correspondent(c),
+    (c) =>
+      (c.statut === StatutCommande.enLivraison ||
+        c.statut === StatutCommande.valideeAdmin ||
+        c.statut === StatutCommande.livree) &&
+      correspondent(c),
   );
 
   if (!pret) {
@@ -231,7 +237,7 @@ export default function LivraisonsPage() {
                 {c.livreurNom && (
                   <p className="text-aide text-[var(--mboa-text-doux)] mt-1">{t("adm.liv.livreur2")} : {c.livreurNom}</p>
                 )}
-                {c.statut === StatutCommande.enLivraison && suivisLive.get(c.id) && (
+                {(c.statut === StatutCommande.enLivraison || c.statut === StatutCommande.livree) && suivisLive.get(c.id) && (
                   <p className="text-aide mt-1 font-bold" style={{ color: "var(--mboa-secondary)" }}>
                     🏍️ {suivisLive.get(c.id)!.jalon}
                     {suivisLive.get(c.id)!.distance !== "N/A" ? ` · ${suivisLive.get(c.id)!.distance}` : ""}

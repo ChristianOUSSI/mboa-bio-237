@@ -98,11 +98,15 @@ export default function AccueilLivreur() {
   // Tirer vers le bas depuis le haut = recharger les courses.
   const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
-  // Automatic GPS sharing every 15 s while a delivery is on the way.
+  // Automatic GPS sharing every 15 s while a delivery is on the way
+  // or delivered but not yet confirmed: la carte reste vivante jusqu'à
+  // ce que la cliente confirme (preuve en cas de litige).
   // Une seule position lue par cycle, partagee entre les courses ;
   // le tick est ignore onglet cache (la batterie compte sur moto).
   useEffect(() => {
-    const enRoute = courses.filter((c) => c.statut === StatutCommande.enLivraison);
+    const enRoute = courses.filter(
+      (c) => c.statut === StatutCommande.enLivraison || c.statut === StatutCommande.livree,
+    );
     if (enRoute.length === 0) return;
     const timer = setInterval(async () => {
       if (document.visibilityState !== "visible") return;
