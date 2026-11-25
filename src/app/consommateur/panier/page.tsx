@@ -16,11 +16,13 @@ import {
   partagerWhatsApp,
   imprimerDocument,
 } from "@/core/utils/export_document";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { vibrer } from "@/core/utils/son";
 import { useTr } from "@/core/i18n";
 import { lireParametre } from "@/core/data/parametres";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 
 const FRAIS_LIVRAISON_DEFAUT = 500;
 const CLE_FRAIS = "frais_livraison";
@@ -73,34 +75,41 @@ export default function PanierPage() {
     }
   }, [etape, livraisonQuartier]);
 
-  useEffect(() => {
-    void lireParametre<number>(CLE_FRAIS, FRAIS_LIVRAISON_DEFAUT).then((f) => {
-      if (typeof f === "number" && f >= 0) setFraisLivraisonCfg(f);
-    });
+  const charger = useCallback(async () => {
+    const f = await lireParametre<number>(CLE_FRAIS, FRAIS_LIVRAISON_DEFAUT);
+    if (typeof f === "number" && f >= 0) setFraisLivraisonCfg(f);
     // Catalogue + annonces : suggestions, prix à jour, code promo.
-    void Promise.all([chargerVitrine(), toutesAnnonces()]).then(([v, a]) => {
-      const anns = a.filter((x) => x.actif);
-      setAnnonces(anns);
-      const ids = new Set(panier.lignes.map((l) => l.produitId));
-      setSuggestions(v.filter((p) => p.actif && p.quantite > 0 && !ids.has(p.id)).slice(0, 8));
-      // Le prix figé dans le panier datait de l'ajout : on le recalcule
-      // avec le catalogue et les promos ACTUELS pour que l'affichage,
-      // le total et la commande soient identiques.
-      const lignes = panier.lignes.map((l) => {
-        const p = v.find((x) => x.id === l.produitId);
-        if (!p) return l;
-        const u = produitUnites(p).find((x) => x.unite === l.unite);
-        if (!u) return l;
-        const pct = annoncePromoPct(anns, p);
-        const prix = pct ? Math.round(u.prix * (1 - pct / 100)) : u.prix;
-        return prix === l.prix ? l : { ...l, prix };
-      });
-      if (lignes.some((l, i) => l !== panier.lignes[i])) {
-        usePanier.getState().actualiserPrix(lignes);
-      }
+    const [v, a] = await Promise.all([chargerVitrine(), toutesAnnonces()]);
+    const anns = a.filter((x) => x.actif);
+    setAnnonces(anns);
+    // getState() : le panier a pu changer depuis le montage (ajouts,
+    // retraits) - on recalcule toujours sur les lignes actuelles.
+    const lignesPanier = usePanier.getState().lignes;
+    const ids = new Set(lignesPanier.map((l) => l.produitId));
+    setSuggestions(v.filter((p) => p.actif && p.quantite > 0 && !ids.has(p.id)).slice(0, 8));
+    // Le prix figé dans le panier datait de l'ajout : on le recalcule
+    // avec le catalogue et les promos ACTUELS pour que l'affichage,
+    // le total et la commande soient identiques.
+    const lignes = lignesPanier.map((l) => {
+      const p = v.find((x) => x.id === l.produitId);
+      if (!p) return l;
+      const u = produitUnites(p).find((x) => x.unite === l.unite);
+      if (!u) return l;
+      const pct = annoncePromoPct(anns, p);
+      const prix = pct ? Math.round(u.prix * (1 - pct / 100)) : u.prix;
+      return prix === l.prix ? l : { ...l, prix };
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (lignes.some((l, i) => l !== lignesPanier[i])) {
+      usePanier.getState().actualiserPrix(lignes);
+    }
   }, []);
+
+  useEffect(() => {
+    void charger();
+  }, [charger]);
+
+  // Tirer vers le bas depuis le haut = recalculer prix, frais et promos.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   function poserSuggestion(produit: Produit) {
     panier.poser({
@@ -359,6 +368,7 @@ export default function PanierPage() {
 
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage titre={t("panier.titre")} sousTitre={t("panier.sousTitre")} onRetour={() => router.back()} />
 
       <div className="flex-1 p-4">
