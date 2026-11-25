@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { chargerLivreurs, sauverLivreur, basculerLivreurActif, supprimerLivreur } from "@/core/data/depots";
 import { CarteMboa, EnTetePage, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa, BadgeStatut } from "@/core/design_system/composants";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { Livreur, livreurRepere } from "@/core/types/livreur";
 import { creerCompte } from "@/core/auth/auth_service";
 import { validerMotDePasse } from "@/core/auth/auth_local";
@@ -50,6 +52,8 @@ export default function LivreursAdminPage() {
 
   // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
   useActualisation(charger);
+  // Tirer vers le bas depuis le haut = recharger la page.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   /**
    * L'admin crée la fiche livreur ET son compte de connexion.
@@ -150,6 +154,7 @@ export default function LivreursAdminPage() {
   }
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage
         titre={t("adm.livr.titre")}
         sousTitre={t("adm.livr.sousTitre")}

@@ -6,6 +6,8 @@ import { chargerFournisseurs, basculerFournisseurActif, supprimerFournisseur, re
 import { creerCompte, compteParIdentifiant, changerMotDePasse, majCompte } from "@/core/auth/auth_service";
 import { validerMotDePasse } from "@/core/auth/auth_local";
 import { CarteMboa, EnTetePage, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { Fournisseur, fournisseurProduction, fournisseurLie } from "@/core/types/fournisseur";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
@@ -23,6 +25,8 @@ export default function FournisseursAdminPage() {
 
   // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
   useActualisation(charger);
+  // Tirer vers le bas depuis le haut = recharger la page.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   async function supprimer(f: Fournisseur) {
     await supprimerFournisseur(f.id);
@@ -129,6 +133,7 @@ export default function FournisseursAdminPage() {
   }
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage titre={t("adm.fourn.titre")} onRetour={() => router.back()} />
       <div className="flex-1 p-4 space-y-2">
         {fournisseurs.map((f) => (

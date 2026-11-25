@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { activitesAdmin, supprimerActivite, archiverActivite, viderActivites, ActiviteAdmin } from "@/core/data/depots";
 import { CarteMboa, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
@@ -29,6 +31,8 @@ export default function ActiviteAdminPage() {
   }
 
   useActualisation(charger);
+  // Tirer vers le bas depuis le haut = recharger la page.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   if (!pret || chargement) {
     return (
@@ -42,6 +46,7 @@ export default function ActiviteAdminPage() {
 
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage titre={t("adm.act.titre")} onRetour={() => router.back()} />
       <div className="flex-1 p-4 space-y-2">
         {activites.length === 0 ? (

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { chargerCatalogue, chargerStock, sauverPack, majPackComposants, chargerVitrine } from "@/core/data/depots";
 import { CarteMboa, BoutonMboa, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { EntreeCatalogue, catalogueUniteReelle } from "@/core/types/catalogue";
 import { Produit, produitEstPack, produitEstBundle, produitEstTheme } from "@/core/types/produit";
 import { Unite, UNITE_INFO, unitePour } from "@/core/types/unite";
@@ -132,6 +134,8 @@ export default function PacksAdminPage() {
 
   // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
   useActualisation(charger);
+  // Tirer vers le bas depuis le haut = recharger la page.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   async function sauver() {
     const prixNum = parseInt(prix) || 0;
@@ -215,6 +219,7 @@ export default function PacksAdminPage() {
   }
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage titre={t("adm.pack.titre")} sousTitre={t("adm.pack.sousTitre")} onRetour={() => router.back()} />
 
       <div className="flex-1 p-4 space-y-3">

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { chargerZonesLivraison, sauverZoneLivraison, supprimerZoneLivraison } from "@/core/data/depots";
 import { ZoneLivraison, zonesParDefaut } from "@/core/types/zone_livraison";
 import { CarteMboa, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
@@ -63,6 +65,8 @@ export default function ZonesLivraisonPage() {
       setEnCours(false);
     }
   }
+  // Tirer vers le bas depuis le haut = recharger la page.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   if (!pret) {
     return (
@@ -79,6 +83,7 @@ export default function ZonesLivraisonPage() {
 
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage titre={t("adm.zones.titre")} onRetour={() => router.back()} />
       <div className="flex-1 p-4 space-y-3">
         {/* Nouvelle zone */}

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CarteMboa, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa, ChampMotDePasse } from "@/core/design_system/composants";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import {
   assurerCompteAdmin,
   changerMotDePasse,
@@ -159,6 +161,8 @@ export default function AdminComptePage() {
       setEnCours(false);
     }
   }
+  // Tirer vers le bas depuis le haut = recharger la page.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   if (!pret) {
     return (
@@ -171,6 +175,7 @@ export default function AdminComptePage() {
   }
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage titre={t("adm.compte")} onRetour={() => router.back()} />
 
       <div className="flex-1 p-4 space-y-3">

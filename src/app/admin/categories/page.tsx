@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CarteMboa, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { categoriesPerso, creerCategoriePerso, supprimerCategoriePerso, CategoriePerso } from "@/core/data/categories";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useSession } from "@/core/etat/store";
@@ -61,6 +63,8 @@ export default function CategoriesAdminPage() {
       setEnCours(false);
     }
   }
+  // Tirer vers le bas depuis le haut = recharger la page.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   if (!pret) {
     return (
@@ -74,6 +78,7 @@ export default function CategoriesAdminPage() {
 
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage
         titre={`🏷️ ${t("adm.cat.titre")}`}
         sousTitre={t("adm.cat.sousTitre")}
