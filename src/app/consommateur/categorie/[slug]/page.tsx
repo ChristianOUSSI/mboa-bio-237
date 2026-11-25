@@ -42,8 +42,11 @@ function PageCategorieInterne() {
   const [persos, setPersos] = useState<CategoriePerso[]>([]);
   const [chargement, setChargement] = useState(true);
   const [annonces, setAnnonces] = useState<Annonce[]>([]);
+  // Horodatage du chargement : Date.now() est impur au render.
+  const [maintenant, setMaintenant] = useState(0);
 
   async function charger() {
+    setMaintenant(Date.now());
     const [v, p, a] = await Promise.all([chargerVitrine(), categoriesPerso(), toutesAnnonces()]);
     setAnnonces(a.filter((x) => x.actif && !annonceExpiree(x)));
     setProduits(v.filter((x) => produitEstVitrine(x) && x.categorie === slug));
@@ -69,7 +72,7 @@ function PageCategorieInterne() {
 
   const promoPct = (p: Produit) => annoncePromoPct(annonces, p);
   const estNouveau = (p: Produit) =>
-    !!p.createdLe && Date.now() - new Date(p.createdLe).getTime() < 7 * 24 * 3600 * 1000;
+    !!p.createdLe && maintenant > 0 && maintenant - new Date(p.createdLe).getTime() < 7 * 24 * 3600 * 1000;
 
   return (
     <FondMboa>
