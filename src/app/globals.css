@@ -1325,3 +1325,9 @@ select:focus-visible {
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--mboa-border);
 }
+
+/* Quand une barre de navigation basse est présente (espaces client,
+   admin, fournisseur), le toast remonte au-dessus d'elle. */
+body:has(.nav-bas) .toast-mboa {
+  bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+}

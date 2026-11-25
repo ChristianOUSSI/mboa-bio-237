@@ -224,7 +224,7 @@ export default function RejoindrePage() {
           <input
             type="text"
             autoComplete="name"
-            placeholder={t("rej.nomPh")}
+            placeholder={t("rej.nomPh")} aria-label={t("rej.nomPh")}
             value={nom}
             onChange={(e) => setNom(e.target.value)}
             className="champ-mboa w-full mb-2"
@@ -234,7 +234,7 @@ export default function RejoindrePage() {
             type="tel"
             inputMode="numeric"
             autoComplete="tel"
-            placeholder={t("rej.telPh")}
+            placeholder={t("rej.telPh")} aria-label={t("rej.telPh")}
             value={telephone}
             onChange={(e) => setTelephone(e.target.value)}
             className="champ-mboa w-full mb-2"
@@ -244,7 +244,7 @@ export default function RejoindrePage() {
             type="tel"
             inputMode="numeric"
             autoComplete="tel"
-            placeholder={t("rej.whatsappPh")}
+            placeholder={t("rej.whatsappPh")} aria-label={t("rej.whatsappPh")}
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
             className="champ-mboa w-full mb-2"
@@ -267,7 +267,7 @@ export default function RejoindrePage() {
           {village === "Other" && (
             <input
               type="text"
-              placeholder={t("rej.zonePh")}
+              placeholder={t("rej.zonePh")} aria-label={t("rej.zonePh")}
               value={villageAutre}
               onChange={(e) => setVillageAutre(e.target.value)}
               className="champ-mboa w-full mt-2"
@@ -307,7 +307,7 @@ export default function RejoindrePage() {
 
             <input
               type="text"
-              placeholder={t("rej.nomProduitPh")}
+              placeholder={t("rej.nomProduitPh")} aria-label={t("rej.nomProduitPh")}
               value={p.nom}
               onChange={(e) => majProduit(i, { nom: e.target.value })}
               className="champ-mboa w-full mb-2"
@@ -369,7 +369,7 @@ export default function RejoindrePage() {
               <input
                 type="number"
                 inputMode="numeric"
-                placeholder={t("rej.quantitePh")}
+                placeholder={t("rej.quantitePh")} aria-label={t("rej.quantitePh")}
                 value={p.quantite || ""}
                 onChange={(e) => majProduit(i, { quantite: parseInt(e.target.value) || 1 })}
                 className="p-2 border-2 border-[var(--mboa-primary)] rounded-xl text-center"
@@ -380,7 +380,7 @@ export default function RejoindrePage() {
             <input
               type="number"
               inputMode="numeric"
-              placeholder={t("rej.prixPh")}
+              placeholder={t("rej.prixPh")} aria-label={t("rej.prixPh")}
               value={p.prix}
               onChange={(e) => majProduit(i, { prix: e.target.value })}
               className="champ-mboa w-full text-chiffre mb-2"
@@ -417,7 +417,7 @@ export default function RejoindrePage() {
         <CarteMboa>
           <label className="text-corps block mb-2">{t("rej.noteLabel")}</label>
           <textarea
-            placeholder={t("rej.notePh")}
+            placeholder={t("rej.notePh")} aria-label={t("rej.notePh")}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             className="champ-mboa w-full"
