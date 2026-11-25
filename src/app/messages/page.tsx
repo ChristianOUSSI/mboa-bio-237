@@ -242,11 +242,12 @@ export default function PageMessages() {
         nom: q.get("nom") ?? "",
         role: (q.get("role") as RoleMessage | null) ?? null,
       });
-      // Pour les vues à conversations (livreur), on ouvre directement le fil.
-      if (estLivreur) setConversation(avec);
+      // Pour les vues à conversations (admin/livreur), on ouvre
+      // directement le fil — même s'il n'existe pas encore.
+      if (estAdmin || estLivreur) setConversation(avec);
     }, 0);
     return () => clearTimeout(d);
-  }, [estLivreur]);
+  }, [estAdmin, estLivreur]);
 
   async function charger() {
     if (!profil) return;
@@ -303,7 +304,13 @@ export default function PageMessages() {
     }
     if (!conversation) return null;
     const conv = conversations.find((c) => c.cle === conversation);
-    if (!conv) return null;
+    // Conversation pas encore dans la liste (premier message) : on
+    // retombe sur le deep-link ?avec pour connaître le correspondant.
+    if (!conv) {
+      return convInitiale?.id === conversation
+        ? { id: conversation, role: convInitiale.role }
+        : null;
+    }
     return {
       id: conv.cle === "__equipe__" ? null : conv.cle,
       role: conv.role ?? (conv.cle === convInitiale?.id ? convInitiale.role : null),
@@ -404,7 +411,9 @@ export default function PageMessages() {
 
   // ---- Fil de discussion (conversation choisie ou fil utilisateur) ----
   const titreConv = vueConversations
-    ? conversations.find((c) => c.cle === conversation)?.nom ?? t("msg.titre")
+    ? (conversations.find((c) => c.cle === conversation)?.nom ??
+        (convInitiale?.id === conversation ? convInitiale.nom : "")) ||
+      t("msg.titre")
     : convInitiale?.nom || t("msg.titre");
 
   return (

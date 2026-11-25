@@ -212,6 +212,20 @@ export default function LivraisonsPage() {
               >
                 {enCours === c.id ? t("adm.liv.paiement") : t("adm.liv.payer")}
               </BoutonMboa>
+              {c.consommateurId && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      `/messages?avec=${encodeURIComponent(c.consommateurId)}&nom=${encodeURIComponent(c.clientNom ?? "")}&role=consommateur`,
+                    )
+                  }
+                  className="text-aide font-bold mt-2"
+                  style={{ color: "var(--mboa-primary)" }}
+                >
+                  💬 {t("adm.liv.contacterClient")}
+                </button>
+              )}
             </CarteMboa>
           ))
         )}
@@ -245,12 +259,28 @@ export default function LivraisonsPage() {
                       ` · ${suivisLive.get(c.id)!.ageMin! <= 2 ? t("adm.liv.gpsLive") : `${t("adm.liv.gpsIlYa")} ${suivisLive.get(c.id)!.ageMin} min`}`}
                   </p>
                 )}
-                <button
-                  onClick={() => annulerCourse(c)}
-                  className="text-aide text-[var(--mboa-error)] font-bold mt-2"
-                >
-                  {t("adm.liv.annulerCourse")}
-                </button>
+                <div className="flex gap-3 mt-2">
+                  {c.consommateurId && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        router.push(
+                          `/messages?avec=${encodeURIComponent(c.consommateurId)}&nom=${encodeURIComponent(c.clientNom ?? "")}&role=consommateur`,
+                        )
+                      }
+                      className="text-aide font-bold"
+                      style={{ color: "var(--mboa-primary)" }}
+                    >
+                      💬 {t("adm.liv.contacterClient")}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => annulerCourse(c)}
+                    className="text-aide text-[var(--mboa-error)] font-bold"
+                  >
+                    {t("adm.liv.annulerCourse")}
+                  </button>
+                </div>
               </CarteMboa>
             ))}
           </>

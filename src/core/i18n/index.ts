@@ -479,6 +479,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.liv.fraisSauve": "Enregistrer",
     "adm.liv.fraisHint": "Ce montant s'affiche au client dans son panier. 0 = livraison offerte.",
     "adm.liv.annulerCourse": "Annuler la course",
+    "adm.liv.contacterClient": "Contacter la cliente",
     "adm.liv.gpsLive": "GPS en direct",
     "adm.liv.gpsIlYa": "GPS il y a",
     "adm.stk.appareil": "Appareil photo",
@@ -551,6 +552,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.livr.desactiver": "Désactiver",
     "adm.livr.reactiver": "Réactiver",
     "adm.livr.supprimer": "Supprimer",
+    "adm.livr.contacter": "Contacter le livreur",
 
     // Admin - zones de livraison
     "adm.zones.titre": "Zones de livraison",
@@ -1257,6 +1259,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.liv.fraisSauve": "Save",
     "adm.liv.fraisHint": "Shown to the customer in their cart. 0 = free delivery.",
     "adm.liv.annulerCourse": "Cancel delivery",
+    "adm.liv.contacterClient": "Message the customer",
     "adm.liv.gpsLive": "Live GPS",
     "adm.liv.gpsIlYa": "GPS from",
     "adm.stk.appareil": "Camera",
@@ -1329,6 +1332,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.livr.desactiver": "Deactivate",
     "adm.livr.reactiver": "Reactivate",
     "adm.livr.supprimer": "Delete",
+    "adm.livr.contacter": "Message the driver",
 
     // Admin - delivery zones
     "adm.zones.titre": "Delivery zones",

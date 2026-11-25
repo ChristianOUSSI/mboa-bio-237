@@ -338,6 +338,20 @@ export default function LivreursAdminPage() {
                 )}
               </div>
               <BoutonVoix texte={`${l.nom}, ${t("adm.livr.zone2")} ${l.zone}. ${t("adm.livr.repere")} : ${livreurRepere(l)}`} />
+              {l.profilId && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      `/messages?avec=${encodeURIComponent(l.profilId!)}&nom=${encodeURIComponent(l.nom)}&role=livreur`,
+                    )
+                  }
+                  className="btn-mboa !min-h-[44px] !min-w-[44px] !rounded-xl text-xl"
+                  aria-label={t("adm.livr.contacter")}
+                >
+                  💬
+                </button>
+              )}
             </div>
             <div className="flex gap-2 mt-2">
               {!l.actif && <BadgeStatut statut="annule" libelle={t("adm.stk.inactif")} />}
