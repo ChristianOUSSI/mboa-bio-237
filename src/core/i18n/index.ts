@@ -357,6 +357,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "liv.clientALaDistance": "Client à",
     "liv.positionLive": "position live",
     "liv.arrive": "Je suis arrivé",
+    "liv.clientConfirme": "La cliente a confirmé la réception",
+    "liv.clientConfirmePb": "La cliente a signalé un problème",
 
     // Espace admin - accueil
     "adm.accueil": "Accueil",
@@ -1126,6 +1128,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "liv.clientALaDistance": "Customer at",
     "liv.positionLive": "live position",
     "liv.arrive": "I've arrived",
+    "liv.clientConfirme": "The customer confirmed receipt",
+    "liv.clientConfirmePb": "The customer reported a problem",
 
     // Espace admin - accueil
     "adm.accueil": "Home",

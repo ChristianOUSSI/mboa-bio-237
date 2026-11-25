@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/core/etat/store";
+import { useSession, toast } from "@/core/etat/store";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
+import { vibrer } from "@/core/utils/son";
 import { toutesCommandes, chargerLivreurs, demarrerLivraison, marquerLivree, partagerPositionGps, enregistrerJalon } from "@/core/data/depots";
 import { cacheEcrire } from "@/core/data/base_locale";
 import { CarteMboa, EnTetePage, BadgeStatut, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { Commande, commandeMontantAPayer } from "@/core/types/commande_full";
-import { STATUT_COMMANDE_INFO, StatutCommande, ModePaiement, MODE_PAIEMENT_INFO } from "@/core/types/statuts";
+import { STATUT_COMMANDE_INFO, StatutCommande, ModePaiement, MODE_PAIEMENT_INFO, Satisfaction } from "@/core/types/statuts";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { resumerQuantites } from "@/core/types/commande";
 import { PositionGps, distanceGps, JalonSuivi } from "@/core/types/suivi_colis";
@@ -45,6 +48,7 @@ export default function AccueilLivreur() {
   // Position live du client par commande : distance restante +
   // destination réelle pour l'itinéraire (pas seulement l'adresse).
   const [clientsGps, setClientsGps] = useState<Map<string, { position: PositionGps; metres: number }>>(new Map());
+  const statutsPrec = useRef<Map<string, StatutCommande>>(new Map());
 
   async function charger() {
     const [toutes, livreurs] = await Promise.all([toutesCommandes(), chargerLivreurs()]);
@@ -62,15 +66,27 @@ export default function AccueilLivreur() {
         )
         .map((l) => l.id),
     );
-    // Le livreur ne voit que SES courses : ni les nouvelles (pas encore
-    // assignées), ni les annulées.
+    // Toutes MES courses, tous statuts : sert à détecter la confirmation
+    // client (livree -> recue) avant de filtrer la liste affichée.
+    const mesCourses = toutes.filter(
+      (c) => c.livreurId != null && mesFiches.has(c.livreurId),
+    );
+    for (const c of mesCourses) {
+      const avant = statutsPrec.current.get(c.id);
+      if (avant === StatutCommande.livree && c.statut === StatutCommande.recue) {
+        toast(c.satisfaction === Satisfaction.probleme ? `⚠️ ${t("liv.clientConfirmePb")}` : `✅ ${t("liv.clientConfirme")}`);
+        vibrer();
+      }
+      statutsPrec.current.set(c.id, c.statut);
+    }
+    // Le livreur ne voit que SES courses actives : ni les nouvelles
+    // (pas encore assignées), ni les annulées, ni les déjà confirmées.
     const miennes = profil
-      ? toutes.filter(
+      ? mesCourses.filter(
           (c) =>
-            c.livreurId != null &&
-            mesFiches.has(c.livreurId) &&
             c.statut !== StatutCommande.nouvelle &&
-            c.statut !== StatutCommande.annulee,
+            c.statut !== StatutCommande.annulee &&
+            c.statut !== StatutCommande.recue,
         )
       : [];
     setCourses(miennes);
@@ -79,6 +95,8 @@ export default function AccueilLivreur() {
   // Recharge au montage, toutes les 30 s et au retour sur l'onglet :
   // une course assignée par l'admin apparaît sans recharger la page.
   useActualisation(charger);
+  // Tirer vers le bas depuis le haut = recharger les courses.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   // Automatic GPS sharing every 15 s while a delivery is on the way.
   // Une seule position lue par cycle, partagee entre les courses ;
@@ -170,6 +188,7 @@ export default function AccueilLivreur() {
 
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage
         titre="MBOA DRIVER"
         sousTitre={profil ? profil.nom : ""}
