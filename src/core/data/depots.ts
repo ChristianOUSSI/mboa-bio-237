@@ -2016,6 +2016,12 @@ export async function sauverAnnonce(params: {
   code?: string | null;
 }): Promise<void> {
   const id = params.id ?? uuidV4();
+  // En modification, on conserve actif/createdLe de l'existante —
+  // sinon éditer une annonce désactivée la réactivait et réinitialisait
+  // sa date de création.
+  const existante = params.id
+    ? await cacheLire<import("../types/annonce").Annonce>("annonce", id)
+    : null;
   const annonce = {
     id,
     type: params.type,
@@ -2024,8 +2030,8 @@ export async function sauverAnnonce(params: {
     produitSlug: params.produitSlug ?? null,
     expireLe: params.expireLe ?? null,
     code: params.code?.trim() || null,
-    actif: true,
-    createdLe: new Date().toISOString(),
+    actif: existante?.actif ?? true,
+    createdLe: existante?.createdLe ?? new Date().toISOString(),
   };
   await cacheEcrire("annonce", id, annonce);
   const client = mboaReseau();
@@ -2038,7 +2044,7 @@ export async function sauverAnnonce(params: {
       produit_slug: params.produitSlug ?? null,
       expire_le: params.expireLe ?? null,
       code: params.code?.trim() || null,
-      actif: true,
+      actif: annonce.actif,
     });
     if (!error) {
       void notifierActiviteAdmin("act.annonceCreee", annonce.titre);
@@ -2198,7 +2204,8 @@ export async function supprimerZoneLivraison(zoneId: string): Promise<void> {
   if (client) {
     await client.from("zones_livraison").delete().eq("id", zoneId);
   }
-  await cacheEcrire("zone_livraison", zoneId, null);
+  const { cacheSupprimer } = await import("./base_locale");
+  await cacheSupprimer("zone_livraison", zoneId);
   await fileAjouter("zone_livraison", zoneId, "delete:zone", {});
 }
 
