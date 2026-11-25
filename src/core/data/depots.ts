@@ -405,6 +405,9 @@ async function decrementerStock(ligne: LigneCommande): Promise<void> {
   // Un pack/plat n'a pas de stock propre fiable (quantite=1 par défaut) :
   // ce sont ses INGRÉDIENTS qui sortent du stock, pas lui.
   if (produit && !produitEstPack(produit) && String(produitUniteReelle(produit)) === String(uLigne)) {
+    if (produit.quantite < ligne.quantite) {
+      void notifierActiviteAdmin("act.stockInsuffisant", `${produit.nom} : ${produit.quantite} dispo, ${ligne.quantite} demandés`);
+    }
     await ecrireStockProduit(produit, Math.max(0, produit.quantite - ligne.quantite));
   }
   // Ingrédients du pack (snapshot de la ligne) + bundleProduits.
@@ -417,7 +420,11 @@ async function decrementerStock(ligne: LigneCommande): Promise<void> {
     const pIng = await produitParSlug(ing.slug);
     if (!pIng) continue;
     if (ing.unite && String(produitUniteReelle(pIng)) !== String(ing.unite)) continue;
-    await ecrireStockProduit(pIng, Math.max(0, pIng.quantite - ing.quantite * ligne.quantite));
+    const besoin = ing.quantite * ligne.quantite;
+    if (pIng.quantite < besoin) {
+      void notifierActiviteAdmin("act.stockInsuffisant", `${pIng.nom} : ${pIng.quantite} dispo, ${besoin} requis (pack ${ligne.nom})`);
+    }
+    await ecrireStockProduit(pIng, Math.max(0, pIng.quantite - besoin));
   }
 }
 
