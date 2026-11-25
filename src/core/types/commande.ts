@@ -111,7 +111,10 @@ export function resumerQuantites(lignes: LigneCommande[]): string {
   for (const l of lignes) {
     const brut = l.unite ?? null;
     const cle = brut ?? ligneUniteReelle(l);
-    const entree = parUnite.get(cle) ?? { unite: brut ? null : ligneUniteReelle(l), total: 0 };
+    // Unité connue de l'enum → libellé pluriel propre (« kilos ») ;
+    // unité libre (« sac ») → libellé brut.
+    const unite = brut && UNITES_CONNNUES.has(brut) ? uniteResolve(brut) : null;
+    const entree = parUnite.get(cle) ?? { unite: unite ?? (brut ? null : ligneUniteReelle(l)), total: 0 };
     entree.total += l.quantite;
     parUnite.set(cle, entree);
   }
