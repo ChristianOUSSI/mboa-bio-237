@@ -25,11 +25,11 @@ import {
   validerMotDePasse,
   IDENTIFIANT_SUPERADMIN,
   EMAIL_SUPERADMIN,
-  motDePasseSuperAdmin,
   type CompteAuth,
 } from "@/core/auth/auth_local";
 import { Profil } from "@/core/types/profil";
 import { ouvrirSessionLocale } from "@/core/data/depots";
+import { mboaReseau } from "@/core/data/mboa_reseau";
 
 type Etape = "choix" | "splash" | "identifiant" | "inscription" | "nouveauMdp" | "resetMdp" | "superadmin";
 
@@ -336,6 +336,13 @@ export default function PageConnexion() {
         setErreur(t("connex.erreurDesactive"));
         return;
       }
+      // Le superadmin ne passe JAMAIS par le login normal : son compte
+      // bootstrap a des identifiants connus du bundle — seule la clé
+      // maîtresse (chou caché, vérifiée en base) donne accès.
+      if (compte.role === "superadmin") {
+        setErreur(t("connex.erreurIntrouvable"));
+        return;
+      }
       // Supabase Auth fait foi en ligne pour les comptes à email ;
       // le hash local reste le repli (comptes bootstrap, hors-ligne).
       let bon = false;
@@ -535,9 +542,18 @@ export default function PageConnexion() {
     setEnCours(true);
     setErreur(null);
     try {
-      // Le mot de passe maître est vérifié en premier : c'est la clé
-      // d'accès, indépendante de l'état du stockage local.
-      if (motDePasse.trim() !== motDePasseSuperAdmin()) {
+      // La clé maîtresse est vérifiée EN BASE (RPC security definer) :
+      // le secret ne transite plus par le bundle JS. Sans réseau ou
+      // sans la fonction SQL, on refuse — jamais de repli local.
+      const client = mboaReseau();
+      let cleOk = false;
+      if (client) {
+        const { data, error } = await client.rpc("verifier_cle_superadmin", {
+          p_mdp: motDePasse.trim(),
+        });
+        cleOk = !error && data === true;
+      }
+      if (!cleOk) {
         setErreur(t("super.erreur"));
         return;
       }
