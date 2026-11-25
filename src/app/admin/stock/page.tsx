@@ -388,6 +388,19 @@ export default function StockAdminPage() {
                     </button>
                   </div>
                 </div>
+                {(p.unites?.length ?? 0) > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {p.unites!.map((u) => (
+                      <span
+                        key={u.unite}
+                        className="text-aide px-2 py-0.5 rounded-full font-bold"
+                        style={{ background: "var(--mboa-secondary-doux)", color: "var(--mboa-primary)", fontSize: 12 }}
+                      >
+                        {u.unite} · {u.prix} F
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <div className="grid grid-cols-3 gap-2 text-center mb-2">
                   <div>
                     <p className="text-aide text-[var(--mboa-text-doux)]">{t("adm.stk.cout")}</p>
