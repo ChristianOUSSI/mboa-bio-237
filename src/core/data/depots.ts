@@ -201,6 +201,7 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
       // Selon la version de la fonction, PostgREST renvoie un objet ou un tableau.
       const brut = Array.isArray(data) ? data[0] : data;
       const commande = commandeFromMap(brut as unknown as Record<string, unknown>);
+      await cacheEcrire("commande", commande.id, commande);
       // Le RPC ne connaît pas les champs contact : on les pose en update direct.
       const patch = {
         appel_souhaite: contact?.appelSouhaite ?? false,
@@ -216,8 +217,7 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
         paiement: contact?.modePaiement ?? null,
       };
       if (patch.appel_souhaite || patch.numero_contact || patch.livraison_quartier || patch.livraison_detail || patch.livraison_lat != null || patch.client_nom || patch.frais_livraison != null || patch.paiement != null) {
-        void mboaReseau()!.from("commandes").update(patch).eq("id", commande.id);
-        return {
+        const finale = {
           ...commande,
           appelSouhaite: patch.appel_souhaite,
           numeroContact: patch.numero_contact,
@@ -231,6 +231,9 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
           fraisLivraison: patch.frais_livraison,
           paiement: patch.paiement as never,
         };
+        void mboaReseau()!.from("commandes").update(patch).eq("id", commande.id);
+        await cacheEcrire("commande", commande.id, finale);
+        return finale;
       }
       return commande;
     }
