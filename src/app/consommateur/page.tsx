@@ -7,6 +7,7 @@ import { useSession, usePanier, useData, useReseau } from "@/core/etat/store";
 import { chargerVitrine, chargerCatalogue, commandesCliente, compterFile } from "@/core/data/depots";
 import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, FondMboa, ChargementMboa } from "@/core/design_system/composants";
 import { BlocQuantite } from "@/core/design_system/bloc_quantite";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
 import { CATEGORIES_ORDREES } from "@/core/types/categorie";
 import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
 import { Produit, produitAnnonceVocale, produitPrixLabel, produitJauge, produitEstRupture, produitEstVitrine, produitEstPack } from "@/core/types/produit";
@@ -147,33 +148,7 @@ export default function MarchePage() {
       />
 
       {/* Indicateur pull-to-refresh : apparaît quand on tire depuis le haut */}
-      {(ptrDistance > 4 || ptrCours) && (
-        <div
-          className="fixed left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-corps font-bold"
-          style={{
-            top: "calc(0.75rem + env(safe-area-inset-top, 0px))",
-            background: "var(--mboa-surface)",
-            color: "var(--mboa-primary)",
-            border: "1px solid var(--mboa-border)",
-            opacity: Math.min(1, ptrDistance / 50),
-            transition: ptrCours ? "none" : "opacity 0.15s ease",
-          }}
-          aria-live="polite"
-        >
-          <span
-            className={ptrCours ? "anim-pulsation" : ""}
-            style={{
-              display: "inline-block",
-              transform: ptrCours ? "none" : `rotate(${Math.min(ptrDistance * 2.4, 180)}deg)`,
-              transition: "transform 0.1s linear",
-            }}
-            aria-hidden
-          >
-            {ptrCours ? "🔄" : "↓"}
-          </span>
-          {ptrCours ? t("march.rafraichit") : ""}
-        </div>
-      )}
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
 
       {/* Network indicator - pastille discrete */}
       <div className="px-4 py-1 flex justify-center">

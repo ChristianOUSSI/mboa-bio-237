@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { commandesCliente, confirmerReception, suiviCommande, partagerPositionGps } from "@/core/data/depots";
 import { cacheEcrire } from "@/core/data/base_locale";
 import { CarteColis } from "@/core/design_system/carte_colis";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { CarteMboa, BoutonMboa, EnTetePage, BadgeStatut, BoutonVoix, FondMboa, SkeletonMboa, ChargementMboa } from "@/core/design_system/composants";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { Commande, commandeMontantAPayer, commandeAttendConfirmation, commandeEstAnnule } from "@/core/types/commande_full";
@@ -135,6 +137,11 @@ export default function SuiviPage() {
     return () => clearInterval(timer);
   }, [profil]);
 
+  // Tirer vers le bas depuis le haut = recharger le suivi.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(() =>
+    profil ? recharger(profil.id) : Promise.resolve(),
+  );
+
   if (!pret) {
     return (
       <FondMboa>
@@ -158,6 +165,7 @@ export default function SuiviPage() {
 
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage titre={t("march.mesCommandes")} onRetour={() => router.push("/consommateur")} />
 
       <div className="flex-1 p-4">
