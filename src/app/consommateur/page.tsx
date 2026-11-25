@@ -234,8 +234,9 @@ export default function MarchePage() {
         })}
       </div>
 
-      {/* Search + sort */}
-      <div className="px-4 py-3">
+      {/* Search + sort - épinglé en haut au scroll pour filtrer
+          un long catalogue sans remonter. */}
+      <div className="px-4 py-3 barre-filtres">
         <div className="champ-recherche mb-2">
           <span aria-hidden>🔍</span>
           <input

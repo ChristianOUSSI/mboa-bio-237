@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTr } from "../i18n";
 
 const CLE_VU = "mboa_onboarding_vu";
@@ -33,6 +33,18 @@ export function OnboardingMboa({ onTermine }: { onTermine: () => void }) {
   const [index, setIndex] = useState(0);
   const slide = SLIDES[index];
   const dernier = index === SLIDES.length - 1;
+
+  // Échap = passer la visite (confort desktop / clavier).
+  useEffect(() => {
+    function surTouche(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        marquerOnboardingVu();
+        onTermine();
+      }
+    }
+    window.addEventListener("keydown", surTouche);
+    return () => window.removeEventListener("keydown", surTouche);
+  }, [onTermine]);
 
   function suivant() {
     if (dernier) {

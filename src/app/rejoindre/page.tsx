@@ -223,6 +223,7 @@ export default function RejoindrePage() {
           <h2 className="text-titre titre-section mb-3">{t("rej.who")}</h2>
           <input
             type="text"
+            autoComplete="name"
             placeholder={t("rej.nomPh")}
             value={nom}
             onChange={(e) => setNom(e.target.value)}
@@ -232,6 +233,7 @@ export default function RejoindrePage() {
           <input
             type="tel"
             inputMode="numeric"
+            autoComplete="tel"
             placeholder={t("rej.telPh")}
             value={telephone}
             onChange={(e) => setTelephone(e.target.value)}
@@ -241,6 +243,7 @@ export default function RejoindrePage() {
           <input
             type="tel"
             inputMode="numeric"
+            autoComplete="tel"
             placeholder={t("rej.whatsappPh")}
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
@@ -422,28 +425,31 @@ export default function RejoindrePage() {
           />
         </CarteMboa>
 
-        {/* Errors */}
-        {erreurs.length > 0 && (
-          <div className="bg-[var(--mboa-error-doux)] rounded-xl p-3">
-            {erreurs.map((e, i) => (
-              <p key={i} className="text-aide text-[var(--mboa-error)]">• {e}</p>
-            ))}
-          </div>
-        )}
+        {/* Erreurs + envoi : toujours visibles en bas d'écran pendant
+            le remplissage du formulaire (mobile). */}
+        <div className="sticky bottom-0 z-30 -mx-4 px-4 pt-2 pb-3" style={{ background: "var(--mboa-background)" }}>
+          {erreurs.length > 0 && (
+            <div className="bg-[var(--mboa-error-doux)] rounded-xl p-3 mb-2">
+              {erreurs.map((e, i) => (
+                <p key={i} className="text-aide text-[var(--mboa-error)]">• {e}</p>
+              ))}
+            </div>
+          )}
 
-        <BoutonMboa
-          variant="primary"
-          onClick={envoyer}
-          disabled={enCours}
-          className="w-full !text-titre"
-        >
-          {enCours ? t("rej.envoi") : t("rej.envoyer")}
-        </BoutonMboa>
+          <BoutonMboa
+            variant="primary"
+            onClick={envoyer}
+            disabled={enCours}
+            className="w-full !text-titre"
+          >
+            {enCours ? t("rej.envoi") : t("rej.envoyer")}
+          </BoutonMboa>
 
-        <p className="text-aide text-center text-[var(--mboa-text-doux)]">
-          {t("rej.dejaFournisseur")}{" "}
-          <Link href="/connexion" className="text-[var(--mboa-primary)] underline">{t("rej.connecter")}</Link>
-        </p>
+          <p className="text-aide text-center text-[var(--mboa-text-doux)] mt-2">
+            {t("rej.dejaFournisseur")}{" "}
+            <Link href="/connexion" className="text-[var(--mboa-primary)] underline">{t("rej.connecter")}</Link>
+          </p>
+        </div>
       </div>
     </FondMboa>
   );

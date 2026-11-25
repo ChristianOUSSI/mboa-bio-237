@@ -1313,3 +1313,15 @@ select:focus-visible {
 }
 /* Réserve la place de la barre pour que le contenu ne passe pas dessous */
 .pb-nav-bas { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+
+/* Barre de recherche/filtres épinglée en haut du marché */
+.barre-filtres {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--mboa-background);
+  background: color-mix(in srgb, var(--mboa-background) 90%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--mboa-border);
+}
