@@ -37,6 +37,7 @@ export default function StockAdminPage() {
   const [npPrixAchat, setNpPrixAchat] = useState("");
   const [npPhoto, setNpPhoto] = useState("");
   const [npPerissable, setNpPerissable] = useState(true);
+  const [npUnites, setNpUnites] = useState<{ unite: string; prix: string }[]>([]);
   const [npEnCours, setNpEnCours] = useState(false);
   const [npSucces, setNpSucces] = useState(false);
   const [npErreur, setNpErreur] = useState("");
@@ -149,9 +150,12 @@ export default function StockAdminPage() {
         photo: npPhoto,
         prixAchat: npPrixAchat ? parseInt(npPrixAchat) : undefined,
         perissable: npPerissable,
+        unites: npUnites
+          .map((u) => ({ unite: u.unite.trim(), prix: parseInt(u.prix) || 0 }))
+          .filter((u) => u.unite && u.prix > 0),
       });
       setNpSucces(true);
-      setNpNom(""); setNpPrix(""); setNpQuantite("1"); setNpPrixAchat(""); setNpPhoto(""); setNpPerissable(true);
+      setNpNom(""); setNpPrix(""); setNpQuantite("1"); setNpPrixAchat(""); setNpPhoto(""); setNpPerissable(true); setNpUnites([]);
       setTimeout(() => setNpSucces(false), 2000);
       await charger();
     } finally {
@@ -594,6 +598,42 @@ export default function StockAdminPage() {
                 </div>
               </div>
             </div>
+
+            {/* Unités de vente : ≥2 lignes valides → le client choisit
+                son unité (kg / pièce / sac…) avec le prix affiché. */}
+            <label className="text-aide text-[var(--mboa-text-doux)] block mb-1">{t("adm.stk.unites")}</label>
+            {npUnites.map((u, i) => (
+              <div key={i} className="flex gap-2 mb-1">
+                <input
+                  type="text"
+                  value={u.unite}
+                  onChange={(e) => setNpUnites(npUnites.map((x, j) => (j === i ? { ...x, unite: e.target.value } : x)))}
+                  placeholder={t("adm.stk.uniteEx")}
+                  className="champ-mboa flex-1"
+                  style={{ fontSize: 16 }}
+                />
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={u.prix}
+                  onChange={(e) => setNpUnites(npUnites.map((x, j) => (j === i ? { ...x, prix: e.target.value } : x)))}
+                  placeholder="F"
+                  className="champ-mboa w-28"
+                  style={{ fontSize: 16 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setNpUnites(npUnites.filter((_, j) => j !== i))}
+                  className="text-aide font-bold px-2"
+                  aria-label="✕"
+                >✕</button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setNpUnites([...npUnites, { unite: "", prix: "" }])}
+              className="btn-mboa btn-surface w-full !min-h-[44px] mb-3"
+            >{t("adm.stk.uniteAjout")}</button>
 
             {/* Photo */}
             <div className="w-full h-32 bg-[var(--mboa-background)] rounded-xl flex items-center justify-center border-2 border-dashed border-[var(--mboa-primary)] mb-2 overflow-hidden">
