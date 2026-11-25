@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "@/core/etat/store";
+import { useSession, toast } from "@/core/etat/store";
 import { messagesNonLus } from "@/core/data/depots";
+import { vibrer, jouerNotificationSonore } from "@/core/utils/son";
 
 /**
  * Bouton flottant « discuter avec l'admin » - visible sur tous les menus
@@ -15,6 +16,9 @@ export function BoutonChatFlottant() {
   const { profil } = useSession();
   const pathname = usePathname();
   const [nonLus, setNonLus] = useState(0);
+  // Baseline : le premier comptage ne doit pas notifier (messages déjà
+  // là avant l'ouverture de l'app).
+  const prec = useRef<number | null>(null);
 
   useEffect(() => {
     if (!profil) return;
@@ -22,7 +26,23 @@ export function BoutonChatFlottant() {
     const charger = () => {
       messagesNonLus(profil)
         .then((n) => {
-          if (actif) setNonLus(n);
+          if (!actif) return;
+          // Nouveau(x) message(s) arrivé(s) pendant qu'on est ailleurs :
+          // toast + vibration + bip, comme les notifications de suivi.
+          if (prec.current != null && n > prec.current && pathname !== "/messages") {
+            toast("💬 Nouveau message");
+            vibrer();
+            jouerNotificationSonore();
+            if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+              try {
+                new Notification("💬 MBOA BIO", { body: "Nouveau message", icon: "/logo-mboa.jpeg" });
+              } catch {
+                /* notification indisponible */
+              }
+            }
+          }
+          prec.current = n;
+          setNonLus(n);
         })
         .catch(() => {});
     };
@@ -32,7 +52,7 @@ export function BoutonChatFlottant() {
       actif = false;
       clearInterval(timer);
     };
-  }, [profil]);
+  }, [profil, pathname]);
 
   if (!profil || pathname === "/messages") return null;
 
