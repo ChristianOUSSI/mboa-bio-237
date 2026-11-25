@@ -20,6 +20,7 @@ import { TYPE_ANNONCE_INFO, Annonce } from "@/core/types/annonce";
 import { annonceEstPhare, annoncePromoPct, annonceExpiree } from "@/core/utils/promos";
 import { notifierNouvellesAnnonces } from "@/core/utils/annonces_notif";
 import { OnboardingMboa, estOnboardingVu } from "@/core/design_system/onboarding";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 
 export default function MarchePage() {
   const router = useRouter();
@@ -62,6 +63,8 @@ export default function MarchePage() {
   // Recharge au montage, toutes les 60 s et au retour sur l'onglet :
   // le stock et les prix restent frais sans action du client.
   useActualisation(charger, 60000);
+  // Tirer vers le bas depuis le haut de page = recharger le marché.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   useEffect(() => {
     // Visite guidée : une seule fois, après hydratation des données.
@@ -142,6 +145,35 @@ export default function MarchePage() {
           </div>
         }
       />
+
+      {/* Indicateur pull-to-refresh : apparaît quand on tire depuis le haut */}
+      {(ptrDistance > 4 || ptrCours) && (
+        <div
+          className="fixed left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-corps font-bold"
+          style={{
+            top: "calc(0.75rem + env(safe-area-inset-top, 0px))",
+            background: "var(--mboa-surface)",
+            color: "var(--mboa-primary)",
+            border: "1px solid var(--mboa-border)",
+            opacity: Math.min(1, ptrDistance / 50),
+            transition: ptrCours ? "none" : "opacity 0.15s ease",
+          }}
+          aria-live="polite"
+        >
+          <span
+            className={ptrCours ? "anim-pulsation" : ""}
+            style={{
+              display: "inline-block",
+              transform: ptrCours ? "none" : `rotate(${Math.min(ptrDistance * 2.4, 180)}deg)`,
+              transition: "transform 0.1s linear",
+            }}
+            aria-hidden
+          >
+            {ptrCours ? "🔄" : "↓"}
+          </span>
+          {ptrCours ? t("march.rafraichit") : ""}
+        </div>
+      )}
 
       {/* Network indicator - pastille discrete */}
       <div className="px-4 py-1 flex justify-center">
