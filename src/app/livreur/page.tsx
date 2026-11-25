@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/core/etat/store";
-import { toutesCommandes, chargerLivreurs, demarrerLivraison, marquerLivree, majPositionLivreur, partagerPositionGps } from "@/core/data/depots";
+import { toutesCommandes, chargerLivreurs, demarrerLivraison, marquerLivree, partagerPositionGps } from "@/core/data/depots";
 import { cacheEcrire } from "@/core/data/base_locale";
 import { CarteMboa, EnTetePage, BadgeStatut, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { Commande, commandeMontantAPayer } from "@/core/types/commande_full";
@@ -89,7 +89,6 @@ export default function AccueilLivreur() {
       await Promise.all(
         enRoute.map(async (c) => {
           await cacheEcrire("gps_livreur", c.id, pos);
-          await majPositionLivreur(c.id, pos.latitude, pos.longitude);
           partagerPositionGps("livreur", c.id, pos);
         }),
       );
@@ -122,7 +121,6 @@ export default function AccueilLivreur() {
     const pos = await positionActuelle();
     if (!pos) return;
     await cacheEcrire("gps_livreur", c.id, pos);
-    await majPositionLivreur(c.id, pos.latitude, pos.longitude);
     partagerPositionGps("livreur", c.id, pos);
   }
 

@@ -313,15 +313,37 @@ export async function commander(lignes: { produitId: string; slug: string; nom: 
 }
 
 export async function confirmerReception(commandeId: string, satisfaction: "bon" | "probleme", motif?: string): Promise<void> {
-  if (mboaReseau()) {
-    const { error } = await mboaReseau()!.rpc("confirmer_reception", {
-      p_commande: commandeId,
-      p_satisfaction: satisfaction,
-      p_motif: motif ?? null,
+  // L'RPC confirmer_reception n'existe pas en base : on écrit
+  // directement + on met à jour le cache, sinon la confirmation
+  // du client n'était persistée nulle part.
+  const maintenant = new Date().toISOString();
+  const cmd = await cacheLire<Commande>("commande", commandeId);
+  if (cmd) {
+    await cacheEcrire("commande", commandeId, {
+      ...cmd,
+      statut: "recue" as never,
+      recueLe: maintenant,
+      satisfaction: satisfaction as never,
+      satisfactionMotif: motif ?? null,
     });
-    if (!error) return;
   }
-  await fileAjouter("commande", commandeId, "rpc:confirmer_reception", { satisfaction, motif });
+  if (mboaReseau()) {
+    const { error } = await mboaReseau()!
+      .from("commandes")
+      .update({
+        statut_enum: "recue",
+        recue_le: maintenant,
+        satisfaction,
+        satisfaction_motif: motif ?? null,
+      })
+      .eq("id", commandeId);
+    if (!error) {
+      void notifierActiviteAdmin("act.receptionConfirmee", satisfaction);
+      return;
+    }
+  }
+  await fileAjouter("commande", commandeId, "update:confirmer_reception", { satisfaction, motif });
+  void notifierActiviteAdmin("act.receptionConfirmee", satisfaction);
 }
 
 /** Décrémente le stock d'une ligne de devis validé. */
@@ -443,6 +465,11 @@ export async function assignerLivreur(commandeId: string, livreurId: string, tar
 
 /** Le livreur démarre la livraison : statut validee_admin → en_livraison. */
 export async function demarrerLivraison(commandeId: string): Promise<void> {
+  // Cache local aussi : sinon le statut reste « validee_admin » hors-ligne.
+  const cmd = await cacheLire<Commande>("commande", commandeId);
+  if (cmd) {
+    await cacheEcrire("commande", commandeId, { ...cmd, statut: "en_livraison" as never });
+  }
   if (mboaReseau()) {
     const { error } = await mboaReseau()!
       .from("commandes")
@@ -879,39 +906,40 @@ export async function sauverLivreur(params: {
 
 /** Le livreur arrive chez la cliente : statut en_livraison → livree. */
 export async function marquerLivree(commandeId: string): Promise<void> {
+  const maintenant = new Date().toISOString();
+  const cmd = await cacheLire<Commande>("commande", commandeId);
+  if (cmd) {
+    await cacheEcrire("commande", commandeId, { ...cmd, statut: "livree" as never, livreeLe: maintenant });
+  }
   if (mboaReseau()) {
     const { error } = await mboaReseau()!
       .from("commandes")
-      .update({ statut_enum: "livree", livree_le: new Date().toISOString() })
+      .update({ statut_enum: "livree", livree_le: maintenant })
       .eq("id", commandeId);
     if (!error) return;
   }
   await fileAjouter("commande", commandeId, "update:statut=livree", {});
 }
 
-/** Le livreur met à jour sa position GPS en temps réel. */
-export async function majPositionLivreur(commandeId: string, latitude: number, longitude: number): Promise<void> {
-  if (mboaReseau()) {
-    const { error } = await mboaReseau()!.rpc("maj_position_livreur", {
-      p_commande: commandeId,
-      p_lat: latitude,
-      p_lng: longitude,
-    });
-    if (!error) return;
-  }
-  // Pas de file pour les positions temps réel - données éphémères
-}
-
 /** Le livreur est payé après réception confirmée par la cliente. */
 export async function payerLivreur(commandeId: string, montant: number): Promise<void> {
-  if (mboaReseau()) {
-    const { error } = await mboaReseau()!.rpc("payer_livreur", {
-      p_commande: commandeId,
-      p_montant: montant,
-    });
-    if (!error) return;
+  // L'RPC payer_livreur n'existe pas en base : update direct + cache.
+  const maintenant = new Date().toISOString();
+  const cmd = await cacheLire<Commande>("commande", commandeId);
+  if (cmd) {
+    await cacheEcrire("commande", commandeId, { ...cmd, payeLe: maintenant });
   }
-  await fileAjouter("commande", commandeId, "rpc:payer_livreur", { montant });
+  if (mboaReseau()) {
+    const { error } = await mboaReseau()!
+      .from("commandes")
+      .update({ paye_le: maintenant })
+      .eq("id", commandeId);
+    if (!error) {
+      void notifierActiviteAdmin("act.livreurPaye", `${montant} F`);
+      return;
+    }
+  }
+  await fileAjouter("commande", commandeId, "update:payer_livreur", { montant });
   void notifierActiviteAdmin("act.livreurPaye", `${montant} F`);
 }
 
@@ -1311,10 +1339,13 @@ export async function validerAchat(achatId: string, prixMarchand?: number): Prom
       valideLe: new Date().toISOString(),
     };
     await cacheEcrire("achat", achatId, achete);
-    // La marchandise achetée entre au stock du comptoir
-    const produitExistant = await cacheLire<Produit>("produit", achat.slug);
+    // La marchandise achetée entre au stock du comptoir.
+    // Recherche par SLUG (pas par id) : les produits ont des uuid,
+    // sinon chaque achat du même article créerait un doublon.
+    const stockActuel = await chargerStock();
+    const produitExistant = stockActuel.find((p) => p.slug === achat.slug);
     const produit: Produit = produitExistant ?? {
-      id: achat.slug || uuidV4(),
+      id: uuidV4(),
       slug: achat.slug,
       nom: achat.nom,
       categorie: achat.categorie,
@@ -1332,6 +1363,27 @@ export async function validerAchat(achatId: string, prixMarchand?: number): Prom
       createdLe: new Date().toISOString(),
     };
     produit.quantite += achat.quantite;
+    // Le produit doit remonter dans Supabase : sans ça il n'existe
+    // que sur l'appareil de l'admin et reste invisible aux clients.
+    const ligneProduit = {
+      id: produit.id, slug: produit.slug, nom: produit.nom, categorie: produit.categorie,
+      photo_reelle: produit.photoReelle, photo_filigranee: produit.photoFiligranee,
+      emoji: produit.emoji, quantite: produit.quantite, prix: produit.prix, unite: produit.unite,
+      prix_achat: produit.prixAchat, audio_description_url: produit.audioDescription,
+      perissable: produit.perissable, actif: produit.actif,
+      pack_composants: produit.composants.length ? JSON.parse(JSON.stringify(produit.composants)) : null,
+      type_pack: produit.typePack ?? null,
+      bundle_produits: produit.bundleProduits?.length ? produit.bundleProduits : null,
+      theme: produit.theme ?? null,
+      unites: produit.unites?.length ? produit.unites : null,
+      created_at: produit.createdLe,
+    };
+    if (mboaReseau()) {
+      const { error } = await mboaReseau()!.from("produits").upsert(ligneProduit);
+      if (error) await fileAjouter("produit", produit.id, "create", {});
+    } else {
+      await fileAjouter("produit", produit.id, "create", {});
+    }
     await cacheEcrire("produit", produit.id, produit);
     await cacheEcrire("vitrine", produit.id, produit);
     void notifierActiviteAdmin("act.achatValide", `${achat.nom} ×${achat.quantite}`);
@@ -1747,7 +1799,7 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
         nom_livreur: c.livreurNom ?? null, photo_livreur: c.livreurPhoto ?? null,
         moto: c.livreurMoto ?? null, plaque: c.livreurPlaque ?? null,
         telephone_livreur: c.livreurTelephone ?? null, tarif_livreur: c.livreurTarif ?? null,
-        tarif_course: c.livreurTarif ?? null, paye_le: null,
+        tarif_course: c.livreurTarif ?? null, paye_le: c.payeLe ?? null,
         appel_souhaite: c.appelSouhaite, numero_contact: c.numeroContact ?? null,
         livraison_quartier: c.livraisonQuartier ?? null, livraison_detail: c.livraisonDetail ?? null,
         livraison_lat: c.livraisonLat ?? null, livraison_lng: c.livraisonLng ?? null,

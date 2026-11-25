@@ -37,10 +37,24 @@ export const UNITE_INFO: Record<
   [Unite.verre]: { un: "verre", pluriel: "verres", article: "par" },
 };
 
+/** Alias tolérés : anciennes données ou saisies libres qui désignent
+ *  la même unité (« pièce » = morceau, « kilo » = kg…). */
+const ALIAS_UNITE: Record<string, Unite> = {
+  piece: Unite.morceau,
+  "pièce": Unite.morceau,
+  kilo: Unite.kg,
+  kilos: Unite.kg,
+  litre: Unite.litre,
+  litres: Unite.litre,
+  regime: Unite.regime,
+  "régime": Unite.regime,
+};
+
 export function uniteResolve(slug?: string | null): Unite {
   if (!slug) return Unite.kg;
   const found = (Object.values(Unite) as string[]).includes(slug);
-  return found ? (slug as Unite) : Unite.kg;
+  if (found) return slug as Unite;
+  return ALIAS_UNITE[slug.toLowerCase()] ?? Unite.kg;
 }
 
 export function unitePour(u: Unite, valeur: number): string {

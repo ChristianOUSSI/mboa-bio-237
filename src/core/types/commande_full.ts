@@ -47,6 +47,8 @@ export interface Commande {
   satisfaction?: Satisfaction | null;
   satisfactionMotif?: string | null;
   satisfactionAudio?: string | null;
+  /** Date de paiement du livreur (admin → livreur). */
+  payeLe?: string | null;
   clos: boolean;
   closPar?: string | null;
   annuleLe?: string | null;
@@ -174,6 +176,7 @@ export function commandeFromMap(map: Record<string, unknown>): Commande {
     satisfaction: satisfactionParse(map.satisfaction as string),
     satisfactionMotif: (map.satisfaction_motif as string) ?? null,
     satisfactionAudio: (map.satisfaction_audio as string) ?? null,
+    payeLe: (map.paye_le as string) ?? null,
     clos: (map.clos as boolean) ?? false,
     closPar: (map.clos_par as string) ?? null,
     annuleLe: (map.annule_le as string) ?? null,
