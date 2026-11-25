@@ -77,10 +77,14 @@ export default function SuiviPage() {
   const [annulationEnCours, setAnnulationEnCours] = useState(false);
   const [satisfactionChoisie, setSatisfactionChoisie] = useState<Satisfaction | null>(null);
   const [motifChoisi, setMotifChoisi] = useState<MotifReception | null>(null);
-  // Dernier partage GPS par commande : la position est re-publiée
-  // toutes les 3 min pour que « approche » / « arrivé » restent exacts.
+  // Dernier partage GPS par commande : la position n'est publiée que
+  // quand la course est réellement partie (vie privée), et toutes les
+  // 60 s pendant la livraison pour que « approche »/« arrivé » restent
+  // précis au moment critique. 3 min suffisent quand c'est juste
+  // « livrée » en attente de confirmation.
   const positionsPartagees = useRef<Map<string, number>>(new Map());
-  const PARTAGE_GPS_MS = 3 * 60 * 1000;
+  const PARTAGE_GPS_LIVRAISON_MS = 60 * 1000;
+  const PARTAGE_GPS_ATTENTE_MS = 3 * 60 * 1000;
   const [jalonOuvert, setJalonOuvert] = useState<{ cmdId: string; jalon: JalonSuivi } | null>(null);
   const statutsPrec = useRef<Map<string, StatutCommande>>(new Map());
   const alertesProximite = useRef<Set<string>>(new Set());
@@ -132,13 +136,14 @@ export default function SuiviPage() {
     const entrees = await Promise.all(cmds.map(async (c) => [c.id, await suiviCommande(c.id)] as const));
     const sMap = new Map<string, SuiviColis>(entrees);
     // Une seule position GPS lue pour toutes les livraisons actives.
-    const actives = cmds.filter(
-      (c) =>
-        (c.statut === StatutCommande.valideeAdmin ||
-          c.statut === StatutCommande.enLivraison ||
-          c.statut === StatutCommande.livree) &&
-        Date.now() - (positionsPartagees.current.get(c.id) ?? 0) > PARTAGE_GPS_MS,
-    );
+    const actives = cmds.filter((c) => {
+      const enCourse =
+        c.statut === StatutCommande.enLivraison || c.statut === StatutCommande.livree;
+      if (!enCourse) return false;
+      const intervalle =
+        c.statut === StatutCommande.enLivraison ? PARTAGE_GPS_LIVRAISON_MS : PARTAGE_GPS_ATTENTE_MS;
+      return Date.now() - (positionsPartagees.current.get(c.id) ?? 0) > intervalle;
+    });
     if (actives.length > 0 && typeof Notification !== "undefined" && Notification.permission === "default" && !notifDemandee.current) {
       notifDemandee.current = true;
       Notification.requestPermission().catch(() => {});
