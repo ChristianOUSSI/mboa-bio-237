@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { commandesCliente, confirmerReception, suiviCommande, partagerPositionGps, annulerMaCommande } from "@/core/data/depots";
+import { commandesCliente, confirmerReception, suiviCommande, partagerPositionGps, annulerMaCommande, chargerLivreurs } from "@/core/data/depots";
 import { cacheEcrire } from "@/core/data/base_locale";
 import { CarteColis } from "@/core/design_system/carte_colis";
 import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
@@ -90,6 +90,23 @@ export default function SuiviPage() {
   const alertesProximite = useRef<Set<string>>(new Set());
   const jalonsPrec = useRef<Map<string, number>>(new Map());
   const notifDemandee = useRef(false);
+  // fiche livreur (livreurs.id) → profil_id, pour ouvrir le chat direct.
+  const [profilsLivreurs, setProfilsLivreurs] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    let actif = true;
+    chargerLivreurs()
+      .then((ls) => {
+        if (!actif) return;
+        const m = new Map<string, string>();
+        for (const l of ls) if (l.profilId) m.set(l.id, l.profilId);
+        setProfilsLivreurs(m);
+      })
+      .catch(() => {});
+    return () => {
+      actif = false;
+    };
+  }, []);
 
   async function recharger(profilId: string) {
     const cmds = await commandesCliente(profilId);
@@ -393,15 +410,31 @@ export default function SuiviPage() {
                           {c.livreurMoto ? ` · ${c.livreurMoto}` : ""}
                         </p>
                       </div>
-                      {c.livreurTelephone && (
-                        <a
-                          href={`tel:${c.livreurTelephone}`}
-                          className="btn-mboa btn-primary !min-h-[44px] !min-w-[44px] !rounded-xl text-xl"
-                          aria-label={`Appeler ${c.livreurNom}`}
-                        >
-                          📞
-                        </a>
-                      )}
+                      <div className="flex gap-2">
+                        {c.livreurTelephone && (
+                          <a
+                            href={`tel:${c.livreurTelephone}`}
+                            className="btn-mboa btn-primary !min-h-[44px] !min-w-[44px] !rounded-xl text-xl"
+                            aria-label={`Appeler ${c.livreurNom}`}
+                          >
+                            📞
+                          </a>
+                        )}
+                        {c.livreurId && profilsLivreurs.get(c.livreurId) && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              router.push(
+                                `/messages?avec=${encodeURIComponent(profilsLivreurs.get(c.livreurId!)!)}&nom=${encodeURIComponent(c.livreurNom ?? "")}&role=livreur`,
+                              )
+                            }
+                            className="btn-mboa btn-primary !min-h-[44px] !min-w-[44px] !rounded-xl text-xl"
+                            aria-label={t("suivi.contacterLivreur")}
+                          >
+                            💬
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
 

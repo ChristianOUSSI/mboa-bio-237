@@ -31,6 +31,46 @@ type Conversation = {
 
 const estRoleAdmin = (r: string | null | undefined) => r === "admin" || r === "superadmin";
 
+/** Clé de conversation d'un message pour un utilisateur donné :
+ *  « __equipe__ » pour les admins, sinon l'id du correspondant. */
+function cleConversation(m: MessageChat, monId: string): string {
+  if (m.expediteurId === monId) {
+    return m.destinataireId == null || estRoleAdmin(m.destinataireRole) ? "__equipe__" : m.destinataireId;
+  }
+  return estRoleAdmin(m.expediteurRole) ? "__equipe__" : m.expediteurId;
+}
+
+/** Regroupe les messages d'un non-admin (livreur) par correspondant. */
+function grouperPourUtilisateur(messages: MessageChat[], monId: string): Conversation[] {
+  const map = new Map<string, Conversation>();
+  for (const m of messages) {
+    const cle = cleConversation(m, monId);
+    let conv = map.get(cle);
+    if (!conv) {
+      conv = { cle, nom: "", role: null, messages: [] };
+      map.set(cle, conv);
+    }
+    conv.messages.push(m);
+    if (m.expediteurId === monId) {
+      if (!conv.role && m.destinataireRole) conv.role = m.destinataireRole;
+    } else {
+      conv.nom = m.expediteurNom || conv.nom;
+      conv.role = m.expediteurRole;
+    }
+  }
+  for (const conv of map.values()) {
+    conv.messages.sort((a, b) => a.createdLe.localeCompare(b.createdLe));
+    if (!conv.nom) {
+      conv.nom = conv.cle === "__equipe__" ? "équipe" : conv.cle.slice(0, 8);
+    }
+  }
+  return [...map.values()].sort((a, b) => {
+    const da = a.messages[a.messages.length - 1]?.createdLe ?? "";
+    const db = b.messages[b.messages.length - 1]?.createdLe ?? "";
+    return db.localeCompare(da);
+  });
+}
+
 /** Regroupe les messages en conversations (vue admin). */
 function grouperConversations(messages: MessageChat[]): Conversation[] {
   const map = new Map<string, Conversation>();
@@ -184,8 +224,29 @@ export default function PageMessages() {
   const [conversation, setConversation] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const bas = useRef<HTMLDivElement | null>(null);
+  // Conversation directe ouverte via ?avec=<id>&nom=<nom>&role=<role>
+  // (ex. client → livreur depuis la page suivi).
+  const [convInitiale, setConvInitiale] = useState<{ id: string; nom: string; role: RoleMessage | null } | null>(null);
 
   const estAdmin = profil?.role === "admin" || profil?.role === "superadmin";
+  const estLivreur = profil?.role === "livreur";
+  const vueConversations = estAdmin || estLivreur;
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const avec = q.get("avec");
+    if (!avec) return;
+    const d = setTimeout(() => {
+      setConvInitiale({
+        id: avec,
+        nom: q.get("nom") ?? "",
+        role: (q.get("role") as RoleMessage | null) ?? null,
+      });
+      // Pour les vues à conversations (livreur), on ouvre directement le fil.
+      if (estLivreur) setConversation(avec);
+    }, 0);
+    return () => clearTimeout(d);
+  }, [estLivreur]);
 
   async function charger() {
     if (!profil) return;
@@ -213,25 +274,41 @@ export default function PageMessages() {
   const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   const conversations = useMemo(
-    () => (estAdmin && messages ? grouperConversations(messages) : []),
-    [estAdmin, messages],
+    () =>
+      vueConversations && messages && profil
+        ? estAdmin
+          ? grouperConversations(messages)
+          : grouperPourUtilisateur(messages, profil.id)
+        : [],
+    [vueConversations, estAdmin, messages, profil],
   );
 
-  // Fil affiché : admin → conversation choisie ; utilisateur → tout le fil.
+  // Fil affiché : conversations (admin/livreur) → fil choisi ;
+  // utilisateur → « équipe » par défaut ou la conversation directe ?avec.
   const fil = useMemo(() => {
-    if (!messages) return [];
-    if (!estAdmin) return messages;
-    const conv = conversations.find((c) => c.cle === conversation);
-    return conv?.messages ?? [];
-  }, [messages, estAdmin, conversations, conversation]);
+    if (!messages || !profil) return [];
+    if (vueConversations) {
+      const conv = conversations.find((c) => c.cle === conversation);
+      return conv?.messages ?? [];
+    }
+    const cle = convInitiale?.id ?? "__equipe__";
+    return messages.filter((m) => cleConversation(m, profil.id) === cle);
+  }, [messages, profil, vueConversations, conversations, conversation, convInitiale]);
 
-  // Le correspondant de la conversation admin ouverte (pour la réponse).
+  // Le correspondant pour la réponse : conversation choisie (admin/
+  // livreur) ou conversation directe ?avec (client/fournisseur).
   const correspondant = useMemo(() => {
-    if (!estAdmin || !conversation) return null;
+    if (!vueConversations) {
+      return convInitiale ? { id: convInitiale.id, role: convInitiale.role } : null;
+    }
+    if (!conversation) return null;
     const conv = conversations.find((c) => c.cle === conversation);
     if (!conv) return null;
-    return { id: conv.cle === "__equipe__" ? null : conv.cle, role: conv.role };
-  }, [estAdmin, conversation, conversations]);
+    return {
+      id: conv.cle === "__equipe__" ? null : conv.cle,
+      role: conv.role ?? (conv.cle === convInitiale?.id ? convInitiale.role : null),
+    };
+  }, [vueConversations, conversation, conversations, convInitiale]);
 
   useEffect(() => {
     bas.current?.scrollIntoView({ behavior: "smooth" });
@@ -285,8 +362,8 @@ export default function PageMessages() {
     );
   }
 
-  // ---- Vue admin : liste des conversations ----
-  if (estAdmin && conversation === null) {
+  // ---- Vue conversations (admin/livreur) : liste des fils ----
+  if (vueConversations && conversation === null) {
     return (
       <FondMboa>
         <EnTetePage titre={t("msg.titre")} sousTitre={t("msg.sousTitreAdmin")} onRetour={() => router.back()} />
@@ -325,18 +402,18 @@ export default function PageMessages() {
     );
   }
 
-  // ---- Fil de discussion (utilisateur ou conversation admin choisie) ----
-  const titreConv = estAdmin
+  // ---- Fil de discussion (conversation choisie ou fil utilisateur) ----
+  const titreConv = vueConversations
     ? conversations.find((c) => c.cle === conversation)?.nom ?? t("msg.titre")
-    : t("msg.titre");
+    : convInitiale?.nom || t("msg.titre");
 
   return (
     <FondMboa>
       <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage
         titre={titreConv}
-        sousTitre={estAdmin ? t("msg.sousTitreAdmin") : t("msg.sousTitre")}
-        onRetour={() => (estAdmin ? setConversation(null) : router.back())}
+        sousTitre={vueConversations ? t("msg.sousTitreAdmin") : convInitiale ? t("msg.sousTitreDirect") : t("msg.sousTitre")}
+        onRetour={() => (vueConversations ? setConversation(null) : router.back())}
       />
       <div className="flex-1 flex flex-col p-4 min-h-0">
         <div className="flex-1 overflow-y-auto space-y-1 pb-3">
@@ -375,9 +452,9 @@ export default function PageMessages() {
             {envoi ? "…" : "➤"}
           </BoutonMboa>
         </div>
-        {!estAdmin && (
+        {!vueConversations && (
           <p className="text-[11px] opacity-50 mt-1 text-center">
-            {t("msg.infoAdmin")}
+            {convInitiale ? t("msg.infoDirect") : t("msg.infoAdmin")}
           </p>
         )}
       </div>

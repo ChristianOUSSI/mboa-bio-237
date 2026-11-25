@@ -286,6 +286,21 @@ export default function AccueilLivreur() {
                     </p>
                   )}
 
+                  {c.consommateurId && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        router.push(
+                          `/messages?avec=${encodeURIComponent(c.consommateurId)}&nom=${encodeURIComponent(c.clientNom ?? t("liv.client"))}&role=consommateur`,
+                        )
+                      }
+                      className="text-aide mt-1 inline-block font-bold underline"
+                      style={{ color: "var(--mboa-primary)" }}
+                    >
+                      💬 {t("liv.contacterClient")}
+                    </button>
+                  )}
+
                   {c.appelSouhaite && (
                     <p className="text-aide mt-2 font-bold" style={{ color: "var(--mboa-primary)" }}>
                       📞 {t("liv.appelerAvant")}
