@@ -327,7 +327,9 @@ export async function confirmerReception(commandeId: string, satisfaction: "bon"
 /** Décrémente le stock d'une ligne de devis validé. */
 async function decrementerStock(ligne: LigneCommande): Promise<void> {
   if (!ligne.produitId || ligne.produitId.startsWith("libre_")) return;
-  const uLigne = ligneUniteReelle(ligne);
+  // Unité brute choisie (« sac »…) : seule une unité strictement égale à
+  // l'unité de stock du produit peut décrémenter — jamais à l'aveugle.
+  const uLigne = ligne.unite ?? ligneUniteReelle(ligne);
 
   let produit: Produit | null = null;
   if (mboaReseau()) {
@@ -341,7 +343,7 @@ async function decrementerStock(ligne: LigneCommande): Promise<void> {
   if (!produit) produit = await cacheLire<Produit>("produit", ligne.produitId);
   if (!produit) return;
   // Unités non convertibles : on ne décrémente pas à l'aveugle
-  if (produitUniteReelle(produit) !== uLigne) return;
+  if (String(produitUniteReelle(produit)) !== String(uLigne)) return;
 
   const nouvelleQte = Math.max(0, produit.quantite - ligne.quantite);
   produit.quantite = nouvelleQte;
@@ -1942,7 +1944,7 @@ export async function supprimerAnnonce(annonceId: string): Promise<void> {
 /** Remet en stock une ligne de commande annulée (miroir de decrementerStock). */
 async function restaurerStock(ligne: LigneCommande): Promise<void> {
   if (!ligne.produitId || ligne.produitId.startsWith("libre_")) return;
-  const uLigne = ligneUniteReelle(ligne);
+  const uLigne = ligne.unite ?? ligneUniteReelle(ligne);
 
   let produit: Produit | null = null;
   if (mboaReseau()) {
@@ -1955,7 +1957,7 @@ async function restaurerStock(ligne: LigneCommande): Promise<void> {
   }
   if (!produit) produit = await cacheLire<Produit>("produit", ligne.produitId);
   if (!produit) return;
-  if (produitUniteReelle(produit) !== uLigne) return;
+  if (String(produitUniteReelle(produit)) !== String(uLigne)) return;
 
   const nouvelleQte = produit.quantite + ligne.quantite;
   produit.quantite = nouvelleQte;

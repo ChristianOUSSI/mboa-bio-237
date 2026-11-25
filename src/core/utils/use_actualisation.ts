@@ -9,7 +9,11 @@ import { useEffect, useRef } from "react";
  */
 export function useActualisation(charger: () => void | Promise<void>, ms = 30000) {
   const ref = useRef(charger);
-  ref.current = charger;
+
+  // La ref est mise à jour dans un effet (jamais pendant le render).
+  useEffect(() => {
+    ref.current = charger;
+  });
 
   useEffect(() => {
     void ref.current();

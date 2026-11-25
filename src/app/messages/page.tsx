@@ -198,9 +198,13 @@ export default function PageMessages() {
       const delai = setTimeout(() => router.replace("/connexion"), 400);
       return () => clearTimeout(delai);
     }
-    void charger();
+    // Premier chargement différé : evite le setState synchrone dans l'effet.
+    const premier = setTimeout(() => void charger(), 0);
     const timer = setInterval(() => void charger(), 8000);
-    return () => clearInterval(timer);
+    return () => {
+      clearTimeout(premier);
+      clearInterval(timer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profil?.id]);
 

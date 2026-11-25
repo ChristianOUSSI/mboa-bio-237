@@ -234,9 +234,14 @@ export default function PageConnexion() {
   const [sombre, setSombre] = useState(false);
 
   // Mode grand texte : synchronisé avec la classe posée avant le 1er rendu.
+  // setState différé (rAF) : la règle react-hooks interdit le setState
+  // synchrone dans le corps d'un effet.
   useEffect(() => {
-    setGrandTexte(document.documentElement.classList.contains("texte-grand"));
-    setSombre(document.documentElement.dataset.theme === "sombre");
+    const frame = requestAnimationFrame(() => {
+      setGrandTexte(document.documentElement.classList.contains("texte-grand"));
+      setSombre(document.documentElement.dataset.theme === "sombre");
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   function basculerTexteGrand() {

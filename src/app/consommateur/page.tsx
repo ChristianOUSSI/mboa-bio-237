@@ -155,9 +155,13 @@ export default function MarchePage() {
   const [onboarding, setOnboarding] = useState(false);
   const [filtreCat, setFiltreCat] = useState("");
   const [monterVisible, setMonterVisible] = useState(false);
+  // Horodatage du dernier chargement : Date.now() est impur au render,
+  // on le capture dans charger() (contexte async autorisé).
+  const [maintenant, setMaintenant] = useState(0);
   const t = useTr();
 
   async function charger() {
+    setMaintenant(Date.now());
     const [v, c, p, a] = await Promise.all([chargerVitrine(), chargerCatalogue(), categoriesPerso(), toutesAnnonces()]);
     setAnnonces(a.filter((x) => x.actif && !annonceExpiree(x)));
     void notifierNouvellesAnnonces(a.filter((x) => x.actif));
@@ -179,7 +183,10 @@ export default function MarchePage() {
 
   useEffect(() => {
     // Visite guidée : une seule fois, après hydratation des données.
-    if (!estOnboardingVu()) setOnboarding(true);
+    // setState différé : interdit en synchrone dans un effet.
+    const frame = requestAnimationFrame(() => {
+      if (!estOnboardingVu()) setOnboarding(true);
+    });
     // Notifications promos : demande la permission une fois (silencieuse si refusée).
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
       void Notification.requestPermission().catch(() => {});
@@ -191,6 +198,7 @@ export default function MarchePage() {
     window.addEventListener("offline", handler);
     window.addEventListener("scroll", surScroll, { passive: true });
     return () => {
+      cancelAnimationFrame(frame);
       window.removeEventListener("online", handler);
       window.removeEventListener("offline", handler);
       window.removeEventListener("scroll", surScroll);
@@ -212,7 +220,7 @@ export default function MarchePage() {
   const promoPct = (p: Produit) => annoncePromoPct(annonces, p);
   // « Nouveau » : produit ajouté au stock il y a moins de 7 jours.
   const estNouveau = (p: Produit) =>
-    !!p.createdLe && Date.now() - new Date(p.createdLe).getTime() < 7 * 24 * 3600 * 1000;
+    !!p.createdLe && maintenant > 0 && maintenant - new Date(p.createdLe).getTime() < 7 * 24 * 3600 * 1000;
 
   const produitsFiltres = vitrine.filter((p) =>
     (!filtreCat || p.categorie === filtreCat) &&

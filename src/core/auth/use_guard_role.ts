@@ -32,12 +32,18 @@ export function useGuardRole(roleAttendu: AppRole): { pret: boolean; profil: Pro
 
   useEffect(() => {
     if (hydrate) return;
-    if (typeof useSession.persist?.hasHydrated === "function" && useSession.persist.hasHydrated()) {
-      setHydrate(true);
-      return;
-    }
+    // setState différé : la règle react-hooks interdit le setState
+    // synchrone dans le corps d'un effet.
+    const verif = setTimeout(() => {
+      if (typeof useSession.persist?.hasHydrated === "function" && useSession.persist.hasHydrated()) {
+        setHydrate(true);
+      }
+    }, 0);
     const off = useSession.persist?.onFinishHydration?.(() => setHydrate(true));
-    return () => off?.();
+    return () => {
+      clearTimeout(verif);
+      off?.();
+    };
   }, [hydrate]);
 
   useEffect(() => {

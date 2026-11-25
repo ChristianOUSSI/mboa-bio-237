@@ -53,9 +53,10 @@ export function produitUniteReelle(p: Produit): Unite {
  *  l'unité/prix par défaut du produit. */
 export function produitUnites(p: Produit): { unite: string; prix: number }[] {
   if (p.unites && p.unites.length > 0) {
-    return p.unites
+    const valides = p.unites
       .filter((u) => u.unite && u.prix > 0)
       .map((u) => ({ unite: u.unite, prix: Math.round(u.prix) }));
+    if (valides.length > 0) return valides;
   }
   return [{ unite: produitUniteReelle(p) as string, prix: p.prix }];
 }

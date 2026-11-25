@@ -12,7 +12,9 @@ export interface LigneCommande {
   prix: number;
   coutAchat: number;
   photo: string;
-  unite?: Unite | null;
+  /** Unité choisie : valeur de l'enum Unite OU libellé libre
+   *  (« sac », « caisse »…) défini dans produit.unites. */
+  unite?: string | null;
   composants: PackComposant[];
 }
 
@@ -24,14 +26,22 @@ export function ligneEstLibre(l: LigneCommande): boolean {
   return !ligneEstPack(l) && (!l.slug || l.slug.length === 0);
 }
 
+const UNITES_CONNNUES = new Set<string>(Object.values(Unite));
+
 export function ligneUniteReelle(l: LigneCommande): Unite {
-  if (l.unite) return l.unite;
+  // Unité libre inconnue de l'enum → kg par défaut pour la logique
+  // interne ; l'affichage utilise ligneQuantiteAffichee qui préserve
+  // le libellé brut.
+  if (l.unite) return uniteResolve(l.unite);
   if (ligneEstPack(l)) return Unite.part;
   if (ligneEstLibre(l)) return Unite.morceau;
   return Unite.kg;
 }
 
 export function ligneQuantiteAffichee(l: LigneCommande): string {
+  if (l.unite && !UNITES_CONNNUES.has(l.unite)) {
+    return `${l.quantite} ${l.unite}`;
+  }
   return uniteAvec(ligneUniteReelle(l), l.quantite);
 }
 
@@ -59,7 +69,7 @@ export function ligneFromJson(json: Record<string, unknown>): LigneCommande {
     prix: Math.round(Number(json.prix ?? 0)),
     coutAchat: Math.round(Number(json.cout_achat ?? 0)),
     photo: (json.photo as string) ?? "",
-    unite: json.unite ? uniteResolve(json.unite as string) : null,
+    unite: (json.unite as string) ?? null,
     composants: packComposantDepuisJson(json.composants),
   };
 }
@@ -72,7 +82,8 @@ export function ligneToJson(l: LigneCommande): Record<string, unknown> {
     nom: l.nom,
     categorie: l.categorie,
     quantite: l.quantite,
-    unite: u,
+    // Préserve l'unité libre choisie (« sac »…) ; sinon l'unité réelle.
+    unite: l.unite ?? u,
     prix: l.prix,
     cout_achat: l.coutAchat,
     photo: l.photo,
@@ -95,13 +106,17 @@ function packComposantLibelle(c: PackComposant): string {
 
 /** Résume les quantités d'un panier, groupées par unité : « 8 kilos · 2 parts ». */
 export function resumerQuantites(lignes: LigneCommande[]): string {
-  const parUnite = new Map<Unite, number>();
+  // Clé = libellé brut (« sac »…) si présent, sinon l'unité réelle.
+  const parUnite = new Map<string, { unite: Unite | null; total: number }>();
   for (const l of lignes) {
-    const u = ligneUniteReelle(l);
-    parUnite.set(u, (parUnite.get(u) ?? 0) + l.quantite);
+    const brut = l.unite ?? null;
+    const cle = brut ?? ligneUniteReelle(l);
+    const entree = parUnite.get(cle) ?? { unite: brut ? null : ligneUniteReelle(l), total: 0 };
+    entree.total += l.quantite;
+    parUnite.set(cle, entree);
   }
   if (parUnite.size === 0) return "rien";
   return Array.from(parUnite.entries())
-    .map(([u, val]) => uniteAvec(u, val))
+    .map(([cle, v]) => (v.unite ? uniteAvec(v.unite, v.total) : `${v.total} ${cle}`))
     .join(" · ");
 }

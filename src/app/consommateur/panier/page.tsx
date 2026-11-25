@@ -60,13 +60,16 @@ export default function PanierPage() {
   const [etape, setEtape] = useState<1 | 2 | 3>(1);
 
   // Calcul dynamique des frais de livraison selon le quartier.
+  // setState différé : la règle react-hooks interdit le setState
+  // synchrone dans le corps d'un effet.
   useEffect(() => {
     if (etape === 2 && livraisonQuartier.trim()) {
-      setCalculEnCours(true);
+      const frame = requestAnimationFrame(() => setCalculEnCours(true));
       fraisLivraisonPourQuartier(livraisonQuartier.trim()).then((p) => {
         setFraisLivraisonCfg(p);
         setCalculEnCours(false);
       });
+      return () => cancelAnimationFrame(frame);
     }
   }, [etape, livraisonQuartier]);
 
