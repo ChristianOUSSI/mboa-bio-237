@@ -767,6 +767,12 @@ export default function PageConnexion() {
             >
               👨‍🌾 {t("choix.rejoindre")}
             </Link>
+            <Link
+              href="/aide"
+              className="block text-center text-aide font-bold text-[var(--mboa-primary)] underline underline-offset-4"
+            >
+              ❓ {t("aide.titre")}
+            </Link>
 
             {/* Puces rassurance */}
             <div className="flex flex-wrap justify-center gap-2 pt-1">

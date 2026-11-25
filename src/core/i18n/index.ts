@@ -738,6 +738,21 @@ const DICT: Record<Lang, Record<string, string>> = {
     "plus.livraison": "Livraison à domicile",
     "plus.paiement": "Paiement à la livraison",
     "plus.frais": "Produits frais du village",
+
+    // Page aide « Comment ça marche »
+    "aide.titre": "Comment ça marche",
+    "aide.sousTitre": "Tout ce qu'il faut savoir, en 4 étapes simples",
+    "aide.etape1.titre": "1. Choisissez vos produits",
+    "aide.etape1.texte": "Parcourez le marché, touchez les produits frais. Vous pouvez choisir le prix par kilo, par pièce ou par sac.",
+    "aide.etape2.titre": "2. Ajoutez au panier",
+    "aide.etape2.texte": "Touchez le bouton + pour chaque produit. Vous pouvez changer la quantité avec les boutons − et +.",
+    "aide.etape3.titre": "3. Envoyez votre commande",
+    "aide.etape3.texte": "Ouvrez le panier, indiquez votre quartier et validez. Un livreur vient chercher vos produits.",
+    "aide.etape4.titre": "4. Recevez et payez",
+    "aide.etape4.texte": "Le livreur vous apporte tout à la maison. Vous payez seulement à la réception.",
+    "aide.besoinAide": "Une question ? Écrivez ou parlez à l'administrateur — il vous répondra.",
+    "aide.boutonAdmin": "Échanger avec l'admin",
+    "aide.retour": "Retour",
   },
   en: {
     // Commun
@@ -1454,6 +1469,21 @@ const DICT: Record<Lang, Record<string, string>> = {
     "plus.livraison": "Home delivery",
     "plus.paiement": "Pay on delivery",
     "plus.frais": "Fresh from the village",
+
+    // Help page "How it works"
+    "aide.titre": "How it works",
+    "aide.sousTitre": "Everything you need to know, in 4 simple steps",
+    "aide.etape1.titre": "1. Choose your products",
+    "aide.etape1.texte": "Browse the market, tap fresh products. You can choose the price per kilo, per piece or per bag.",
+    "aide.etape2.titre": "2. Add to cart",
+    "aide.etape2.texte": "Tap the + button for each product. You can change the quantity with the − and + buttons.",
+    "aide.etape3.titre": "3. Send your order",
+    "aide.etape3.texte": "Open the cart, enter your neighborhood and confirm. A driver picks up your products.",
+    "aide.etape4.titre": "4. Receive and pay",
+    "aide.etape4.texte": "The driver brings everything to your home. You only pay on receipt.",
+    "aide.besoinAide": "A question? Write or speak to the administrator — they will answer you.",
+    "aide.boutonAdmin": "Chat with admin",
+    "aide.retour": "Back",
   },
 };
 

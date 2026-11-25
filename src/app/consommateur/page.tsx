@@ -241,16 +241,23 @@ export default function MarchePage() {
           router.push("/connexion");
         }}
         action={
-          <Link href="/consommateur/panier" className="relative">
-            <button className="btn-mboa btn-surface !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl">
-              🛒
-            </button>
-            {panier.compte() > 0 && (
-              <span key={panier.compte()} className="absolute -top-1 -right-1 bg-[var(--mboa-error)] text-white rounded-full w-6 h-6 flex items-center justify-center text-aide font-bold anim-apparition-zoom">
-                {panier.compte()}
-              </span>
-            )}
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/aide" aria-label={t("aide.titre")} title={t("aide.titre")}>
+              <button className="btn-mboa btn-surface !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl">
+                ❓
+              </button>
+            </Link>
+            <Link href="/consommateur/panier" className="relative">
+              <button className="btn-mboa btn-surface !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl">
+                🛒
+              </button>
+              {panier.compte() > 0 && (
+                <span key={panier.compte()} className="absolute -top-1 -right-1 bg-[var(--mboa-error)] text-white rounded-full w-6 h-6 flex items-center justify-center text-aide font-bold anim-apparition-zoom">
+                  {panier.compte()}
+                </span>
+              )}
+            </Link>
+          </div>
         }
       />
 
