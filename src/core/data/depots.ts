@@ -527,10 +527,14 @@ export async function ajusterProduit(produitId: string, maj: { quantite?: number
     produit.prix = Math.round(maj.prix);
     miseAJour.prix = produit.prix;
   }
+  let syncOk = Object.keys(miseAJour).length === 0;
   if (mboaReseau() && Object.keys(miseAJour).length > 0) {
-    await mboaReseau()!.from("produits").update(miseAJour).eq("id", produitId);
-    await mboaReseau()!.from("vitrine").update(miseAJour).eq("id", produitId);
+    const { error } = await mboaReseau()!.from("produits").update(miseAJour).eq("id", produitId);
+    syncOk = !error;
+    if (syncOk) await mboaReseau()!.from("vitrine").update(miseAJour).eq("id", produitId);
   }
+  // Hors-ligne ou échec : mise en file — le replay synchronise le produit.
+  if (!syncOk) await fileAjouter("produit", produitId, "sync:ajustement", {});
   await cacheEcrire("produit", produit.id, produit);
   await cacheEcrire("vitrine", produit.id, produit);
   void notifierActiviteAdmin("act.stockAjuste", `${produit.nom} → ${produit.quantite}`);
@@ -602,13 +606,16 @@ export async function creerProduit(params: {
 
 /** L'admin supprime définitivement un produit du stock. */
 export async function supprimerProduit(produitId: string): Promise<void> {
+  let ok = false;
   if (mboaReseau()) {
     const { error: err1 } = await mboaReseau()!.from("produits").delete().eq("id", produitId);
     const { error: err2 } = await mboaReseau()!.from("vitrine").delete().eq("id", produitId);
-    if (!err1 && !err2) return;
+    ok = !err1 && !err2;
   }
-  await fileAjouter("produit", produitId, "delete:produit", {});
-  // Marquer inactif dans le cache (impossible de supprimer la clé en IndexedDB sans scan)
+  if (!ok) {
+    await fileAjouter("produit", produitId, "delete:produit", {});
+  }
+  // Marquer inactif dans le cache (IndexedDB ne permet pas de supprimer une clé sans scan)
   const produit = await cacheLire<Produit>("produit", produitId);
   if (produit) {
     await cacheEcrire("produit", produitId, { ...produit, actif: false, quantite: 0 });
@@ -716,30 +723,38 @@ export async function basculerLivreurActif(livreurId: string, actif: boolean): P
 
 /** Supprime définitivement un livreur (fiche + droits de connexion restent côté comptes). */
 export async function supprimerLivreur(livreurId: string): Promise<void> {
+  let ok = false;
   if (mboaReseau()) {
     const { error } = await mboaReseau()!.from("livreurs").delete().eq("id", livreurId);
-    if (!error) {
-      const l = await cacheLire<Livreur>("livreur", livreurId);
-      void notifierActiviteAdmin("act.livreurSupprime", l?.nom);
-      return;
-    }
+    ok = !error;
   }
-  await fileAjouter("livreur", livreurId, "delete:livreur", {});
-  void notifierActiviteAdmin("act.livreurSupprime", livreurId.slice(0, 8));
+  if (ok) {
+    const l = await cacheLire<Livreur>("livreur", livreurId);
+    if (l) await cacheEcrire("livreur", livreurId, { ...l, actif: false });
+    void notifierActiviteAdmin("act.livreurSupprime", l?.nom);
+  } else {
+    await fileAjouter("livreur", livreurId, "delete:livreur", {});
+    const l = await cacheLire<Livreur>("livreur", livreurId);
+    if (l) await cacheEcrire("livreur", livreurId, { ...l, actif: false });
+    void notifierActiviteAdmin("act.livreurSupprime", l?.nom ?? livreurId.slice(0, 8));
+  }
 }
 
 /** Supprime définitivement une fiche fournisseur. */
 export async function supprimerFournisseur(fournisseurId: string): Promise<void> {
   const f = await cacheLire<Fournisseur>("fournisseur", fournisseurId);
+  let ok = false;
   if (mboaReseau()) {
     const { error } = await mboaReseau()!.from("fournisseurs").delete().eq("id", fournisseurId);
-    if (!error) {
-      void notifierActiviteAdmin("act.fournisseurSupprime", f?.nom);
-      return;
-    }
+    ok = !error;
   }
-  await fileAjouter("fournisseur", fournisseurId, "delete:fournisseur", {});
-  void notifierActiviteAdmin("act.fournisseurSupprime", f?.nom ?? fournisseurId.slice(0, 8));
+  if (f) await cacheEcrire("fournisseur", fournisseurId, { ...f, actif: false });
+  if (ok) {
+    void notifierActiviteAdmin("act.fournisseurSupprime", f?.nom);
+  } else {
+    await fileAjouter("fournisseur", fournisseurId, "delete:fournisseur", {});
+    void notifierActiviteAdmin("act.fournisseurSupprime", f?.nom ?? fournisseurId.slice(0, 8));
+  }
 }
 
 /** Enregistre le mode et la référence de paiement d'une commande (à la livraison). */
@@ -1762,6 +1777,11 @@ export async function synchroniserFileAttente(): Promise<number> {
 async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau>>, entite: string, id: string, operation?: string): Promise<boolean> {
   switch (entite) {
     case "produit": {
+      if (operation === "delete:produit") {
+        const { error: e1 } = await client.from("produits").delete().eq("id", id);
+        const { error: e2 } = await client.from("vitrine").delete().eq("id", id);
+        return !e1 && !e2;
+      }
       const p = await cacheLire<Produit>("produit", id);
       if (!p) return true;
       const { error } = await client.from("produits").upsert({
@@ -1828,6 +1848,10 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
       return !error;
     }
     case "fournisseur": {
+      if (operation === "delete:fournisseur") {
+        const { error } = await client.from("fournisseurs").delete().eq("id", id);
+        return !error;
+      }
       const f = await cacheLire<Fournisseur>("fournisseur", id);
       if (!f) return true;
       const { error } = await client.from("fournisseurs").upsert({
@@ -1839,6 +1863,10 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
       return !error;
     }
     case "livreur": {
+      if (operation === "delete:livreur") {
+        const { error } = await client.from("livreurs").delete().eq("id", id);
+        return !error;
+      }
       const l = await cacheLire<Livreur>("livreur", id);
       if (!l) return true;
       const { error } = await client.from("livreurs").upsert({
