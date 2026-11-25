@@ -6,7 +6,7 @@ import { cacheTout, cacheEcrire, cacheLire, etatEcrire, etatLire, fileAjouter, f
 import { CATALOGUE_HORS_LIGNE } from "./catalogue_hors_ligne";
 import { supabaseConfigure } from "../config/app_env";
 import { compteParIdentifiant } from "../auth/auth_service";
-import { Produit, produitFromMap, produitUniteReelle } from "../types/produit";
+import { Produit, produitFromMap, produitUniteReelle, produitEstPack } from "../types/produit";
 import { uniteResolve } from "../types/unite";
 import { EntreeCatalogue } from "../types/catalogue";
 import { Categorie } from "../types/categorie";
@@ -352,6 +352,37 @@ export async function confirmerReception(commandeId: string, satisfaction: "bon"
   void notifierActiviteAdmin("act.receptionConfirmee", satisfaction);
 }
 
+/** Retrouve un produit par son slug (remote puis cache). */
+async function produitParSlug(slug: string): Promise<Produit | null> {
+  if (mboaReseau()) {
+    const { data } = await mboaReseau()!
+      .from("produits")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (data) return produitFromMap(data as unknown as Record<string, unknown>);
+  }
+  const tous = await cacheTout<Produit>("produit");
+  return tous.find((p) => p.slug === slug) ?? null;
+}
+
+/** Écrit la nouvelle quantité d'un produit (remote + cache + file). */
+async function ecrireStockProduit(produit: Produit, nouvelleQte: number): Promise<void> {
+  produit.quantite = nouvelleQte;
+  let syncOk = false;
+  if (mboaReseau()) {
+    const { error } = await mboaReseau()!.from("produits").update({ quantite: nouvelleQte }).eq("id", produit.id);
+    syncOk = !error;
+    if (syncOk) await mboaReseau()!.from("vitrine").update({ quantite: nouvelleQte }).eq("id", produit.id);
+  }
+  // Hors-ligne ou échec : la quantité est mise en file — le replay
+  // upsert tout le produit depuis le cache, sinon le stock divergeait.
+  if (!syncOk) await fileAjouter("produit", produit.id, "sync:quantite", {});
+  // Le client ne voit que le stock réel : vitrine et stock admin restent synchronisés
+  await cacheEcrire("produit", produit.id, produit);
+  await cacheEcrire("vitrine", produit.id, produit);
+}
+
 /** Décrémente le stock d'une ligne de devis validé. */
 async function decrementerStock(ligne: LigneCommande): Promise<void> {
   if (!ligne.produitId || ligne.produitId.startsWith("libre_")) return;
@@ -369,24 +400,25 @@ async function decrementerStock(ligne: LigneCommande): Promise<void> {
     if (data) produit = produitFromMap(data as unknown as Record<string, unknown>);
   }
   if (!produit) produit = await cacheLire<Produit>("produit", ligne.produitId);
-  if (!produit) return;
-  // Unités non convertibles : on ne décrémente pas à l'aveugle
-  if (String(produitUniteReelle(produit)) !== String(uLigne)) return;
 
-  const nouvelleQte = Math.max(0, produit.quantite - ligne.quantite);
-  produit.quantite = nouvelleQte;
-  let syncOk = false;
-  if (mboaReseau()) {
-    const { error } = await mboaReseau()!.from("produits").update({ quantite: nouvelleQte }).eq("id", produit.id);
-    syncOk = !error;
-    if (syncOk) await mboaReseau()!.from("vitrine").update({ quantite: nouvelleQte }).eq("id", produit.id);
+  // Produit simple : décrément direct si l'unité correspond.
+  // Un pack/plat n'a pas de stock propre fiable (quantite=1 par défaut) :
+  // ce sont ses INGRÉDIENTS qui sortent du stock, pas lui.
+  if (produit && !produitEstPack(produit) && String(produitUniteReelle(produit)) === String(uLigne)) {
+    await ecrireStockProduit(produit, Math.max(0, produit.quantite - ligne.quantite));
   }
-  // Hors-ligne ou échec : la quantité est mise en file — le replay
-  // upsert tout le produit depuis le cache, sinon le stock divergeait.
-  if (!syncOk) await fileAjouter("produit", produit.id, "sync:quantite", {});
-  // Le client ne voit que le stock réel : vitrine et stock admin restent synchronisés
-  await cacheEcrire("produit", produit.id, produit);
-  await cacheEcrire("vitrine", produit.id, produit);
+  // Ingrédients du pack (snapshot de la ligne) + bundleProduits.
+  const ingredients: { slug: string; quantite: number; unite: string | null }[] = [
+    ...(ligne.composants ?? []).map((c) => ({ slug: c.slug, quantite: c.quantite, unite: c.unite ?? null })),
+    ...(produit?.bundleProduits ?? []).map((b) => ({ slug: b.slug, quantite: b.quantite, unite: null })),
+  ];
+  for (const ing of ingredients) {
+    if (!ing.slug) continue;
+    const pIng = await produitParSlug(ing.slug);
+    if (!pIng) continue;
+    if (ing.unite && String(produitUniteReelle(pIng)) !== String(ing.unite)) continue;
+    await ecrireStockProduit(pIng, Math.max(0, pIng.quantite - ing.quantite * ligne.quantite));
+  }
 }
 
 /** L'admin valide le devis : statut nouvelle → validee_admin, et le stock diminue. */
@@ -2052,20 +2084,22 @@ async function restaurerStock(ligne: LigneCommande): Promise<void> {
     if (data) produit = produitFromMap(data as unknown as Record<string, unknown>);
   }
   if (!produit) produit = await cacheLire<Produit>("produit", ligne.produitId);
-  if (!produit) return;
-  if (String(produitUniteReelle(produit)) !== String(uLigne)) return;
 
-  const nouvelleQte = produit.quantite + ligne.quantite;
-  produit.quantite = nouvelleQte;
-  let syncOk = false;
-  if (mboaReseau()) {
-    const { error } = await mboaReseau()!.from("produits").update({ quantite: nouvelleQte }).eq("id", produit.id);
-    syncOk = !error;
-    if (syncOk) await mboaReseau()!.from("vitrine").update({ quantite: nouvelleQte }).eq("id", produit.id);
+  // Miroir du décrément : les packs ne restaurent que leurs ingrédients.
+  if (produit && !produitEstPack(produit) && String(produitUniteReelle(produit)) === String(uLigne)) {
+    await ecrireStockProduit(produit, produit.quantite + ligne.quantite);
   }
-  if (!syncOk) await fileAjouter("produit", produit.id, "sync:quantite", {});
-  await cacheEcrire("produit", produit.id, produit);
-  await cacheEcrire("vitrine", produit.id, produit);
+  const ingredients: { slug: string; quantite: number; unite: string | null }[] = [
+    ...(ligne.composants ?? []).map((c) => ({ slug: c.slug, quantite: c.quantite, unite: c.unite ?? null })),
+    ...(produit?.bundleProduits ?? []).map((b) => ({ slug: b.slug, quantite: b.quantite, unite: null })),
+  ];
+  for (const ing of ingredients) {
+    if (!ing.slug) continue;
+    const pIng = await produitParSlug(ing.slug);
+    if (!pIng) continue;
+    if (ing.unite && String(produitUniteReelle(pIng)) !== String(ing.unite)) continue;
+    await ecrireStockProduit(pIng, pIng.quantite + ing.quantite * ligne.quantite);
+  }
 }
 
 /**
