@@ -10,7 +10,8 @@ import { Commande, commandeMontantAPayer } from "@/core/types/commande_full";
 import { STATUT_COMMANDE_INFO, StatutCommande, ModePaiement, MODE_PAIEMENT_INFO } from "@/core/types/statuts";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { resumerQuantites } from "@/core/types/commande";
-import { PositionGps } from "@/core/types/suivi_colis";
+import { PositionGps, distanceGps } from "@/core/types/suivi_colis";
+import { suiviCommande } from "@/core/data/depots";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
@@ -41,6 +42,9 @@ export default function AccueilLivreur() {
   const { deconnexion } = useSession();
   const [courses, setCourses] = useState<Commande[]>([]);
   const [enCours, setEnCours] = useState<string | null>(null);
+  // Position live du client par commande : distance restante +
+  // destination réelle pour l'itinéraire (pas seulement l'adresse).
+  const [clientsGps, setClientsGps] = useState<Map<string, { position: PositionGps; metres: number }>>(new Map());
 
   async function charger() {
     const [toutes, livreurs] = await Promise.all([toutesCommandes(), chargerLivreurs()]);
@@ -91,6 +95,24 @@ export default function AccueilLivreur() {
           await cacheEcrire("gps_livreur", c.id, pos);
           partagerPositionGps("livreur", c.id, pos);
         }),
+      );
+      // Position live du client : le livreur voit la distance réelle
+      // restante et navigue vers là où le client est vraiment.
+      const entrees = await Promise.all(
+        enRoute.map(async (c) => {
+          const s = await suiviCommande(c.id);
+          const dest = s.positionDestination;
+          // Position client exploitable seulement si fraîche (partagée
+          // toutes les 3 min) - testé ici, pas au render (pureté React).
+          const fraiche =
+            dest?.horodatage &&
+            Date.now() - new Date(dest.horodatage).getTime() < 10 * 60 * 1000;
+          if (!dest || !fraiche) return null;
+          return [c.id, { position: dest, metres: distanceGps(pos, dest) }] as const;
+        }),
+      );
+      setClientsGps(
+        new Map(entrees.filter((e): e is NonNullable<typeof e> => e !== null)),
       );
     }, 15000);
     return () => clearInterval(timer);
@@ -171,6 +193,7 @@ export default function AccueilLivreur() {
               const aCharger = c.statut === StatutCommande.valideeAdmin;
               const enRoute = c.statut === StatutCommande.enLivraison;
               const livree = c.statut === StatutCommande.livree;
+              const clientLive = clientsGps.get(c.id);
               return (
                 <CarteMboa key={c.id}>
                   <div className="flex justify-between items-start mb-2">
@@ -195,17 +218,30 @@ export default function AccueilLivreur() {
                       {c.livraisonDetail ? ` - ${c.livraisonDetail}` : ""}
                     </p>
                   )}
-                  {c.livraisonLat != null && c.livraisonLng != null && (
+                  {enRoute && clientLive && (
+                    <p className="text-aide mt-1 font-bold" style={{ color: "var(--mboa-secondary)" }}>
+                      📡 {t("liv.clientALaDistance")} :{" "}
+                      {clientLive.metres < 1000
+                        ? `${clientLive.metres} m`
+                        : `${(clientLive.metres / 1000).toFixed(1)} km`}
+                    </p>
+                  )}
+                  {(c.livraisonLat != null && c.livraisonLng != null) || clientLive ? (
                     <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${c.livraisonLat},${c.livraisonLng}`}
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${
+                        clientLive
+                          ? `${clientLive.position.latitude},${clientLive.position.longitude}`
+                          : `${c.livraisonLat},${c.livraisonLng}`
+                      }`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-aide mt-1 inline-block font-bold underline"
                       style={{ color: "var(--mboa-primary)" }}
                     >
                       🗺️ {t("liv.itineraire")}
+                      {clientLive ? ` (${t("liv.positionLive")})` : ""}
                     </a>
-                  )}
+                  ) : null}
 
                   {(c.clientNom || c.clientVillage) && (
                     <p className="text-aide mt-1 text-[var(--mboa-text-doux)]">

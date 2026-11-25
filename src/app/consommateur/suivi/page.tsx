@@ -66,6 +66,9 @@ export default function SuiviPage() {
 
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [suivis, setSuivis] = useState<Map<string, SuiviColis>>(new Map());
+  // Âge (minutes) de la dernière position livreur, par commande - calculé
+  // au chargement pour garder le render pur.
+  const [agesPositions, setAgesPositions] = useState<Map<string, number>>(new Map());
   const [confirmationCmd, setConfirmationCmd] = useState<string | null>(null);
   const [satisfactionChoisie, setSatisfactionChoisie] = useState<Satisfaction | null>(null);
   const [motifChoisi, setMotifChoisi] = useState<MotifReception | null>(null);
@@ -147,6 +150,15 @@ export default function SuiviPage() {
       }
     }
     setSuivis(sMap);
+    const ages = new Map<string, number>();
+    for (const [id, s] of sMap) {
+      const h = s.positionActuelle?.horodatage;
+      if (h) {
+        const t = new Date(h).getTime();
+        if (!isNaN(t)) ages.set(id, Math.max(0, Math.round((Date.now() - t) / 60000)));
+      }
+    }
+    setAgesPositions(ages);
   }
 
   useEffect(() => {
@@ -362,6 +374,16 @@ export default function SuiviPage() {
                             livreur={suivi.positionActuelle}
                             destination={suivi.positionDestination}
                           />
+                        )}
+                        {/* Fraîcheur de la position : le client sait si la
+                            carte est vraiment en direct ou si le livreur
+                            n'a pas partagé depuis longtemps. */}
+                        {agesPositions.has(c.id) && (
+                          <p className="text-aide mt-1 text-center" style={{ color: "var(--mboa-text-doux)" }}>
+                            {(agesPositions.get(c.id) ?? 0) <= 2
+                              ? `🟢 ${t("suivi.positionDirecte")}`
+                              : `🟠 ${t("suivi.positionIlYa")} ${agesPositions.get(c.id)} min`}
+                          </p>
                         )}
                       </div>
                     )}

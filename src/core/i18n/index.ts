@@ -297,6 +297,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "suivi.auteurLivreur": "Livreur",
     "suivi.auteurVous": "Vous",
     "suivi.auteurGps": "Position GPS",
+    "suivi.positionDirecte": "Position du livreur en direct",
+    "suivi.positionIlYa": "Position du livreur il y a",
     "carte.attente": "La carte s'affichera quand le livreur partagera sa position",
     "carte.comptoir": "Comptoir",
     "carte.vous": "Vous",
@@ -348,6 +350,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "liv.livre": "Livré",
     "liv.attenteClient": "En attente de la confirmation du client…",
     "liv.itineraire": "Itinéraire GPS",
+    "liv.clientALaDistance": "Client à",
+    "liv.positionLive": "position live",
 
     // Espace admin - accueil
     "adm.accueil": "Accueil",
@@ -1055,6 +1059,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "suivi.auteurLivreur": "Driver",
     "suivi.auteurVous": "You",
     "suivi.auteurGps": "GPS position",
+    "suivi.positionDirecte": "Driver position is live",
+    "suivi.positionIlYa": "Driver position from",
     "carte.attente": "The map will appear once the driver shares their position",
     "carte.comptoir": "Counter",
     "carte.vous": "You",
@@ -1106,6 +1112,8 @@ const DICT: Record<Lang, Record<string, string>> = {
     "liv.livre": "Delivered",
     "liv.attenteClient": "Waiting for the customer's confirmation…",
     "liv.itineraire": "GPS directions",
+    "liv.clientALaDistance": "Customer at",
+    "liv.positionLive": "live position",
 
     // Espace admin - accueil
     "adm.accueil": "Home",
