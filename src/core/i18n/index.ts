@@ -337,6 +337,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "liv.itineraire": "Itinéraire GPS",
 
     // Espace admin - accueil
+    "adm.accueil": "Accueil",
     "adm.sousTitre": "Le comptoir",
     "adm.sync.actif": "Synchro cloud activée",
     "adm.sync.local": "Synchro locale uniquement",
@@ -1081,6 +1082,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "liv.itineraire": "GPS directions",
 
     // Espace admin - accueil
+    "adm.accueil": "Home",
     "adm.sousTitre": "The counter",
     "adm.sync.actif": "Cloud sync enabled",
     "adm.sync.local": "Local sync only",

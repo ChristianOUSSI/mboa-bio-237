@@ -36,8 +36,11 @@ export function BoutonChatFlottant() {
 
   if (!profil || pathname === "/messages") return null;
 
-  // Sur l'espace client, la nav basse occupe ~68px en bas : on remonte le bouton.
-  const avecNavBas = pathname?.startsWith("/consommateur") ?? false;
+  // Sur les espaces avec nav basse (client, admin), elle occupe ~68px
+  // en bas : on remonte le bouton pour ne pas le masquer.
+  const avecNavBas =
+    (pathname?.startsWith("/consommateur") ?? false) ||
+    (pathname?.startsWith("/admin") ?? false);
 
   return (
     <Link
