@@ -112,14 +112,19 @@ export function CarteColis({ suivi }: Props) {
           </g>
         )}
 
-        {/* Livreur (pulse) */}
+        {/* Livreur (pulse) - glisse en douceur entre les relevés GPS */}
         {courant && (
-          <g>
-            <circle cx={courant.x} cy={courant.y} r="14" fill="var(--mboa-secondary)" opacity="0.3">
+          <g
+            style={{
+              transform: `translate(${courant.x}px, ${courant.y}px)`,
+              transition: "transform 1.2s ease",
+            }}
+          >
+            <circle cx={0} cy={0} r="14" fill="var(--mboa-secondary)" opacity="0.3">
               <animate attributeName="r" values="10;16;10" dur="2s" repeatCount="indefinite" />
             </circle>
-            <circle cx={courant.x} cy={courant.y} r="8" fill="var(--mboa-secondary)" />
-            <text x={courant.x} y={courant.y - 14} textAnchor="middle" fontSize="11" fill="var(--mboa-text)">🏍️</text>
+            <circle cx={0} cy={0} r="8" fill="var(--mboa-secondary)" />
+            <text x={0} y={-14} textAnchor="middle" fontSize="11" fill="var(--mboa-text)">🏍️</text>
           </g>
         )}
       </svg>

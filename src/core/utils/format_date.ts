@@ -13,6 +13,18 @@ export function formaterDate(iso: string | null | undefined): string {
   });
 }
 
+/** Heure seule, localisée (fr-FR / en-GB). */
+export function formaterHeure(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const langue = useLangue.getState().langue;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString(langue === "en" ? "en-GB" : "fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 /** Date + heure courte localisée. */
 export function formaterDateHeure(iso: string | null | undefined): string {
   if (!iso) return "";

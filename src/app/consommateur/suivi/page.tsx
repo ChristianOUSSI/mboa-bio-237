@@ -10,10 +10,12 @@ import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
 import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { CarteMboa, BoutonMboa, EnTetePage, BadgeStatut, BoutonVoix, FondMboa, ChargementMboa } from "@/core/design_system/composants";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
+import { formaterHeure } from "@/core/utils/format_date";
+import { vibrer, jouerNotificationSonore } from "@/core/utils/son";
 import { Commande, commandeMontantAPayer, commandeAttendConfirmation, commandeEstAnnule } from "@/core/types/commande_full";
 import { STATUT_COMMANDE_INFO, StatutCommande, Satisfaction, SATISFACTION_INFO, MotifReception, MOTIF_RECEPTION_INFO, statutRang } from "@/core/types/statuts";
 import { toast } from "@/core/etat/store";
-import { SuiviColis, suiviTimeline, JALON_SUIVI_INFO, PositionGps } from "@/core/types/suivi_colis";
+import { SuiviColis, suiviTimeline, JALON_SUIVI_INFO, PositionGps, distanceGps, distanceRestante, JalonSuivi } from "@/core/types/suivi_colis";
 import { resumerQuantites } from "@/core/types/commande";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useTr } from "@/core/i18n";
@@ -69,6 +71,7 @@ export default function SuiviPage() {
   const [motifChoisi, setMotifChoisi] = useState<MotifReception | null>(null);
   const positionsPartagees = useRef<Set<string>>(new Set());
   const statutsPrec = useRef<Map<string, StatutCommande>>(new Map());
+  const alertesProximite = useRef<Set<string>>(new Set());
   const notifDemandee = useRef(false);
 
   async function recharger(profilId: string) {
@@ -81,6 +84,8 @@ export default function SuiviPage() {
         // changement d'étape même sans permission de notification.
         const texte = STATUT_COMMANDE_INFO[c.statut]?.annonce ?? c.statut;
         toast(texte);
+        vibrer();
+        jouerNotificationSonore();
         if (typeof Notification !== "undefined" && Notification.permission === "granted") {
           const titre = c.statut === StatutCommande.livree ? "📦 MBOA BIO" : "🔔 MBOA BIO";
           try {
@@ -121,6 +126,20 @@ export default function SuiviPage() {
             positionsPartagees.current.add(c.id);
           }),
         );
+      }
+    }
+    // Alerte "livreur tout proche" : une seule vibration + bip par commande.
+    for (const c of cmds) {
+      const s = sMap.get(c.id);
+      if (!s?.positionActuelle || !s.positionDestination) continue;
+      if (
+        distanceGps(s.positionActuelle, s.positionDestination) < 800 &&
+        !alertesProximite.current.has(c.id)
+      ) {
+        alertesProximite.current.add(c.id);
+        vibrer([80, 60, 80]);
+        jouerNotificationSonore();
+        toast(t("suivi.arriveBientot"));
       }
     }
     setSuivis(sMap);
@@ -181,6 +200,15 @@ export default function SuiviPage() {
               const suivi = suivis.get(c.id);
               const timeline = suivi ? suiviTimeline(suivi) : [];
               const info = STATUT_COMMANDE_INFO[c.statut];
+              // Dernier jalon réellement atteint : c'est lui qui pulse.
+              const rangAtteintMax = timeline.reduce(
+                (m, e, i) => (e.etape ? i : m),
+                -1,
+              );
+              const proche =
+                !!suivi?.positionActuelle &&
+                !!suivi?.positionDestination &&
+                distanceGps(suivi.positionActuelle, suivi.positionDestination) < 800;
               return (
                 <CarteMboa key={c.id} className="carte-suivi">
                   {/* Status */}
@@ -208,7 +236,7 @@ export default function SuiviPage() {
                           <div key={s} className="flex items-center flex-1 last:flex-none">
                             <div className="flex flex-col items-center flex-1">
                               <span
-                                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold"
+                                className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${courant ? "animate-pulse" : ""}`}
                                 style={{
                                   background: atteint ? "var(--mboa-primary)" : "var(--mboa-trait)",
                                   color: atteint ? "#fff" : "var(--mboa-text-doux)",
@@ -302,6 +330,22 @@ export default function SuiviPage() {
                     </div>
                   )}
 
+                  {/* Alerte proximité : le livreur est à moins de 800 m */}
+                  {proche && (
+                    <div
+                      className="mt-2 rounded-xl p-3 text-center animate-pulse"
+                      style={{
+                        background: "var(--mboa-secondary-doux)",
+                        border: "2px solid var(--mboa-secondary)",
+                      }}
+                    >
+                      <p className="text-corps font-bold">🏍️ {t("suivi.arriveBientot")}</p>
+                      <p className="text-aide text-[var(--mboa-text-doux)] mt-0.5">
+                        {t("suivi.preparezVous")} · {distanceRestante(suivi!)}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Real-time map */}
                   {suivi &&
                     (c.statut === StatutCommande.valideeAdmin ||
@@ -318,26 +362,48 @@ export default function SuiviPage() {
                       </div>
                     )}
 
-                  {/* Timeline */}
+                  {/* Timeline : chaque jalon coché affiche son heure réelle */}
                   {timeline.length > 0 && (
-                    <div className="timeline-suivi flex justify-between items-center mt-4 mb-2">
-                      {timeline.map((etape, i) => (
-                        <div key={i} className="flex flex-col items-center flex-1">
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
-                            style={{
-                              background: etape.etape
-                                ? "var(--mboa-secondary)"
-                                : "var(--mboa-trait)",
-                            }}
-                          >
-                            {etape.etape ? "✓" : ""}
+                    <div className="timeline-suivi flex justify-between items-start mt-4 mb-2">
+                      {timeline.map((etape, i) => {
+                        const atteint = !!etape.etape;
+                        const estDernier = i === rangAtteintMax && atteint;
+                        const enCours = estDernier && etape.jalon !== JalonSuivi.remis;
+                        return (
+                          <div key={i} className="flex flex-col items-center flex-1">
+                            <div
+                              className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${enCours ? "animate-pulse" : ""}`}
+                              style={{
+                                background: atteint
+                                  ? "var(--mboa-secondary)"
+                                  : "var(--mboa-trait)",
+                              }}
+                            >
+                              {atteint ? "✓" : ""}
+                            </div>
+                            <span
+                              className="text-aide text-center mt-1 leading-tight"
+                              style={{
+                                fontSize: 11,
+                                color: enCours
+                                  ? "var(--mboa-primary)"
+                                  : "var(--mboa-text-doux)",
+                                fontWeight: enCours ? 700 : 400,
+                              }}
+                            >
+                              {JALON_SUIVI_INFO[etape.jalon].libelle}
+                            </span>
+                            {etape.etape && (
+                              <span
+                                className="text-[9px] mt-0.5"
+                                style={{ color: "var(--mboa-text-doux)" }}
+                              >
+                                {formaterHeure(etape.etape.horodatage)}
+                              </span>
+                            )}
                           </div>
-                          <span className="text-aide text-center mt-1 text-[var(--mboa-text-doux)]" style={{ fontSize: 12 }}>
-                            {JALON_SUIVI_INFO[etape.jalon].libelle}
-                          </span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 
