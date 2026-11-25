@@ -318,6 +318,9 @@ export async function confirmerReception(commandeId: string, satisfaction: "bon"
   // du client n'était persistée nulle part.
   const maintenant = new Date().toISOString();
   const cmd = await cacheLire<Commande>("commande", commandeId);
+  // Garde : seule une course livrée peut être confirmée — sinon un
+  // appel tardif marquerait « recue » une commande annulée/en cours.
+  if (cmd && cmd.statut !== StatutCommande.livree) return;
   if (cmd) {
     await cacheEcrire("commande", commandeId, {
       ...cmd,
@@ -386,6 +389,9 @@ async function decrementerStock(ligne: LigneCommande): Promise<void> {
 /** L'admin valide le devis : statut nouvelle → validee_admin, et le stock diminue. */
 export async function validerDevis(commande: Commande): Promise<void> {
   const commandeId = commande.id;
+  // Garde : seule une commande « nouvelle » sort le stock — une
+  // re-validation décrémenterait le stock une seconde fois.
+  if (commande.statut !== StatutCommande.nouvelle) return;
   const maj: Commande = { ...commande, statut: StatutCommande.valideeAdmin, stockSorti: true };
   if (mboaReseau()) {
     const { error } = await mboaReseau()!
@@ -475,6 +481,8 @@ export async function assignerLivreur(commandeId: string, livreurId: string, tar
 export async function demarrerLivraison(commandeId: string): Promise<void> {
   // Cache local aussi : sinon le statut reste « validee_admin » hors-ligne.
   const cmd = await cacheLire<Commande>("commande", commandeId);
+  // Garde : seuls validee_admin/en_livraison (idempotent) peuvent démarrer.
+  if (cmd && cmd.statut !== StatutCommande.valideeAdmin && cmd.statut !== StatutCommande.enLivraison) return;
   if (cmd) {
     await cacheEcrire("commande", commandeId, { ...cmd, statut: "en_livraison" as never });
   }
@@ -918,6 +926,8 @@ export async function sauverLivreur(params: {
 export async function marquerLivree(commandeId: string): Promise<void> {
   const maintenant = new Date().toISOString();
   const cmd = await cacheLire<Commande>("commande", commandeId);
+  // Garde : seuls en_livraison/livree (idempotent) peuvent être livrés.
+  if (cmd && cmd.statut !== StatutCommande.enLivraison && cmd.statut !== StatutCommande.livree) return;
   if (cmd) {
     await cacheEcrire("commande", commandeId, { ...cmd, statut: "livree" as never, livreeLe: maintenant });
   }
@@ -936,6 +946,8 @@ export async function payerLivreur(commandeId: string, montant: number): Promise
   // L'RPC payer_livreur n'existe pas en base : update direct + cache.
   const maintenant = new Date().toISOString();
   const cmd = await cacheLire<Commande>("commande", commandeId);
+  // Garde : payé uniquement après réception, et une seule fois.
+  if (cmd && (cmd.statut !== StatutCommande.recue || cmd.payeLe)) return;
   if (cmd) {
     await cacheEcrire("commande", commandeId, { ...cmd, payeLe: maintenant });
   }

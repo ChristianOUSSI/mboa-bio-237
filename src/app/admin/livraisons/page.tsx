@@ -83,8 +83,10 @@ export default function LivraisonsPage() {
         ...c.lignes.map((l) => l.nom)].filter(Boolean).join(" "),
     ).includes(q);
   };
+  // payeLe (base/cache) fait foi ; le Set local ne couvre que les
+  // anciennes données antérieures au champ — sinon double paiement.
   const aPayer = commandes.filter(
-    (c) => c.statut === StatutCommande.recue && !payes.has(c.id) && correspondent(c),
+    (c) => c.statut === StatutCommande.recue && !c.payeLe && !payes.has(c.id) && correspondent(c),
   );
   const enCours2 = commandes.filter(
     (c) => (c.statut === StatutCommande.enLivraison || c.statut === StatutCommande.valideeAdmin) && correspondent(c),
