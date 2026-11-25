@@ -1356,7 +1356,17 @@ export async function proposerAchat(params: {
       p_audio: params.audioUrl,
     });
     if (!error && data) {
-      return achatFromMap(data as unknown as Record<string, unknown>);
+      const a = achatFromMap(data as unknown as Record<string, unknown>);
+      // Le RPC ne reçoit pas fournisseur_id : si la ligne revenue sans
+      // fournisseur, on le pose pour que le fournisseur voie sa proposition.
+      if (!a.fournisseurId) {
+        const corrige = { ...a, fournisseurId: params.fournisseurId };
+        void mboaReseau()!.from("achats").update({ fournisseur_id: params.fournisseurId }).eq("id", a.id);
+        await cacheEcrire("achat", a.id, corrige);
+        return corrige;
+      }
+      await cacheEcrire("achat", a.id, a);
+      return a;
     }
     // RPC absente : insertion directe pour que le comptoir voie la
     // proposition sur tous ses appareils.
@@ -1436,6 +1446,12 @@ export async function validerAchat(achatId: string, prixMarchand?: number): Prom
       createdLe: new Date().toISOString(),
     };
     produit.quantite += achat.quantite;
+    // Produit existant : le prix d'achat négocié reste un FAIT à
+    // enregistrer (coût réel) — sinon les marges et le coût des
+    // commandes restaient calculés sur l'ancien prix.
+    if (produitExistant && prixMarchand != null) {
+      produit.prixAchat = prixMarchand;
+    }
     // Le produit doit remonter dans Supabase : sans ça il n'existe
     // que sur l'appareil de l'admin et reste invisible aux clients.
     const ligneProduit = {
