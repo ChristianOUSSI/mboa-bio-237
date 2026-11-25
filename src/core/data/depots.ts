@@ -369,10 +369,15 @@ async function decrementerStock(ligne: LigneCommande): Promise<void> {
 
   const nouvelleQte = Math.max(0, produit.quantite - ligne.quantite);
   produit.quantite = nouvelleQte;
+  let syncOk = false;
   if (mboaReseau()) {
-    await mboaReseau()!.from("produits").update({ quantite: nouvelleQte }).eq("id", produit.id);
-    await mboaReseau()!.from("vitrine").update({ quantite: nouvelleQte }).eq("id", produit.id);
+    const { error } = await mboaReseau()!.from("produits").update({ quantite: nouvelleQte }).eq("id", produit.id);
+    syncOk = !error;
+    if (syncOk) await mboaReseau()!.from("vitrine").update({ quantite: nouvelleQte }).eq("id", produit.id);
   }
+  // Hors-ligne ou échec : la quantité est mise en file — le replay
+  // upsert tout le produit depuis le cache, sinon le stock divergeait.
+  if (!syncOk) await fileAjouter("produit", produit.id, "sync:quantite", {});
   // Le client ne voit que le stock réel : vitrine et stock admin restent synchronisés
   await cacheEcrire("produit", produit.id, produit);
   await cacheEcrire("vitrine", produit.id, produit);
@@ -2013,10 +2018,13 @@ async function restaurerStock(ligne: LigneCommande): Promise<void> {
 
   const nouvelleQte = produit.quantite + ligne.quantite;
   produit.quantite = nouvelleQte;
+  let syncOk = false;
   if (mboaReseau()) {
-    await mboaReseau()!.from("produits").update({ quantite: nouvelleQte }).eq("id", produit.id);
-    await mboaReseau()!.from("vitrine").update({ quantite: nouvelleQte }).eq("id", produit.id);
+    const { error } = await mboaReseau()!.from("produits").update({ quantite: nouvelleQte }).eq("id", produit.id);
+    syncOk = !error;
+    if (syncOk) await mboaReseau()!.from("vitrine").update({ quantite: nouvelleQte }).eq("id", produit.id);
   }
+  if (!syncOk) await fileAjouter("produit", produit.id, "sync:quantite", {});
   await cacheEcrire("produit", produit.id, produit);
   await cacheEcrire("vitrine", produit.id, produit);
 }
