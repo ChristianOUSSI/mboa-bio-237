@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/core/etat/store";
-import { toutesCommandes, chargerLivreurs, demarrerLivraison, marquerLivree, partagerPositionGps } from "@/core/data/depots";
+import { toutesCommandes, chargerLivreurs, demarrerLivraison, marquerLivree, partagerPositionGps, enregistrerJalon } from "@/core/data/depots";
 import { cacheEcrire } from "@/core/data/base_locale";
 import { CarteMboa, EnTetePage, BadgeStatut, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { Commande, commandeMontantAPayer } from "@/core/types/commande_full";
 import { STATUT_COMMANDE_INFO, StatutCommande, ModePaiement, MODE_PAIEMENT_INFO } from "@/core/types/statuts";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { resumerQuantites } from "@/core/types/commande";
-import { PositionGps, distanceGps } from "@/core/types/suivi_colis";
+import { PositionGps, distanceGps, JalonSuivi } from "@/core/types/suivi_colis";
 import { suiviCommande } from "@/core/data/depots";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
@@ -144,6 +144,18 @@ export default function AccueilLivreur() {
     if (!pos) return;
     await cacheEcrire("gps_livreur", c.id, pos);
     partagerPositionGps("livreur", c.id, pos);
+  }
+
+  /** Le livreur signale son arrivée : jalon « arrivé » avec sa position. */
+  async function signalerArrivee(c: Commande) {
+    setEnCours(c.id);
+    try {
+      const pos = await positionActuelle();
+      await enregistrerJalon(c.id, JalonSuivi.arrive, "livreur", pos);
+      await charger();
+    } finally {
+      setEnCours(null);
+    }
   }
 
   async function livrer(c: Commande) {
@@ -288,13 +300,25 @@ export default function AccueilLivreur() {
                   )}
 
                   {enRoute && (
-                    <div className="flex gap-2 mt-2">
-                      <BoutonMboa variant="surface" className="flex-1" onClick={() => partagerPosition(c)}>
-                        {t("liv.partagerPos")}
-                      </BoutonMboa>
+                    <div className="mt-2 space-y-2">
+                      <div className="flex gap-2">
+                        <BoutonMboa variant="surface" className="flex-1" onClick={() => partagerPosition(c)}>
+                          {t("liv.partagerPos")}
+                        </BoutonMboa>
+                        <BoutonMboa
+                          variant="surface"
+                          className="flex-1"
+                          disabled={enCours === c.id}
+                          onClick={() => signalerArrivee(c)}
+                        >
+                          {t("liv.arrive")}
+                        </BoutonMboa>
+                      </div>
+                      {/* « Livré » pulse quand le client est à moins de 500 m :
+                          le livreur sait qu'il peut conclure la course. */}
                       <BoutonMboa
                         variant="primary"
-                        className="flex-1"
+                        className={`w-full ${clientLive && clientLive.metres < 500 ? "animate-pulse" : ""}`}
                         disabled={enCours === c.id}
                         onClick={() => livrer(c)}
                       >
