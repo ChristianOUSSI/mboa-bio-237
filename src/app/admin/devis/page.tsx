@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toutesCommandes, chargerLivreurs, validerDevis, assignerLivreur, refuserDevis } from "@/core/data/depots";
+import { toast } from "@/core/etat/store";
 import { CarteMboa, EnTetePage, BadgeStatut, BoutonVoix, BoutonMboa, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { Commande, commandeMontantAPayer } from "@/core/types/commande_full";
 import { Livreur } from "@/core/types/livreur";
@@ -67,10 +68,31 @@ export default function DevisAdminPage() {
   async function validerEtEnvoyer(c: Commande, livreurId?: string) {
     const id = livreurId ?? livreurChoisi[c.id] ?? livreurs[0]?.id;
     const livreur = livreurs.find((l) => l.id === id);
-    if (!livreur) return;
+    if (!livreur) {
+      toast(t("adm.dev.sansLivreur"));
+      return;
+    }
     setEnCours(c.id);
     try {
       await validerDevis(c);
+      await assignerLivreur(c.id, livreur.id, livreur.tarifCourse);
+      await charger();
+    } finally {
+      setEnCours(null);
+    }
+  }
+
+  /** Assigne ou change le livreur d'une commande DÉJÀ validée :
+   *  pas de re-validation (le stock ne doit pas être décrémenté 2×). */
+  async function changerLivreur(c: Commande) {
+    const id = livreurChoisi[c.id] ?? livreurs[0]?.id;
+    const livreur = livreurs.find((l) => l.id === id);
+    if (!livreur) {
+      toast(t("adm.dev.sansLivreur"));
+      return;
+    }
+    setEnCours(c.id);
+    try {
       await assignerLivreur(c.id, livreur.id, livreur.tarifCourse);
       await charger();
     } finally {
@@ -159,6 +181,14 @@ export default function DevisAdminPage() {
         {commandesFiltrees.map((c) => {
           const info = STATUT_COMMANDE_INFO[c.statut];
           const estNouveau = c.statut === StatutCommande.nouvelle;
+          // Assignation possible : devis neuf (validation + envoi groupés)
+          // ou déjà validé/en cours (changement de livreur sans re-décrémenter
+          // le stock — c'est ce qui manquait : une fois validé, impossible
+          // de corriger une mauvaise assignation).
+          const estAssignable =
+            estNouveau ||
+            c.statut === StatutCommande.valideeAdmin ||
+            c.statut === StatutCommande.enLivraison;
           const livreurSelectionne = livreurChoisi[c.id] ?? livreurs[0]?.id ?? "";
           return (
             <CarteMboa key={c.id}>
@@ -210,6 +240,36 @@ export default function DevisAdminPage() {
                 </div>
               )}
               {estNouveau && livreurs.length === 0 && (
+                <p className="text-aide text-[var(--mboa-error)] mt-2">{t("adm.dev.sansLivreur")}</p>
+              )}
+
+              {/* Réassignation : commande déjà validée ou en cours —
+                  on change juste le livreur, sans re-valider le devis. */}
+              {!estNouveau && estAssignable && livreurs.length > 0 && (
+                <div className="mt-2 space-y-2">
+                  <select
+                    value={livreurSelectionne}
+                    onChange={(e) => setLivreurChoisi({ ...livreurChoisi, [c.id]: e.target.value })}
+                    className="champ-mboa w-full"
+                    style={{ fontSize: 18 }}
+                  >
+                    {livreurs.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        🏍️ {l.nom} - {l.zone} ({l.tarifCourse} F)
+                      </option>
+                    ))}
+                  </select>
+                  <BoutonMboa
+                    variant="secondary"
+                    className="w-full"
+                    disabled={enCours === c.id}
+                    onClick={() => changerLivreur(c)}
+                  >
+                    {enCours === c.id ? t("adm.dev.envoi") : t("adm.dev.assigner")}
+                  </BoutonMboa>
+                </div>
+              )}
+              {!estNouveau && estAssignable && livreurs.length === 0 && (
                 <p className="text-aide text-[var(--mboa-error)] mt-2">{t("adm.dev.sansLivreur")}</p>
               )}
 

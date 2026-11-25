@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession, usePanier, useData, useReseau, toast } from "@/core/etat/store";
+import { useSession, usePanier, useData, useReseau, toast, clePanier } from "@/core/etat/store";
 import { chargerVitrine, chargerCatalogue, commandesCliente, compterFile } from "@/core/data/depots";
 import { CarteMboa, JaugeMboa, PictoCategorie, BoutonVoix, EnTetePage, BoutonMboa, FondMboa, SkeletonMboa, ChargementMboa } from "@/core/design_system/composants";
 import { CATEGORIES_ORDREES } from "@/core/types/categorie";
 import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
-import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstVitrine, produitEstPack } from "@/core/types/produit";
+import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitEstVitrine, produitEstPack, produitUnites } from "@/core/types/produit";
 import { Commande } from "@/core/types/commande_full";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
@@ -26,12 +26,20 @@ import { vibrer } from "@/core/utils/son";
 function BlocQuantite({ produit, promoPct, t }: { produit: Produit; promoPct: (p: Produit) => number | null; t: (k: string) => string }) {
   const panier = usePanier();
   const [qte, setQte] = useState(1);
-  const enPanier = panier.lignes.find((l) => l.produitId === produit.id)?.quantite ?? 0;
+  // Multi-unités : le client choisit kg / pièce / sac… et voit le prix
+  // de l'unité sélectionnée avant d'ajouter.
+  const unites = produitUnites(produit);
+  const [uniteIdx, setUniteIdx] = useState(0);
+  const uniteChoisie = unites[Math.min(uniteIdx, unites.length - 1)];
+  const enPanier = panier.lignes
+    .filter((l) => l.produitId === produit.id && l.unite === uniteChoisie.unite)
+    .reduce((s, l) => s + l.quantite, 0);
+  const cle = clePanier(produit.id, uniteChoisie.unite);
 
   function ajouter() {
     const n = Math.max(1, Math.floor(qte) || 1);
     const pct = promoPct(produit) ?? 0;
-    const prix = pct ? Math.round(produit.prix * (1 - pct / 100)) : produit.prix;
+    const prix = pct ? Math.round(uniteChoisie.prix * (1 - pct / 100)) : uniteChoisie.prix;
     panier.poser({
       produitId: produit.id,
       slug: produit.slug,
@@ -41,20 +49,47 @@ function BlocQuantite({ produit, promoPct, t }: { produit: Produit; promoPct: (p
       prix,
       coutAchat: produit.prixAchat ?? 0,
       photo: produit.photoReelle,
-      unite: produitUniteReelle(produit),
+      unite: uniteChoisie.unite,
       composants: produit.composants,
     });
     vibrer();
-    toast(`${produit.nom} ×${n} ${t("toast.ajoute")}`);
+    toast(`${produit.nom} ×${n} ${uniteChoisie.unite} ${t("toast.ajoute")}`);
     setQte(1);
   }
 
+  const pucesUnites = unites.length > 1 && (
+    <div className="flex flex-wrap gap-1.5 mb-1.5" role="radiogroup" aria-label={t("march.uniteChoisir")}>
+      {unites.map((u, i) => {
+        const actif = i === Math.min(uniteIdx, unites.length - 1);
+        return (
+          <button
+            key={u.unite}
+            type="button"
+            role="radio"
+            aria-checked={actif}
+            onClick={() => { setUniteIdx(i); setQte(1); }}
+            className="px-3 py-1.5 rounded-full text-aide font-bold border-2 transition-colors"
+            style={{
+              borderColor: actif ? "var(--mboa-primary)" : "var(--mboa-border)",
+              background: actif ? "var(--mboa-secondary-doux)" : "var(--mboa-surface)",
+              color: actif ? "var(--mboa-primary)" : "var(--mboa-text-doux)",
+            }}
+          >
+            {u.unite} · {u.prix.toLocaleString("fr-FR")} F
+          </button>
+        );
+      })}
+    </div>
+  );
+
   if (enPanier > 0) {
     return (
-      <div className="flex items-center justify-between gap-1 mt-2">
+      <div className="mt-2">
+        {pucesUnites}
+        <div className="flex items-center justify-between gap-1">
         <div className="flex items-center gap-1">
           <button
-            onClick={() => panier.ajuster(produit.id, enPanier - 1)}
+            onClick={() => panier.ajuster(cle, enPanier - 1)}
             className="btn-mboa btn-surface !min-h-[40px] !min-w-[40px] !rounded-xl text-xl"
             aria-label={`Moins de ${produit.nom}`}
           >
@@ -62,7 +97,7 @@ function BlocQuantite({ produit, promoPct, t }: { produit: Produit; promoPct: (p
           </button>
           <span className="text-corps font-bold min-w-[28px] text-center">{enPanier}</span>
           <button
-            onClick={() => panier.ajuster(produit.id, enPanier + 1)}
+            onClick={() => panier.ajuster(cle, enPanier + 1)}
             className="btn-mboa btn-secondary !min-h-[40px] !min-w-[40px] !rounded-xl text-xl"
             aria-label={`Plus de ${produit.nom}`}
           >
@@ -75,12 +110,15 @@ function BlocQuantite({ produit, promoPct, t }: { produit: Produit; promoPct: (p
         >
           +{t("march.ajouter")}
         </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-1.5 mt-2">
+    <div className="mt-2">
+      {pucesUnites}
+      <div className="flex items-center gap-1.5">
       <input
         type="number"
         inputMode="numeric"
@@ -96,6 +134,7 @@ function BlocQuantite({ produit, promoPct, t }: { produit: Produit; promoPct: (p
       >
         + {t("march.ajouter")}
       </button>
+      </div>
     </div>
   );
 }

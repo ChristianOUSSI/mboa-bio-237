@@ -50,6 +50,7 @@ export default function StockAdminPage() {
   const [edPrixAchat, setEdPrixAchat] = useState("");
   const [edPhoto, setEdPhoto] = useState("");
   const [edPerissable, setEdPerissable] = useState(true);
+  const [edUnites, setEdUnites] = useState<{ unite: string; prix: string }[]>([]);
   const [edEnCours, setEdEnCours] = useState(false);
 
   async function charger() {
@@ -90,6 +91,7 @@ export default function StockAdminPage() {
     setEdPrixAchat(p.prixAchat != null ? String(p.prixAchat) : "");
     setEdPhoto(p.photoReelle ?? "");
     setEdPerissable(p.perissable);
+    setEdUnites((p.unites ?? []).map((u) => ({ unite: u.unite, prix: String(u.prix) })));
   }
 
   async function sauverEdition() {
@@ -104,6 +106,9 @@ export default function StockAdminPage() {
         prixAchat: edPrixAchat ? parseInt(edPrixAchat) : null,
         photo: edPhoto || "",
         perissable: edPerissable,
+        unites: edUnites
+          .map((u) => ({ unite: u.unite.trim(), prix: parseInt(u.prix) || 0 }))
+          .filter((u) => u.unite && u.prix > 0),
       });
       setEdition(null);
       await charger();
@@ -286,6 +291,42 @@ export default function StockAdminPage() {
                   <input type="number" inputMode="numeric" value={edPrixAchat} onChange={(e) => setEdPrixAchat(e.target.value)} className="champ-mboa w-full" style={{ fontSize: 18 }} />
                 </div>
               </div>
+
+              {/* Unités de vente : quand ≥2 lignes valides, le client choisit
+                  son unité (kg / pièce / sac…) et voit le prix directement. */}
+              <label className="text-aide block mb-1 mt-2">{t("adm.stk.unites")}</label>
+              {edUnites.map((u, i) => (
+                <div key={i} className="flex gap-2 mb-1">
+                  <input
+                    type="text"
+                    value={u.unite}
+                    onChange={(e) => setEdUnites(edUnites.map((x, j) => (j === i ? { ...x, unite: e.target.value } : x)))}
+                    placeholder={t("adm.stk.uniteEx")}
+                    className="champ-mboa flex-1"
+                    style={{ fontSize: 16 }}
+                  />
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={u.prix}
+                    onChange={(e) => setEdUnites(edUnites.map((x, j) => (j === i ? { ...x, prix: e.target.value } : x)))}
+                    placeholder="F"
+                    className="champ-mboa w-28"
+                    style={{ fontSize: 16 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setEdUnites(edUnites.filter((_, j) => j !== i))}
+                    className="text-aide font-bold px-2"
+                    aria-label="✕"
+                  >✕</button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setEdUnites([...edUnites, { unite: "", prix: "" }])}
+                className="btn-mboa btn-surface w-full !min-h-[44px] mb-2"
+              >{t("adm.stk.uniteAjout")}</button>
 
               <label className="text-aide block mb-1">{t("adm.stk.photo") ?? "Photo"}</label>
               <div className="flex gap-2 mb-2">

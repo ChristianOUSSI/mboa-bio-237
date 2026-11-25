@@ -195,6 +195,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "march.rupture": "Épuisé",
     "march.liste": "Liste de marché",
     "march.ajouter": "Ajouter au panier",
+    "march.uniteChoisir": "Choisir l'unité",
     "march.quantite": "Quantité",
 
     // Liste de marché
@@ -457,6 +458,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.dev.valider": "Valider et envoyer le livreur",
     "adm.dev.refuser": "Refuser le devis",
     "adm.dev.sansLivreur": "Aucun livreur actif",
+    "adm.dev.assigner": "Assigner / changer le livreur",
     "adm.dev.livreur": "Livreur",
     "adm.dev.appelAvant": "Appeler la cliente avant de livrer",
     "adm.ach.titre": "Achats fournisseurs",
@@ -581,6 +583,9 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.stk.nom": "Nom du produit",
     "adm.stk.categorie": "Catégorie",
     "adm.stk.unite": "Unité",
+    "adm.stk.unites": "Unités de vente (ex. kg + pièce) — le client choisit",
+    "adm.stk.uniteEx": "ex. kg, pièce, sac",
+    "adm.stk.uniteAjout": "+ Ajouter une unité",
     "adm.stk.prixVente2": "Prix de vente (FCFA)",
     "adm.stk.prixAchat": "Coût d'achat (optionnel)",
     "adm.stk.quantite": "Quantité en stock",
@@ -906,6 +911,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "march.rupture": "Sold out",
     "march.liste": "Market list",
     "march.ajouter": "Add to cart",
+    "march.uniteChoisir": "Choose unit",
     "march.quantite": "Quantity",
 
     // Liste de marché
@@ -1168,6 +1174,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.dev.valider": "Validate and send the driver",
     "adm.dev.refuser": "Reject the quote",
     "adm.dev.sansLivreur": "No active driver",
+    "adm.dev.assigner": "Assign / change driver",
     "adm.dev.livreur": "Driver",
     "adm.dev.appelAvant": "Call the customer before delivering",
     "adm.ach.titre": "Supplier purchases",
@@ -1292,6 +1299,9 @@ const DICT: Record<Lang, Record<string, string>> = {
     "adm.stk.nom": "Product name",
     "adm.stk.categorie": "Category",
     "adm.stk.unite": "Unit",
+    "adm.stk.unites": "Sell units (e.g. kg + piece) — customer chooses",
+    "adm.stk.uniteEx": "e.g. kg, piece, bag",
+    "adm.stk.uniteAjout": "+ Add a unit",
     "adm.stk.prixVente2": "Sale price (FCFA)",
     "adm.stk.prixAchat": "Purchase cost (optional)",
     "adm.stk.quantite": "Stock quantity",

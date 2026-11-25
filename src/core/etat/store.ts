@@ -60,11 +60,17 @@ export const useSession = create<SessionState>()(
 // Panier (cart)
 // ============================================================
 
+/** Clé de ligne panier : produit + unité choisie. Un même produit peut
+ *  exister en plusieurs unités (kg / pièce / sac) avec des prix différents. */
+export function clePanier(produitId: string, unite?: string | null): string {
+  return `${produitId}|${unite ?? ""}`;
+}
+
 interface PanierState {
   lignes: LigneCommande[];
   poser: (ligne: LigneCommande) => void;
-  retirer: (produitId: string) => void;
-  ajuster: (produitId: string, quantite: number) => void;
+  retirer: (cle: string) => void;
+  ajuster: (cle: string, quantite: number) => void;
   vider: () => void;
   montantTotal: () => number;
   resumeQuantites: () => string;
@@ -77,11 +83,12 @@ export const usePanier = create<PanierState>()(
       lignes: [],
       poser: (ligne) =>
         set((state) => {
-          const existant = state.lignes.find((l) => l.produitId === ligne.produitId);
+          const cle = clePanier(ligne.produitId, ligne.unite);
+          const existant = state.lignes.find((l) => clePanier(l.produitId, l.unite) === cle);
           if (existant) {
             return {
               lignes: state.lignes.map((l) =>
-                l.produitId === ligne.produitId
+                clePanier(l.produitId, l.unite) === cle
                   ? { ...l, quantite: l.quantite + ligne.quantite }
                   : l,
               ),
@@ -89,14 +96,14 @@ export const usePanier = create<PanierState>()(
           }
           return { lignes: [...state.lignes, ligne] };
         }),
-      retirer: (produitId) =>
+      retirer: (cle) =>
         set((state) => ({
-          lignes: state.lignes.filter((l) => l.produitId !== produitId),
+          lignes: state.lignes.filter((l) => clePanier(l.produitId, l.unite) !== cle),
         })),
-      ajuster: (produitId, quantite) =>
+      ajuster: (cle, quantite) =>
         set((state) => ({
           lignes: state.lignes.map((l) =>
-            l.produitId === produitId
+            clePanier(l.produitId, l.unite) === cle
               ? { ...l, quantite: Math.max(0, quantite) }
               : l,
           ).filter((l) => l.quantite > 0),

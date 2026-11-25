@@ -27,6 +27,10 @@ create table if not exists public.produits (
   perissable boolean not null default true,
   actif boolean not null default true,
   pack_composants jsonb,
+  type_pack text default 'plat',
+  bundle_produits jsonb,
+  theme text,
+  unites jsonb,
   created_at timestamptz not null default now()
 );
 

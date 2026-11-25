@@ -16,6 +16,9 @@ export interface Produit {
   prix: number;
   prixAchat?: number | null;
   unite?: Unite | null;
+  /** Unités de vente alternatives avec leur prix (ex. kg 500F / pièce 200F).
+   *  Quand présent (>1), le client choisit son unité sur la carte produit. */
+  unites?: { unite: string; prix: number }[] | null;
   audioDescription?: string | null;
   perissable: boolean;
   actif: boolean;
@@ -44,6 +47,17 @@ export function produitEstTheme(p: Produit): boolean {
 export function produitUniteReelle(p: Produit): Unite {
   if (produitEstPack(p)) return Unite.part;
   return p.unite ?? Unite.kg;
+}
+
+/** Liste des unités vendables : la config `unites` si définie, sinon
+ *  l'unité/prix par défaut du produit. */
+export function produitUnites(p: Produit): { unite: string; prix: number }[] {
+  if (p.unites && p.unites.length > 0) {
+    return p.unites
+      .filter((u) => u.unite && u.prix > 0)
+      .map((u) => ({ unite: u.unite, prix: Math.round(u.prix) }));
+  }
+  return [{ unite: produitUniteReelle(p) as string, prix: p.prix }];
 }
 
 export function produitPhoto(p: Produit): string {
@@ -126,6 +140,11 @@ export function produitFromMap(map: Record<string, unknown>): Produit {
         }))
       : null,
     theme: (map.theme as string) ?? null,
+    unites: Array.isArray(map.unites)
+      ? (map.unites as { unite?: string; prix?: number }[])
+          .map((u) => ({ unite: String(u.unite ?? ""), prix: Math.round(Number(u.prix ?? 0)) }))
+          .filter((u) => u.unite && u.prix > 0)
+      : null,
     createdLe: (map.created_at as string) ?? null,
   };
 }

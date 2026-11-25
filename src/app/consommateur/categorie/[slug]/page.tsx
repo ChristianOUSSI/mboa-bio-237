@@ -8,7 +8,7 @@ import { chargerVitrine, toutesAnnonces } from "@/core/data/depots";
 import { Annonce } from "@/core/types/annonce";
 import { annoncePromoPct, annonceExpiree } from "@/core/utils/promos";
 import { categoriesPerso, libelleCategorie, emojiCategorie, CategoriePerso } from "@/core/data/categories";
-import { Produit, produitAnnonceVocale, produitDisponibilite, produitPrixLabel, produitJauge, produitEstRupture, produitUniteReelle, produitEstVitrine, produitEstPack } from "@/core/types/produit";
+import { Produit, produitAnnonceVocale, produitJauge, produitEstRupture, produitEstVitrine, produitEstPack, produitUnites } from "@/core/types/produit";
 import { usePanier, toast } from "@/core/etat/store";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
@@ -37,7 +37,6 @@ function PageCategorieInterne() {
   const params = useParams<{ slug: string }>();
   const slug = decodeURIComponent(params.slug ?? "");
   const { pret } = useGuardRole("consommateur");
-  const panier = usePanier();
   const t = useTr();
   const [produits, setProduits] = useState<Produit[]>([]);
   const [persos, setPersos] = useState<CategoriePerso[]>([]);
@@ -72,25 +71,6 @@ function PageCategorieInterne() {
   const estNouveau = (p: Produit) =>
     !!p.createdLe && Date.now() - new Date(p.createdLe).getTime() < 7 * 24 * 3600 * 1000;
 
-  function poserAuPanier(produit: Produit) {
-    const u = produitUniteReelle(produit);
-    const pct = promoPct(produit);
-    panier.poser({
-      produitId: produit.id,
-      slug: produit.slug,
-      nom: produit.nom,
-      categorie: produit.categorie,
-      quantite: 1,
-      prix: pct ? Math.round(produit.prix * (1 - pct / 100)) : produit.prix,
-      coutAchat: produit.prixAchat ?? 0,
-      photo: produit.photoReelle,
-      unite: u,
-      composants: produit.composants,
-    });
-    vibrer();
-    toast(`${produit.nom} ${t("toast.ajoute")}`);
-  }
-
   return (
     <FondMboa>
       <EnTetePage
@@ -108,70 +88,136 @@ function PageCategorieInterne() {
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {produits.map((p) => (
-              <CarteMboa key={p.id} className="card-produit !p-3">
-                <div className="flex justify-between items-start mb-1">
-                  <div className="flex items-center gap-1">
-                    {p.emoji ?? <PictoCategorie categorie={p.categorie} size={24} />}
-                    <h3 className="text-corps font-bold">{p.nom}</h3>
-                    {estNouveau(p) && (
-                      <span className="text-aide px-1.5 py-0.5 rounded-full font-bold" style={{ background: "var(--mboa-accent-doux)", color: "var(--mboa-primary)", fontSize: 11 }}>
-                        {t("march.nouveau")}
-                      </span>
-                    )}
-                  </div>
-                  <BoutonVoix texte={produitAnnonceVocale(p, true)} />
-                </div>
-
-                <div className="zone-photo w-full h-32 rounded-xl flex items-center justify-center mb-2 overflow-hidden">
-                  {p.emoji ? (
-                    <span style={{ fontSize: 64 }} aria-hidden>{p.emoji}</span>
-                  ) : p.photoReelle ? (
-                    <img src={p.photoReelle} alt={p.nom} loading="lazy" decoding="async" className="w-full h-full object-cover rounded-xl" />
-                  ) : (
-                    <PictoCategorie categorie={p.categorie} size={64} />
-                  )}
-                </div>
-
-                <p className="text-aide text-[var(--mboa-text-doux)] mb-1">
-                  {produitEstRupture(p) ? t("march.rupture") : t("march.disponible")}
-                </p>
-                <JaugeMboa valeur={produitJauge(p)} />
-
-                <div className="flex justify-between items-center mt-2">
-                  {(() => {
-                    const pct = promoPct(p);
-                    return pct ? (
-                      <span className="flex flex-col items-end">
-                        <span className="text-aide line-through" style={{ color: "var(--mboa-text-doux)" }}>{p.prix} F</span>
-                        <span className="puce-prix" style={{ background: "var(--mboa-error)" }}>{Math.round(p.prix * (1 - pct / 100))} F -{pct} %</span>
-                      </span>
-                    ) : (
-                      <span className="puce-prix">{produitPrixLabel(p)}</span>
-                    );
-                  })()}
-                  {!produitEstRupture(p) && (
-                    <button
-                      onClick={() => poserAuPanier(p)}
-                      className="btn-mboa btn-primary !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl"
-                      aria-label={t("march.ajouter")}
-                    >
-                      +
-                    </button>
-                  )}
-                </div>
-                {produitEstPack(p) && (
-                  <Link
-                    href={`/consommateur/pack/${encodeURIComponent(p.slug)}`}
-                    className="block text-center text-aide text-[var(--mboa-primary)] font-bold mt-2 underline"
-                  >
-                    🍲 {t("pack.voir")}
-                  </Link>
-                )}
-              </CarteMboa>
+              <CarteProduitCat key={p.id} p={p} promoPct={promoPct} estNouveau={estNouveau} t={t} />
             ))}
           </div>
         )}
       </div>
     </FondMboa>
+  );
+}
+
+/** Carte produit de la page catégorie : quand le produit a plusieurs
+ *  unités (kg / pièce / sac…), le client choisit la sienne et voit
+ *  directement le prix correspondant avant d'ajouter au panier. */
+function CarteProduitCat({
+  p,
+  promoPct,
+  estNouveau,
+  t,
+}: {
+  p: Produit;
+  promoPct: (x: Produit) => number | null;
+  estNouveau: (x: Produit) => boolean;
+  t: (k: string) => string;
+}) {
+  const panier = usePanier();
+  const unites = produitUnites(p);
+  const [uniteIdx, setUniteIdx] = useState(0);
+  const uniteChoisie = unites[Math.min(uniteIdx, unites.length - 1)];
+  const pct = promoPct(p);
+  const prixAffiche = pct ? Math.round(uniteChoisie.prix * (1 - pct / 100)) : uniteChoisie.prix;
+
+  function poser() {
+    panier.poser({
+      produitId: p.id,
+      slug: p.slug,
+      nom: p.nom,
+      categorie: p.categorie,
+      quantite: 1,
+      prix: prixAffiche,
+      coutAchat: p.prixAchat ?? 0,
+      photo: p.photoReelle,
+      unite: uniteChoisie.unite,
+      composants: p.composants,
+    });
+    vibrer();
+    toast(`${p.nom} ${uniteChoisie.unite} ${t("toast.ajoute")}`);
+  }
+
+  return (
+    <CarteMboa className="card-produit !p-3">
+      <div className="flex justify-between items-start mb-1">
+        <div className="flex items-center gap-1">
+          {p.emoji ?? <PictoCategorie categorie={p.categorie} size={24} />}
+          <h3 className="text-corps font-bold">{p.nom}</h3>
+          {estNouveau(p) && (
+            <span className="text-aide px-1.5 py-0.5 rounded-full font-bold" style={{ background: "var(--mboa-accent-doux)", color: "var(--mboa-primary)", fontSize: 11 }}>
+              {t("march.nouveau")}
+            </span>
+          )}
+        </div>
+        <BoutonVoix texte={produitAnnonceVocale(p, true)} />
+      </div>
+
+      <div className="zone-photo w-full h-32 rounded-xl flex items-center justify-center mb-2 overflow-hidden">
+        {p.emoji ? (
+          <span style={{ fontSize: 64 }} aria-hidden>{p.emoji}</span>
+        ) : p.photoReelle ? (
+          <img src={p.photoReelle} alt={p.nom} loading="lazy" decoding="async" className="w-full h-full object-cover rounded-xl" />
+        ) : (
+          <PictoCategorie categorie={p.categorie} size={64} />
+        )}
+      </div>
+
+      <p className="text-aide text-[var(--mboa-text-doux)] mb-1">
+        {produitEstRupture(p) ? t("march.rupture") : t("march.disponible")}
+      </p>
+      <JaugeMboa valeur={produitJauge(p)} />
+
+      {unites.length > 1 && (
+        <div className="flex flex-wrap gap-1.5 mt-2" role="radiogroup" aria-label={t("march.uniteChoisir")}>
+          {unites.map((u, i) => {
+            const actif = i === Math.min(uniteIdx, unites.length - 1);
+            return (
+              <button
+                key={u.unite}
+                type="button"
+                role="radio"
+                aria-checked={actif}
+                onClick={() => setUniteIdx(i)}
+                className="px-2.5 py-1 rounded-full text-aide font-bold border-2"
+                style={{
+                  borderColor: actif ? "var(--mboa-primary)" : "var(--mboa-border)",
+                  background: actif ? "var(--mboa-secondary-doux)" : "var(--mboa-surface)",
+                  color: actif ? "var(--mboa-primary)" : "var(--mboa-text-doux)",
+                  fontSize: 13,
+                }}
+              >
+                {u.unite}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="flex justify-between items-center mt-2">
+        {pct ? (
+          <span className="flex flex-col items-end">
+            <span className="text-aide line-through" style={{ color: "var(--mboa-text-doux)" }}>{uniteChoisie.prix} F/{uniteChoisie.unite}</span>
+            <span className="puce-prix" style={{ background: "var(--mboa-error)" }}>{prixAffiche} F -{pct} %</span>
+          </span>
+        ) : (
+          <span className="puce-prix">{uniteChoisie.prix} F / {uniteChoisie.unite}</span>
+        )}
+        {!produitEstRupture(p) && (
+          <button
+            onClick={poser}
+            className="btn-mboa btn-primary !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl"
+            aria-label={t("march.ajouter")}
+          >
+            +
+          </button>
+        )}
+      </div>
+      {produitEstPack(p) && (
+        <Link
+          href={`/consommateur/pack/${encodeURIComponent(p.slug)}`}
+          className="block text-center text-aide text-[var(--mboa-primary)] font-bold mt-2 underline"
+        >
+          🍲 {t("pack.voir")}
+        </Link>
+      )}
+    </CarteMboa>
   );
 }

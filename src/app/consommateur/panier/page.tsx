@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { usePanier, toast } from "@/core/etat/store";
+import { usePanier, toast, clePanier } from "@/core/etat/store";
 import { CarteMboa, BoutonMboa, EnTetePage, BoutonVoix, FondMboa, ChargementMboa } from "@/core/design_system/composants";
 import { formaterFcfa, formaterFcfaCourt } from "@/core/utils/format_monnaie";
 import { commander, chargerVitrine, toutesAnnonces, fraisLivraisonPourQuartier } from "@/core/data/depots";
@@ -377,7 +377,7 @@ export default function PanierPage() {
             {/* Cart lines */}
             <div className="space-y-2">
               {panier.lignes.map((l, i) => (
-                <CarteMboa key={l.produitId} className="anim-apparition" style={{ animationDelay: `${Math.min(i, 6) * 0.05}s` }}>
+                <CarteMboa key={clePanier(l.produitId, l.unite)} className="anim-apparition" style={{ animationDelay: `${Math.min(i, 6) * 0.05}s` }}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       {/* Miniature produit */}
@@ -390,6 +390,11 @@ export default function PanierPage() {
                       </span>
                       <BoutonVoix texte={`${l.quantite} ${t("liste.de")} ${l.nom}, ${l.prix} francs`} />
                       <span className="text-corps font-bold">{l.nom}</span>
+                      {l.unite && (
+                        <span className="text-aide px-2 py-0.5 rounded-full font-bold" style={{ background: "var(--mboa-secondary-doux)", color: "var(--mboa-primary)", fontSize: 12 }}>
+                          {l.unite}
+                        </span>
+                      )}
                     </div>
                     <span className="text-chiffre text-[var(--mboa-primary)]">
                       {formaterFcfaCourt(Math.round(l.quantite * l.prix))}
@@ -398,11 +403,11 @@ export default function PanierPage() {
 
                   <div className="flex items-center justify-between">
                     <span className="text-aide text-[var(--mboa-text-doux)]">
-                      {formaterFcfa(l.prix)} {t("panier.parUnite")}
+                      {formaterFcfa(l.prix)} / {l.unite || t("panier.parUnite")}
                     </span>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => panier.ajuster(l.produitId, l.quantite - 1)}
+                        onClick={() => panier.ajuster(clePanier(l.produitId, l.unite), l.quantite - 1)}
                         className="btn-mboa btn-surface !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl"
                         aria-label={`Remove one ${l.nom}`}
                       >
@@ -410,7 +415,7 @@ export default function PanierPage() {
                       </button>
                       <span className="text-chiffre min-w-[48px] text-center">{l.quantite}</span>
                       <button
-                        onClick={() => panier.ajuster(l.produitId, l.quantite + 1)}
+                        onClick={() => panier.ajuster(clePanier(l.produitId, l.unite), l.quantite + 1)}
                         className="btn-mboa btn-secondary !min-h-[48px] !min-w-[48px] !rounded-xl text-2xl"
                         aria-label={`Add one ${l.nom}`}
                       >

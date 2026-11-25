@@ -373,8 +373,22 @@ export async function validerDevis(commande: Commande): Promise<void> {
   void notifierActiviteAdmin("act.devisValide", commande.lignes.map((l) => l.nom).join(", "));
 }
 
-/** L'admin assigne un livreur au devis validé. */
+/** L'admin assigne (ou réassigne) un livreur à une commande. */
 export async function assignerLivreur(commandeId: string, livreurId: string, tarifCourse: number): Promise<void> {
+  // Résout la fiche livreur pour l'instantané (nom/photo/moto/plaque)
+  // affiché au client, au livreur et dans les exports.
+  const fiches = await chargerLivreurs();
+  const fiche = fiches.find((l) => l.id === livreurId);
+  const snapshot = fiche
+    ? {
+        nom: fiche.nom,
+        photo: fiche.photo ?? null,
+        moto: fiche.moto ?? null,
+        plaque: fiche.plaque ?? null,
+        tarif_course: tarifCourse,
+      }
+    : null;
+
   // Si la commande a un quartier, on utilise le tarif de la zone si disponible.
   const client = mboaReseau();
   if (client) {
@@ -386,21 +400,43 @@ export async function assignerLivreur(commandeId: string, livreurId: string, tar
       if (trouve?.tarifCourse) tarifCourse = trouve.tarifCourse;
     }
   }
+  // Met à jour le cache local : sans ça, l'assignation faite hors-ligne
+  // (ou avant sync) n'apparaît ni chez le livreur ni dans l'admin.
+  const cmdLocale = await cacheLire<Commande>("commande", commandeId);
+  if (cmdLocale) {
+    await cacheEcrire("commande", commandeId, {
+      ...cmdLocale,
+      livreurId,
+      livreurNom: fiche?.nom ?? cmdLocale.livreurNom ?? null,
+      livreurPhoto: fiche?.photo ?? cmdLocale.livreurPhoto ?? null,
+      livreurMoto: fiche?.moto ?? cmdLocale.livreurMoto ?? null,
+      livreurPlaque: fiche?.plaque ?? cmdLocale.livreurPlaque ?? null,
+      livreurTelephone: fiche?.telephone ?? cmdLocale.livreurTelephone ?? null,
+      livreurTarif: tarifCourse,
+    });
+  }
   if (mboaReseau()) {
     const { error } = await mboaReseau()!
       .from("commandes")
       .update({
         livreur_id: livreurId,
         tarif_livreur: tarifCourse,
+        tarif_course: tarifCourse,
+        livreur: snapshot,
+        nom_livreur: fiche?.nom ?? null,
+        photo_livreur: fiche?.photo ?? null,
+        moto: fiche?.moto ?? null,
+        plaque: fiche?.plaque ?? null,
+        telephone_livreur: fiche?.telephone ?? null,
       })
       .eq("id", commandeId);
     if (!error) {
-      void notifierActiviteAdmin("act.livreurAssigne", livreurId);
+      void notifierActiviteAdmin("act.livreurAssigne", fiche?.nom ?? livreurId);
       return;
     }
   }
   await fileAjouter("commande", commandeId, "update:assigner_livreur", { livreurId, tarifCourse });
-  void notifierActiviteAdmin("act.livreurAssigne", livreurId);
+  void notifierActiviteAdmin("act.livreurAssigne", fiche?.nom ?? livreurId);
 }
 
 /** Le livreur démarre la livraison : statut validee_admin → en_livraison. */
@@ -476,6 +512,7 @@ export async function creerProduit(params: {
   photo?: string;
   prixAchat?: number;
   perissable?: boolean;
+  unites?: { unite: string; prix: number }[];
 }): Promise<Produit | null> {
   const slug = slugDe(params.nom);
   const produit: Produit = {
@@ -493,6 +530,7 @@ export async function creerProduit(params: {
     perissable: params.perissable ?? true,
     actif: true,
     composants: [],
+    unites: params.unites?.length ? params.unites.map((u) => ({ unite: u.unite, prix: Math.round(u.prix) })) : null,
     createdLe: new Date().toISOString(),
   };
   if (mboaReseau()) {
@@ -508,6 +546,7 @@ export async function creerProduit(params: {
         photo_reelle: produit.photoReelle,
         prix_achat: params.prixAchat ?? null,
         perissable: produit.perissable,
+        unites: produit.unites?.length ? produit.unites : null,
         actif: true,
       })
       .select("*")
@@ -569,6 +608,7 @@ export async function modifierProduit(produitId: string, maj: {
   photo?: string;
   perissable?: boolean;
   emoji?: string | null;
+  unites?: { unite: string; prix: number }[] | null;
 }): Promise<void> {
   let produit = await cacheLire<Produit>("produit", produitId);
   if (!produit && mboaReseau()) {
@@ -609,6 +649,10 @@ export async function modifierProduit(produitId: string, maj: {
   if (maj.perissable != null) {
     produit.perissable = maj.perissable;
     distant.perissable = maj.perissable;
+  }
+  if (maj.unites !== undefined) {
+    produit.unites = maj.unites?.filter((u) => u.unite && u.prix > 0).map((u) => ({ unite: u.unite, prix: Math.round(u.prix) })) ?? null;
+    distant.unites = produit.unites?.length ? produit.unites : null;
   }
   if (maj.emoji !== undefined) {
     produit.emoji = maj.emoji;
@@ -1668,6 +1712,10 @@ async function rejouerOperation(client: NonNullable<ReturnType<typeof mboaReseau
         prix_achat: p.prixAchat, audio_description_url: p.audioDescription,
         perissable: p.perissable, actif: p.actif,
         pack_composants: p.composants.length ? JSON.parse(JSON.stringify(p.composants)) : null,
+        type_pack: p.typePack ?? null,
+        bundle_produits: p.bundleProduits?.length ? p.bundleProduits : null,
+        theme: p.theme ?? null,
+        unites: p.unites?.length ? p.unites : null,
         created_at: p.createdLe,
       });
       return !error;
