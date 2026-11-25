@@ -386,18 +386,21 @@ async function decrementerStock(ligne: LigneCommande): Promise<void> {
 /** L'admin valide le devis : statut nouvelle → validee_admin, et le stock diminue. */
 export async function validerDevis(commande: Commande): Promise<void> {
   const commandeId = commande.id;
+  const maj: Commande = { ...commande, statut: StatutCommande.valideeAdmin, stockSorti: true };
   if (mboaReseau()) {
     const { error } = await mboaReseau()!
       .from("commandes")
-      .update({ statut_enum: "validee_admin" })
+      .update({ statut_enum: "validee_admin", stock_sorti: true })
       .eq("id", commandeId);
     if (!error) {
+      await cacheEcrire("commande", commandeId, maj);
       for (const l of commande.lignes) await decrementerStock(l);
       void notifierActiviteAdmin("act.devisValide", commande.lignes.map((l) => l.nom).join(", "));
       return;
     }
   }
   await fileAjouter("commande", commandeId, "update:statut=validee_admin", {});
+  await cacheEcrire("commande", commandeId, maj);
   for (const l of commande.lignes) await decrementerStock(l);
   void notifierActiviteAdmin("act.devisValide", commande.lignes.map((l) => l.nom).join(", "));
 }
@@ -2077,22 +2080,23 @@ export async function annulerCourseComplete(commande: Commande): Promise<void> {
     commande.statut === StatutCommande.valideeAdmin ||
     commande.statut === StatutCommande.enLivraison ||
     commande.stockSorti;
+  const maj: Commande = { ...commande, statut: StatutCommande.annulee, stockSorti: false };
   if (dejaSorti) {
     for (const l of commande.lignes) await restaurerStock(l);
   }
   if (mboaReseau()) {
     const { error } = await mboaReseau()!
       .from("commandes")
-      .update({ statut_enum: "annulee", annule_le: new Date().toISOString() })
+      .update({ statut_enum: "annulee", annule_le: new Date().toISOString(), stock_sorti: false })
       .eq("id", commande.id);
     if (!error) {
-      await cacheEcrire("commande", commande.id, { ...commande, statut: StatutCommande.annulee });
+      await cacheEcrire("commande", commande.id, maj);
       void notifierActiviteAdmin("act.courseAnnulee", commande.lignes.map((l) => l.nom).join(", "));
       return;
     }
   }
   await fileAjouter("commande", commande.id, "update:statut=annulee", {});
-  await cacheEcrire("commande", commande.id, { ...commande, statut: StatutCommande.annulee });
+  await cacheEcrire("commande", commande.id, maj);
   void notifierActiviteAdmin("act.courseAnnulee", commande.lignes.map((l) => l.nom).join(", "));
 }
 
