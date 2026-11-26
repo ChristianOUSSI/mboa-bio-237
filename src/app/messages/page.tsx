@@ -21,6 +21,7 @@ import { vibrer, jouerNotificationSonore } from "@/core/utils/son";
 import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
 import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { formaterDateHeure } from "@/core/utils/format_date";
+import { DUREE_MESSAGE_VOCAL } from "@/core/config/app_env";
 
 type Conversation = {
   cle: string;
@@ -144,7 +145,7 @@ function BoutonVocal({ onAudio, libelle }: { onAudio: (dataUrl: string) => void;
       setSecondes(0);
       timer.current = setInterval(() => {
         setSecondes((s) => {
-          if (s >= 60) {
+          if (s >= DUREE_MESSAGE_VOCAL) {
             arreterEnvoyer();
             return s;
           }

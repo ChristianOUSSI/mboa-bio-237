@@ -24,8 +24,8 @@ export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
 export const supabaseConfigure: boolean =
   SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY.length > 20;
 
-/** Durée maximale d'un message vocal, en secondes. */
-export const DUREE_MESSAGE_VOCAL = 5;
+/** Durée maximale d'un message vocal, en secondes (chat /messages). */
+export const DUREE_MESSAGE_VOCAL = 60;
 
 /** Nombre de chiffres du code OTP. */
 export const OTP_CHIFFRES = 4;
