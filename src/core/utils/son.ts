@@ -34,15 +34,33 @@ export function vibrer(pattern: number | number[] = 15): void {
   }
 }
 
+// Contexte audio réutilisé : en créer un par bip épuise la limite de
+// contextes simultanés sur mobile (et perd le son après quelques appels).
+let ctxPartage: AudioContext | null = null;
+
+function contexteAudio(): AudioContext | null {
+  if (ctxPartage && ctxPartage.state !== "closed") return ctxPartage;
+  const Ctx =
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!Ctx) return null;
+  try {
+    ctxPartage = new Ctx();
+    return ctxPartage;
+  } catch {
+    return null;
+  }
+}
+
 /** Petit bip deux tons - joué uniquement si l'interrupteur est activé. */
 export function jouerNotificationSonore(): void {
   if (!sonNotificationActif() || typeof window === "undefined") return;
   try {
-    const Ctx =
-      window.AudioContext ??
-      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
+    const ctx = contexteAudio();
+    if (!ctx) return;
+    // Contexte suspendu (politique autoplay) : on tente la reprise ;
+    // le bip partira dès qu'une interaction utilisateur a eu lieu.
+    if (ctx.state === "suspended") void ctx.resume().catch(() => {});
     const maintenant = ctx.currentTime;
     [880, 1174].forEach((freq, i) => {
       const osc = ctx.createOscillator();
@@ -57,7 +75,6 @@ export function jouerNotificationSonore(): void {
       osc.start(t0);
       osc.stop(t0 + 0.3);
     });
-    window.setTimeout(() => void ctx.close(), 700);
   } catch {
     /* audio indisponible : silencieux */
   }
