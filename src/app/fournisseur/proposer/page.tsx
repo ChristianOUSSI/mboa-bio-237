@@ -11,13 +11,12 @@ import { proposerAchat } from "@/core/data/depots";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { choisirPhotoDepuisAppareil } from "@/core/utils/photo";
 import { useGuardRole } from "@/core/auth/use_guard_role";
-import { useTr, useCategorieLibelle } from "@/core/i18n";
+import { useTr } from "@/core/i18n";
 
 export default function ProposerRecoltePage() {
   const router = useRouter();
   const { pret, profil } = useGuardRole("fournisseur");
   const t = useTr();
-  const catLibelle = useCategorieLibelle();
 
   const [nom, setNom] = useState("");
   const [categorie, setCategorie] = useState<string>("fruit");

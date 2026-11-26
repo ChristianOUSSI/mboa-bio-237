@@ -38,7 +38,7 @@ function SonToggle() {
 
 export default function TableauAdmin() {
   const router = useRouter();
-  const { pret, profil } = useGuardRole("admin");
+  const { pret } = useGuardRole("admin");
   const t = useTr();
   const { deconnexion } = useSession();
   const [achats, setAchats] = useState<Achat[]>([]);

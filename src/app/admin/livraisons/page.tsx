@@ -23,7 +23,7 @@ const FRAIS_LIVRAISON_DEFAUT = 500;
 
 export default function LivraisonsPage() {
   const router = useRouter();
-  const { pret, profil } = useGuardRole("admin");
+  const { pret } = useGuardRole("admin");
   const t = useTr();
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [payes, setPayes] = useState<Set<string>>(new Set());

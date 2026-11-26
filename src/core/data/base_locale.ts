@@ -39,7 +39,7 @@ function ouvrirDb(dejaRepare = false): Promise<IDBDatabase> {
     let req: IDBOpenDBRequest;
     try {
       req = indexedDB.open(DB_NAME, DB_VERSION);
-    } catch (e) {
+    } catch {
       reparer();
       return;
     }

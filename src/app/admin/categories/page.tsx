@@ -30,7 +30,6 @@ export default function CategoriesAdminPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (pret) charger();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pret]);
 
   async function ajouter() {

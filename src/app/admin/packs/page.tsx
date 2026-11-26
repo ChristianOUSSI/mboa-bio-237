@@ -313,7 +313,6 @@ export default function PacksAdminPage() {
                     value={b.slug}
                     onChange={(e) => {
                       const slug = e.target.value;
-                      const prod = stock.find((p) => p.slug === slug);
                       setBundleProduits(bundleProduits.map((bp, idx) => idx === i ? { ...bp, slug, quantite: bp.quantite || 1 } : bp));
                     }}
                     className="flex-1 p-2 border-2 border-[var(--mboa-primary)] rounded-xl"

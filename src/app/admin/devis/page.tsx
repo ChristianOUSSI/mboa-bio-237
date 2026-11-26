@@ -48,7 +48,7 @@ function exporterCsv(commandes: Commande[]) {
 
 export default function DevisAdminPage() {
   const router = useRouter();
-  const { pret, profil } = useGuardRole("admin");
+  const { pret } = useGuardRole("admin");
   const t = useTr();
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [livreurs, setLivreurs] = useState<Livreur[]>([]);

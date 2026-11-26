@@ -1,4 +1,4 @@
-import { LigneCommande, resumerQuantites } from "./commande";
+import { LigneCommande } from "./commande";
 
 /** Un brouillon de devis préparé par une cliente. Table `public.listes`. */
 export interface ListeMarche {

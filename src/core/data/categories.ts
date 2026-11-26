@@ -1,6 +1,6 @@
 "use client";
 
-import { cacheEcrire, cacheLire, cacheTout } from "./base_locale";
+import { cacheEcrire, cacheTout } from "./base_locale";
 import { mboaReseau } from "./mboa_reseau";
 import { uuidV4, slugDe } from "../utils/identifiants";
 import { CATEGORIE_INFO, Categorie } from "../types/categorie";

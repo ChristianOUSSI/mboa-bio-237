@@ -15,7 +15,7 @@ import { useTr } from "@/core/i18n";
 
 export default function StockFournisseurPage() {
   const router = useRouter();
-  const { pret, profil } = useGuardRole("fournisseur");
+  const { pret } = useGuardRole("fournisseur");
   const t = useTr();
 
   const [stock, setStock] = useState<Produit[]>([]);

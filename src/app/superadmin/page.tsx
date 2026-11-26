@@ -55,7 +55,6 @@ export default function SuperAdminPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (pret) charger();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pret]);
 
   async function enregistrer(c: CompteAuth) {
@@ -75,7 +74,7 @@ export default function SuperAdminPage() {
         maj = await majCompte(maj, { nom: nomEdit.trim() });
       }
       if (mdpEdit.trim()) {
-        maj = await changerMotDePasse(maj, mdpEdit);
+        await changerMotDePasse(maj, mdpEdit);
       }
       setEdition(null);
       setNomEdit("");

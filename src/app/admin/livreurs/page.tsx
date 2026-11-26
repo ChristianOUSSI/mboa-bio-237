@@ -36,7 +36,7 @@ const FORMULAIRE_VIDE: FormulaireLivreur = {
 
 export default function LivreursAdminPage() {
   const router = useRouter();
-  const { pret, profil } = useGuardRole("admin");
+  const { pret } = useGuardRole("admin");
   const t = useTr();
   const [livreurs, setLivreurs] = useState<Livreur[]>([]);
   const [form, setForm] = useState<FormulaireLivreur>(FORMULAIRE_VIDE);

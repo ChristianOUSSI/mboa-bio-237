@@ -9,7 +9,7 @@ import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
-import { formaterDate, formaterDateHeure } from "@/core/utils/format_date";
+import { formaterDateHeure } from "@/core/utils/format_date";
 
 /** Journal complet des actions admin : qui a fait quoi, et quand. */
 export default function ActiviteAdminPage() {

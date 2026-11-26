@@ -22,7 +22,7 @@ import { useTr } from "@/core/i18n";
 
 export default function AdminComptePage() {
   const router = useRouter();
-  const { pret, profil } = useGuardRole("admin");
+  const { pret } = useGuardRole("admin");
   const t = useTr();
   const [compte, setCompte] = useState<CompteAuth | null>(null);
   const [actuel, setActuel] = useState("");

@@ -1,5 +1,3 @@
-import { Categorie } from "./categorie";
-
 /**
  * États partagés entre les apps et la base.
  * Miroir exact de `public.commandes.statut_enum`.

@@ -1,5 +1,5 @@
 import { categorieResolve } from "./categorie";
-import { Unite, uniteResolve, uniteAvec, unitePour, uniteAvecArticle } from "./unite";
+import { Unite, uniteResolve, uniteAvec } from "./unite";
 import { PackComposant, packComposantDepuisJson } from "./pack_composant";
 
 /** Une ligne du devis, telle qu'elle est gelée dans `commandes.produits`. */

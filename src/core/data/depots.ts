@@ -16,7 +16,6 @@ import { MessageChat, messageFromMap, RoleMessage } from "../types/message";
 import { LigneCommande, ligneUniteReelle } from "../types/commande";
 import { Achat, StatutAchat, achatFromMap, achatMontant } from "../types/achat";
 import { Profil, profilFromMap } from "../types/profil";
-import { roleResolve } from "../config/app_env";
 import { Livreur, livreurFromMap } from "../types/livreur";
 import { Fournisseur, fournisseurFromMap } from "../types/fournisseur";
 import { ZoneLivraison, zoneFromMap, zonesParDefaut } from "../types/zone_livraison";
@@ -1605,7 +1604,7 @@ export async function demanderCode(telephone: string): Promise<{ code: string; m
   return { code, mode: "voix" };
 }
 
-export async function validerCode(telephone: string, codeSaisi: string, role?: string): Promise<Profil | null> {
+export async function validerCode(telephone: string, codeSaisi: string, _role?: string): Promise<Profil | null> {
   // Mode SMS Supabase
   if (mboaReseau() && supabaseConfigure) {
     const { data, error } = await mboaReseau()!.auth.verifyOtp({

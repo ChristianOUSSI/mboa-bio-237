@@ -20,7 +20,7 @@ type Onglet = "stock" | "ajouter";
 
 export default function StockAdminPage() {
   const router = useRouter();
-  const { pret, profil } = useGuardRole("admin");
+  const { pret } = useGuardRole("admin");
   const t = useTr();
   const [stock, setStock] = useState<Produit[]>([]);
   const [prixEdit, setPrixEdit] = useState<Record<string, string>>({});
