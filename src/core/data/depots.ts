@@ -1431,6 +1431,7 @@ export async function proposerAchat(params: {
         return corrige;
       }
       await cacheEcrire("achat", a.id, a);
+      void notifierActiviteAdmin("act.achatPropose", params.nom);
       return a;
     }
     // RPC absente : insertion directe pour que le comptoir voie la
@@ -1457,12 +1458,14 @@ export async function proposerAchat(params: {
     if (!errIns && ins) {
       const a = achatFromMap(ins as unknown as Record<string, unknown>);
       await cacheEcrire("achat", a.id, a);
+      void notifierActiviteAdmin("act.achatPropose", params.nom);
       return a;
     }
     if (errIns) console.warn("[achat] insert direct:", errIns.message);
   }
   await cacheEcrire("achat", achat.id, achat);
   await fileAjouter("achat", achat.id, "rpc:proposer_achat", params);
+  void notifierActiviteAdmin("act.achatPropose", params.nom);
   return achat;
 }
 
