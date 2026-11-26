@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useSession, useReseau } from "@/core/etat/store";
+import { useSession, useReseau, toast } from "@/core/etat/store";
 import { mesAchats } from "@/core/data/depots";
 import { CarteMboa, BoutonMboa, EnTetePage, FondMboa, SkeletonMboa } from "@/core/design_system/composants";
 import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
@@ -13,6 +13,7 @@ import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
+import { vibrer, jouerNotificationSonore } from "@/core/utils/son";
 
 export default function AccueilFournisseur() {
   const router = useRouter();
@@ -23,10 +24,31 @@ export default function AccueilFournisseur() {
   const [achats, setAchats] = useState<Achat[]>([]);
   const [gainsPaye, setGainsPaye] = useState(0);
   const [gainsEnAttente, setGainsEnAttente] = useState(0);
+  // Statuts déjà vus : pour notifier le fournisseur quand le comptoir
+  // traite une vente (acceptée, payée, refusée…).
+  const statutsVus = useRef<Map<string, string>>(new Map());
 
   async function charger() {
     if (!profil) return;
     const a = await mesAchats(profil.id, profil.telephone);
+    for (const x of a) {
+      const avant = statutsVus.current.get(x.id);
+      if (avant !== undefined && avant !== x.statut) {
+        const info = STATUT_ACHAT_INFO[x.statut];
+        const texte = `${x.nom} · ${info.annonce ?? info.libelle}`;
+        toast(texte);
+        vibrer();
+        jouerNotificationSonore();
+        if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+          try {
+            new Notification("🌾 MBOA BIO", { body: texte, icon: "/logo-mboa.jpeg", tag: `achat-${x.id}` });
+          } catch {
+            /* notification indisponible */
+          }
+        }
+      }
+      statutsVus.current.set(x.id, x.statut);
+    }
     setAchats(a);
     const paye = a.filter((x) => achatEstPayee(x.statut)).reduce((s, x) => s + achatMontant(x), 0);
     const enAttente = a.filter((x) => achatEstDu(x.statut)).reduce((s, x) => s + achatMontant(x), 0);

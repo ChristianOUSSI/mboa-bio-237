@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 import { mesAchats } from "@/core/data/depots";
@@ -13,6 +13,8 @@ import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { useGuardRole } from "@/core/auth/use_guard_role";
 import { useActualisation } from "@/core/utils/use_actualisation";
 import { useTr } from "@/core/i18n";
+import { toast } from "@/core/etat/store";
+import { vibrer, jouerNotificationSonore } from "@/core/utils/son";
 
 export default function MesAchatsPage() {
   const router = useRouter();
@@ -20,10 +22,30 @@ export default function MesAchatsPage() {
   const t = useTr();
 
   const [achats, setAchats] = useState<Achat[]>([]);
+  const statutsVus = useRef<Map<string, string>>(new Map());
 
   async function charger() {
     if (!profil) return;
-    setAchats(await mesAchats(profil.id, profil.telephone));
+    const a = await mesAchats(profil.id, profil.telephone);
+    for (const x of a) {
+      const avant = statutsVus.current.get(x.id);
+      if (avant !== undefined && avant !== x.statut) {
+        const info = STATUT_ACHAT_INFO[x.statut];
+        const texte = `${x.nom} · ${info.annonce ?? info.libelle}`;
+        toast(texte);
+        vibrer();
+        jouerNotificationSonore();
+        if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+          try {
+            new Notification("🌾 MBOA BIO", { body: texte, icon: "/logo-mboa.jpeg", tag: `achat-${x.id}` });
+          } catch {
+            /* notification indisponible */
+          }
+        }
+      }
+      statutsVus.current.set(x.id, x.statut);
+    }
+    setAchats(a);
   }
 
   // Recharge au montage, toutes les 30 s et au retour sur l'onglet.
