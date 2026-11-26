@@ -2,7 +2,7 @@
 
 import { mboaReseau } from "./mboa_reseau";
 import { creerCategoriePerso, type CategoriePerso } from "./categories";
-import { cacheTout, cacheEcrire, cacheLire, etatEcrire, etatLire, fileAjouter, fileCompte, fileTout, fileSupprimer } from "./base_locale";
+import { cacheTout, cacheEcrire, cacheLire, cacheSupprimer, etatEcrire, etatLire, fileAjouter, fileCompte, fileTout, fileSupprimer } from "./base_locale";
 import { CATALOGUE_HORS_LIGNE } from "./catalogue_hors_ligne";
 import { supabaseConfigure } from "../config/app_env";
 import { compteParIdentifiant } from "../auth/auth_service";
@@ -705,13 +705,14 @@ export async function supprimerProduit(produitId: string): Promise<void> {
   if (!ok) {
     await fileAjouter("produit", produitId, "delete:produit", {});
   }
-  // Marquer inactif dans le cache (IndexedDB ne permet pas de supprimer une clé sans scan)
-  const produit = await cacheLire<Produit>("produit", produitId);
-  if (produit) {
-    await cacheEcrire("produit", produitId, { ...produit, actif: false, quantite: 0 });
-    await cacheEcrire("vitrine", produitId, { ...produit, actif: false, quantite: 0 });
-    void notifierActiviteAdmin("act.produitSupprime", produit.nom);
-  }
+  // Vraie suppression du cache : les photos base64 pèsent des centaines
+  // de Ko — les garder (même marquées inactives) gonfle IndexedDB.
+  const produit =
+    (await cacheLire<Produit>("produit", produitId)) ??
+    (await cacheLire<Produit>("vitrine", produitId));
+  await cacheSupprimer("produit", produitId);
+  await cacheSupprimer("vitrine", produitId);
+  void notifierActiviteAdmin("act.produitSupprime", produit?.nom ?? produitId.slice(0, 8));
 }
 
 /** L'admin active/désactive un produit sans le supprimer. */
@@ -821,14 +822,12 @@ export async function supprimerLivreur(livreurId: string): Promise<void> {
     const { error } = await mboaReseau()!.from("livreurs").delete().eq("id", livreurId);
     ok = !error;
   }
+  const l = await cacheLire<Livreur>("livreur", livreurId);
+  await cacheSupprimer("livreur", livreurId);
   if (ok) {
-    const l = await cacheLire<Livreur>("livreur", livreurId);
-    if (l) await cacheEcrire("livreur", livreurId, { ...l, actif: false });
     void notifierActiviteAdmin("act.livreurSupprime", l?.nom);
   } else {
     await fileAjouter("livreur", livreurId, "delete:livreur", {});
-    const l = await cacheLire<Livreur>("livreur", livreurId);
-    if (l) await cacheEcrire("livreur", livreurId, { ...l, actif: false });
     void notifierActiviteAdmin("act.livreurSupprime", l?.nom ?? livreurId.slice(0, 8));
   }
 }
@@ -841,7 +840,7 @@ export async function supprimerFournisseur(fournisseurId: string): Promise<void>
     const { error } = await mboaReseau()!.from("fournisseurs").delete().eq("id", fournisseurId);
     ok = !error;
   }
-  if (f) await cacheEcrire("fournisseur", fournisseurId, { ...f, actif: false });
+  await cacheSupprimer("fournisseur", fournisseurId);
   if (ok) {
     void notifierActiviteAdmin("act.fournisseurSupprime", f?.nom);
   } else {
