@@ -17,94 +17,18 @@ import {
   envoyerMessageChat,
 } from "@/core/data/depots";
 import { MessageChat, RoleMessage } from "@/core/types/message";
+import {
+  CLE_EQUIPE,
+  estRoleAdmin,
+  cleConversation,
+  grouperPourUtilisateur,
+  grouperConversations,
+} from "@/core/utils/conversations";
 import { vibrer, jouerNotificationSonore } from "@/core/utils/son";
 import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
 import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
 import { formaterDateHeure } from "@/core/utils/format_date";
 import { DUREE_MESSAGE_VOCAL } from "@/core/config/app_env";
-
-type Conversation = {
-  cle: string;
-  nom: string;
-  role: RoleMessage | null;
-  messages: MessageChat[];
-};
-
-const estRoleAdmin = (r: string | null | undefined) => r === "admin" || r === "superadmin";
-
-/** Clé de conversation d'un message pour un utilisateur donné :
- *  « __equipe__ » pour les admins, sinon l'id du correspondant. */
-function cleConversation(m: MessageChat, monId: string): string {
-  if (m.expediteurId === monId) {
-    return m.destinataireId == null || estRoleAdmin(m.destinataireRole) ? "__equipe__" : m.destinataireId;
-  }
-  return estRoleAdmin(m.expediteurRole) ? "__equipe__" : m.expediteurId;
-}
-
-/** Regroupe les messages d'un non-admin (livreur) par correspondant. */
-function grouperPourUtilisateur(messages: MessageChat[], monId: string): Conversation[] {
-  const map = new Map<string, Conversation>();
-  for (const m of messages) {
-    const cle = cleConversation(m, monId);
-    let conv = map.get(cle);
-    if (!conv) {
-      conv = { cle, nom: "", role: null, messages: [] };
-      map.set(cle, conv);
-    }
-    conv.messages.push(m);
-    if (m.expediteurId === monId) {
-      if (!conv.role && m.destinataireRole) conv.role = m.destinataireRole;
-    } else {
-      conv.nom = m.expediteurNom || conv.nom;
-      conv.role = m.expediteurRole;
-    }
-  }
-  for (const conv of map.values()) {
-    conv.messages.sort((a, b) => a.createdLe.localeCompare(b.createdLe));
-    if (!conv.nom) {
-      conv.nom = conv.cle === "__equipe__" ? "équipe" : conv.cle.slice(0, 8);
-    }
-  }
-  return [...map.values()].sort((a, b) => {
-    const da = a.messages[a.messages.length - 1]?.createdLe ?? "";
-    const db = b.messages[b.messages.length - 1]?.createdLe ?? "";
-    return db.localeCompare(da);
-  });
-}
-
-/** Regroupe les messages en conversations (vue admin). */
-function grouperConversations(messages: MessageChat[]): Conversation[] {
-  const map = new Map<string, Conversation>();
-  for (const m of messages) {
-    const deAdmin = estRoleAdmin(m.expediteurRole);
-    const cle = deAdmin ? (m.destinataireId ?? "__equipe__") : m.expediteurId;
-    let conv = map.get(cle);
-    if (!conv) {
-      conv = { cle, nom: "", role: null, messages: [] };
-      map.set(cle, conv);
-    }
-    conv.messages.push(m);
-    // Le nom/rôle du correspondant vient de ses propres messages.
-    if (!deAdmin) {
-      conv.nom = m.expediteurNom || conv.nom;
-      conv.role = m.expediteurRole;
-    } else if (!conv.role && m.destinataireRole) {
-      conv.role = m.destinataireRole;
-    }
-  }
-  for (const conv of map.values()) {
-    conv.messages.sort((a, b) => a.createdLe.localeCompare(b.createdLe));
-    if (!conv.nom) {
-      conv.nom = conv.cle === "__equipe__" ? "équipe" : conv.cle.slice(0, 8);
-    }
-  }
-  // Conversations avec le dernier message le plus récent en premier.
-  return [...map.values()].sort((a, b) => {
-    const da = a.messages[a.messages.length - 1]?.createdLe ?? "";
-    const db = b.messages[b.messages.length - 1]?.createdLe ?? "";
-    return db.localeCompare(da);
-  });
-}
 
 /** Bouton micro : enregistre un message vocal (webm/mp4) ≤ 60 s. */
 function BoutonVocal({ onAudio, libelle }: { onAudio: (dataUrl: string) => void; libelle: string }) {
@@ -308,7 +232,7 @@ export default function PageMessages() {
       const conv = conversations.find((c) => c.cle === conversation);
       return conv?.messages ?? [];
     }
-    const cle = convInitiale?.id ?? "__equipe__";
+    const cle = convInitiale?.id ?? CLE_EQUIPE;
     return messages.filter((m) => cleConversation(m, profil.id) === cle);
   }, [messages, profil, vueConversations, conversations, conversation, convInitiale]);
 
@@ -328,7 +252,7 @@ export default function PageMessages() {
         : null;
     }
     return {
-      id: conv.cle === "__equipe__" ? null : conv.cle,
+      id: conv.cle === CLE_EQUIPE ? null : conv.cle,
       role: conv.role ?? (conv.cle === convInitiale?.id ? convInitiale.role : null),
     };
   }, [vueConversations, conversation, conversations, convInitiale]);
@@ -351,7 +275,7 @@ export default function PageMessages() {
         const ids = new Set(conv.messages.map((m) => m.id));
         filtre = (m) => ids.has(m.id);
       } else {
-        const cle = convInitiale?.id ?? "__equipe__";
+        const cle = convInitiale?.id ?? CLE_EQUIPE;
         filtre = (m) => cleConversation(m, profil.id) === cle;
       }
       void marquerMessagesLus(profil, filtre).catch(() => {});
