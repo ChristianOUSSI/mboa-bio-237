@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useSession, toast } from "@/core/etat/store";
 import { messagesNonLus } from "@/core/data/depots";
 import { vibrer, jouerNotificationSonore } from "@/core/utils/son";
+import { configurerPush } from "@/core/push";
 
 /**
  * Bouton flottant « discuter avec l'admin » - visible sur tous les menus
@@ -19,9 +20,15 @@ export function BoutonChatFlottant() {
   // Baseline : le premier comptage ne doit pas notifier (messages déjà
   // là avant l'ouverture de l'app).
   const prec = useRef<number | null>(null);
+  // Push : une seule tentative d'abonnement par session et par profil.
+  const pushFait = useRef<string | null>(null);
 
   useEffect(() => {
     if (!profil) return;
+    if (pushFait.current !== profil.id) {
+      pushFait.current = profil.id;
+      void configurerPush(profil);
+    }
     let actif = true;
     const charger = () => {
       messagesNonLus(profil)
