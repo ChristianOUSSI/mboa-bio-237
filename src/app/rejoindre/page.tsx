@@ -12,6 +12,8 @@ import { EntreeCatalogue, catalogueUniteReelle } from "@/core/types/catalogue";
 import { formaterFcfa } from "@/core/utils/format_monnaie";
 import { choisirPhotoDepuisAppareil } from "@/core/utils/photo";
 import { useLangue, useTr, Lang } from "@/core/i18n";
+import { useTirageRafraichir } from "@/core/utils/use_tirage_rafraichir";
+import { IndicateurTirage } from "@/core/design_system/indicateur_tirage";
 import { useEffect } from "react";
 
 interface ProduitDraft {
@@ -61,14 +63,19 @@ export default function RejoindrePage() {
   const [succes, setSucces] = useState(false);
   const [erreurs, setErreurs] = useState<string[]>([]);
 
+  async function charger() {
+    const [c, p] = await Promise.all([chargerCatalogue(), categoriesPerso()]);
+    setCatalogue(c);
+    setPersos(p);
+  }
+
   useEffect(() => {
-    async function charger() {
-      const [c, p] = await Promise.all([chargerCatalogue(), categoriesPerso()]);
-      setCatalogue(c);
-      setPersos(p);
-    }
-    charger();
+    const d = setTimeout(() => void charger(), 0);
+    return () => clearTimeout(d);
   }, []);
+
+  // Tirer vers le bas depuis le haut = recharger catalogue et catégories.
+  const { distance: ptrDistance, enCours: ptrCours } = useTirageRafraichir(charger);
 
   function majProduit(i: number, maj: Partial<ProduitDraft>) {
     setProduits(produits.map((p, idx) => (idx === i ? { ...p, ...maj } : p)));
@@ -198,6 +205,7 @@ export default function RejoindrePage() {
 
   return (
     <FondMboa>
+      <IndicateurTirage distance={ptrDistance} enCours={ptrCours} />
       <EnTetePage
         titre={t("rej.titre")}
         sousTitre={t("rej.sousTitre")}
