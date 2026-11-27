@@ -97,21 +97,6 @@ function ouvrirDb(dejaRepare = false): Promise<IDBDatabase> {
   });
 }
 
-/** Noms d'entités du cache. */
-export const Entites = {
-  profil: "profil",
-  produit: "produit",
-  commande: "commande",
-  catalogue: "catalogue",
-  vitrine: "vitrine",
-  achat: "achat",
-  suivi: "suivi",
-  liste: "liste",
-  livreur: "livreur",
-  fournisseur: "fournisseur",
-  notification: "notification",
-} as const;
-
 export interface EntiteCache {
   entite: string;
   id: string;

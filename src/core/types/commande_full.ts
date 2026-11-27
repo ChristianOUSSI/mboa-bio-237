@@ -62,36 +62,6 @@ export interface Commande {
   livreurTarif?: number | null;
 }
 
-export function commandeAUnLivreur(c: Commande): boolean {
-  return c.livreurId != null;
-}
-
-export function commandeMontantDue(c: Commande): number {
-  return c.clos ? (c.montantLivre ?? 0) : 0;
-}
-
-export function commandeEcart(c: Commande): number {
-  return c.montantLivre == null ? 0 : c.montantTotal - c.montantLivre;
-}
-
-export function commandeEcartSignificatif(c: Commande): boolean {
-  return commandeEcart(c) > 0;
-}
-
-export function commandeMarge(c: Commande): number {
-  if (!c.clos) return 0;
-  const encaisse = c.montantLivre ?? 0;
-  if (c.montantTotal <= 0) return encaisse;
-  const coutGarde = Math.round((c.coutAchat * encaisse) / c.montantTotal);
-  return encaisse - coutGarde;
-}
-
-export function commandeCoutGarde(c: Commande): number {
-  const encaisse = c.montantLivre ?? 0;
-  if (c.montantTotal <= 0) return 0;
-  return Math.round((c.coutAchat * encaisse) / c.montantTotal);
-}
-
 export function commandeMontantAPayer(c: Commande): number {
   // Le frais de livraison client (fixé par l'admin) prime ; pour les
   // anciennes commandes sans ce champ, on retombe sur le tarif livreur.
@@ -104,29 +74,6 @@ export function commandeAttendConfirmation(c: Commande): boolean {
 
 export function commandeEstAnnule(c: Commande): boolean {
   return c.statut === StatutCommande.annulee;
-}
-
-export function commandePreteARelance(c: Commande): boolean {
-  if (!commandeAttendConfirmation(c)) return false;
-  if (!c.livreeLe) return false;
-  const heures = (Date.now() - new Date(c.livreeLe).getTime()) / (1000 * 60 * 60);
-  return heures >= 12;
-}
-
-export function commandeEtapeAllumee(c: Commande): number {
-  return statutJalon(c.statut);
-}
-
-function statutJalon(s: StatutCommande): number {
-  const ordre = [
-    StatutCommande.nouvelle,
-    StatutCommande.valideeAdmin,
-    StatutCommande.enLivraison,
-    StatutCommande.livree,
-    StatutCommande.recue,
-    StatutCommande.annulee,
-  ];
-  return Math.min(ordre.indexOf(s), 3);
 }
 
 export function commandeFromMap(map: Record<string, unknown>): Commande {

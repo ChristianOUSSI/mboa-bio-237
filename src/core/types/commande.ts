@@ -45,18 +45,6 @@ export function ligneQuantiteAffichee(l: LigneCommande): string {
   return uniteAvec(ligneUniteReelle(l), l.quantite);
 }
 
-export function ligneAnnonce(l: LigneCommande): string {
-  return `${ligneQuantiteAffichee(l)} de ${l.nom}`;
-}
-
-export function ligneSousTotal(l: LigneCommande): number {
-  return Math.round(l.quantite * l.prix);
-}
-
-export function ligneCout(l: LigneCommande): number {
-  return Math.round(l.quantite * l.coutAchat);
-}
-
 export function ligneFromJson(json: Record<string, unknown>): LigneCommande {
   const slugRaw = (json.slug as string) ?? "";
   const slug = slugRaw.trim().length === 0 ? null : slugRaw;

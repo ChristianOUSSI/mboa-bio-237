@@ -1,5 +1,4 @@
 import { LigneCommande } from "../types/commande";
-import { Commande } from "../types/commande_full";
 import { formaterFcfa } from "../utils/format_monnaie";
 import { UNITE_INFO, Unite } from "../types/unite";
 
@@ -202,20 +201,3 @@ function echapper(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-/** Construit les options d'export depuis une commande. */
-export function optionsDepuisCommande(c: Commande, telephone?: string | null): ExportOptions {
-  return {
-    type: "devis",
-    titre: "Devis MBOA BIO 237",
-    lignes: c.lignes,
-    telephone,
-    code: null,
-    fraisLivraison: c.fraisLivraison ?? c.livreurTarif ?? 0,
-    reference: c.id.slice(0, 8).toUpperCase(),
-    date: new Date(c.createdLe).toLocaleDateString("fr-CM", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    }),
-  };
-}

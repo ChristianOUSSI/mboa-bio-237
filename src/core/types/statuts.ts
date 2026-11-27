@@ -67,22 +67,6 @@ export function statutRang(s: StatutCommande): number {
 }
 
 /** Position sur la timeline à quatre icônes. `recue` allume la même case que `livree`. */
-export function statutJalon(s: StatutCommande): number {
-  return Math.min(statutRang(s), 3);
-}
-
-export function statutAttendConfirmation(s: StatutCommande): boolean {
-  return s === StatutCommande.livree;
-}
-
-export function statutEstTerminee(s: StatutCommande): boolean {
-  return s === StatutCommande.recue;
-}
-
-export function statutEstFermee(s: StatutCommande): boolean {
-  return s === StatutCommande.recue || s === StatutCommande.annulee;
-}
-
 /** Colonne `public.commandes.paiement`. */
 export enum ModePaiement {
   especes = "especes",

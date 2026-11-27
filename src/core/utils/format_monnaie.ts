@@ -22,12 +22,3 @@ function groupes(montant: number): string {
   return montant < 0 ? `-${joint}` : joint;
 }
 
-/** 2.0 -> « 2 », 2.5 -> « 2,5 ». */
-export function formaterKg(kg: number): string {
-  const arrondi = Math.round(kg);
-  const texte =
-    Math.abs(kg - arrondi) < 0.01
-      ? arrondi.toString()
-      : kg.toFixed(1);
-  return texte.replace(".", ",");
-}

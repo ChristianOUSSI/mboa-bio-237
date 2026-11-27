@@ -55,24 +55,3 @@ export function slugDe(nom: string): string {
   return sansAccent.substring(0, Math.min(sansAccent.length, 40));
 }
 
-/** Normalise un numéro de téléphone camerounais en +237XXXXXXXXX. */
-export function normaliserTelephone(saisie: string): string | null {
-  const chiffres = saisie.replace(/\D/g, "");
-  // Cas 1 : déjà avec l'indicatif +237
-  if (chiffres.startsWith("237")) {
-    const reste = chiffres.substring(3);
-    if (reste.length === 9 && (reste.startsWith("6") || reste.startsWith("2"))) {
-      return `+237${reste}`;
-    }
-  }
-  // Cas 2 : 9 chiffres starting with 6 or 2
-  if (chiffres.length === 9 && (chiffres.startsWith("6") || chiffres.startsWith("2"))) {
-    return `+237${chiffres}`;
-  }
-  return null;
-}
-
-/** Vérifie qu'un numéro est un numéro camerounais valide. */
-export function telephoneValide(saisie: string): boolean {
-  return normaliserTelephone(saisie) !== null;
-}

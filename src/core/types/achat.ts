@@ -29,9 +29,6 @@ export function statutAchatResolve(slug?: string | null): StatutAchat {
   return found ? (slug as StatutAchat) : StatutAchat.propose;
 }
 
-export function achatEstAttente(s: StatutAchat): boolean {
-  return s === StatutAchat.propose;
-}
 export function achatEstPrise(s: StatutAchat): boolean {
   return s === StatutAchat.valide || s === StatutAchat.paye;
 }
@@ -68,12 +65,6 @@ export interface Achat {
 
 export function achatMontant(a: Achat): number {
   return Math.round(a.quantite * (a.prixMarchand ?? a.prixDemande));
-}
-
-export function achatAnnonce(a: Achat): string {
-  const u = a.unite;
-  const prix = a.prixMarchand ?? a.prixDemande;
-  return `${a.quantite} ${u} de ${a.nom}, à ${prix} francs`;
 }
 
 export function achatResume(a: Achat): string {

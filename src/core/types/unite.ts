@@ -65,8 +65,6 @@ export function uniteAvecArticle(u: Unite): string {
   return `${UNITE_INFO[u].article} ${UNITE_INFO[u].un}`;
 }
 
-/** « 350 F per kilo ». */
-
 function nombre(valeur: number): string {
   const arrondi = Math.round(valeur);
   return Math.abs(valeur - arrondi) < 0.01
@@ -76,8 +74,4 @@ function nombre(valeur: number): string {
 
 export function uniteAvec(u: Unite, valeur: number): string {
   return `${nombre(valeur)} ${unitePour(u, valeur)}`;
-}
-
-export function uniteEstPoids(u: Unite): boolean {
-  return u === Unite.kg;
 }

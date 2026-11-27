@@ -22,22 +22,3 @@ export function mboaReseau(): SupabaseClient | null {
   }
   return _client;
 }
-
-export function urlPublique(): string {
-  return SUPABASE_URL;
-}
-
-export async function televerser(bucket: string, chemin: string, bytes: Uint8Array, contentType: string): Promise<string | null> {
-  const client = mboaReseau();
-  if (!client) return null;
-  const { error } = await client.storage.from(bucket).upload(chemin, bytes, {
-    contentType,
-    upsert: true,
-  });
-  if (error) {
-    console.error("Upload error:", error.message);
-    return null;
-  }
-  const { data } = client.storage.from(bucket).getPublicUrl(chemin);
-  return data.publicUrl;
-}

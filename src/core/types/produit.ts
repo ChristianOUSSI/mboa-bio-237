@@ -61,10 +61,6 @@ export function produitUnites(p: Produit): { unite: string; prix: number }[] {
   return [{ unite: produitUniteReelle(p) as string, prix: p.prix }];
 }
 
-export function produitPhoto(p: Produit): string {
-  return p.photoFiligranee ?? p.photoReelle;
-}
-
 export function produitEstVitrine(p: Produit): boolean {
   return p.actif && p.quantite > 0;
 }

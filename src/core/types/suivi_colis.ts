@@ -38,15 +38,6 @@ export function jalonResolve(slug?: string | null): JalonSuivi {
   return found ? (slug as JalonSuivi) : JalonSuivi.panierPrepare;
 }
 
-export function jalonEstAutomatique(j: JalonSuivi): boolean {
-  return (
-    j === JalonSuivi.panierPrepare ||
-    j === JalonSuivi.motoPartie ||
-    j === JalonSuivi.arrive ||
-    j === JalonSuivi.remis
-  );
-}
-
 /** Position GPS d'un point du trajet. */
 export interface PositionGps {
   latitude: number;
@@ -98,27 +89,6 @@ export interface SuiviColis {
   positionDepart?: PositionGps | null;
   /** Position de la cliente (destination). */
   positionDestination?: PositionGps | null;
-}
-
-export function suiviDerniereEtape(s: SuiviColis): EtapeSuivi | null {
-  return s.etapes.length === 0 ? null : s.etapes[s.etapes.length - 1];
-}
-
-export function suiviDernierRang(s: SuiviColis): number {
-  const derniere = suiviDerniereEtape(s);
-  return derniere ? jalonRang(derniere.jalon) : -1;
-}
-
-export function suiviEnApproche(s: SuiviColis): boolean {
-  return s.etapes.some((e) => e.jalon === JalonSuivi.enApproche);
-}
-
-export function suiviArrive(s: SuiviColis): boolean {
-  return s.etapes.some((e) => e.jalon === JalonSuivi.arrive);
-}
-
-export function suiviRemis(s: SuiviColis): boolean {
-  return s.etapes.some((e) => e.jalon === JalonSuivi.remis);
 }
 
 /** Une étape de la timeline, posée ou non. */
